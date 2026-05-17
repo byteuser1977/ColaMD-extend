@@ -1,0 +1,88 @@
+body.theme-elegant .mermaid-preview svg .node rect,
+body.theme-elegant .mermaid-preview svg .node circle,
+body.theme-elegant .mermaid-preview svg .node ellipse,
+body.theme-elegant .mermaid-preview svg .node polygon,
+body.theme-elegant .mermaid-preview svg .node path {
+  stroke: #b0a89f;
+}
+
+body.theme-elegant .mermaid-preview svg .edgePath .path {
+  stroke: #b0a89f;
+}
+
+body.theme-elegant .mermaid-preview svg .cluster rect,
+body.theme-elegant .mermaid-preview svg .cluster path {
+  stroke: #c4bbb0;
+}
+
+body.theme-elegant .mermaid-preview svg defs marker path {
+  fill: #b0a89f;
+  stroke: #b0a89f;
+}
+
+body.theme-elegant .mermaid-preview svg rect[stroke="#444444"] {
+  stroke: #b0a89f !important;
+}
+
+body.theme-elegant .mermaid-preview svg path[stroke="#444444"] {
+  stroke: #b0a89f !important;
+}
+
+body.theme-elegant .mermaid-preview svg rect[stroke="#000000"] {
+  stroke: #b0a89f !important;
+}
+
+body.theme-elegant .mermaid-preview svg path[stroke="#000000"] {
+  stroke: #b0a89f !important;
+}
+
+body.theme-elegant .mermaid-preview svg .edgeLabel text {
+  fill: #3d3530 !important;
+}
+
+body.theme-elegant .mermaid-preview svg .edgeLabel rect {
+  fill: #4f4d4b !important;
+}
+
+body.theme-elegant .mermaid-preview svg .edgeLabel span {
+  color: #3d3530 !important;
+}
+
+body.theme-elegant .mermaid-preview svg .label text {
+  fill: #000000 !important;
+}
+
+body.theme-elegant .mermaid-preview svg .nodeLabel text {
+  fill: #3d3530 !important;
+}
+
+body.theme-elegant .mermaid-preview svg .nodeLabel span {
+  color: #3d3530 !important;
+}
+
+body.theme-elegant .mermaid-preview svg text {
+  fill: #3d3530;
+  font-family: 'LXGW WenKai', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', Georgia, serif;
+}
+
+body.theme-elegant .mermaid-preview svg .nodeLabel span,
+body.theme-elegant .mermaid-preview svg .edgeLabel span {
+  font-family: 'LXGW WenKai', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', Georgia, serif;
+}
+
+body.theme-elegant .mermaid-preview svg .person rect,
+body.theme-elegant .mermaid-preview svg .person path {
+  stroke: #3d3530;
+}
+
+body.theme-elegant .mermaid-preview svg .person-man text {
+  fill: #ffffff !important;
+}
+
+body.theme-elegant .mermaid-preview svg .person-man span {
+  color: #ffffff !important;
+}
+
+body.theme-elegant .mermaid-preview svg foreignObject span {
+  color: #2c2c2c !important;
+}

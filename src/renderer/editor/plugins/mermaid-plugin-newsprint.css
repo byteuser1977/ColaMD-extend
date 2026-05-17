@@ -1,0 +1,20 @@
+body.theme-newsprint .mermaid-preview svg .edgeLabel text {
+  fill: var(--text-color) !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .edgeLabel rect {
+  fill: var(--code-block-bg) !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .edgeLabel span {
+  color: var(--text-color) !important;
+}
+
+body.theme-newsprint .mermaid-preview svg text {
+  font-family: 'PT Serif', Georgia, serif;
+}
+
+body.theme-newsprint .mermaid-preview svg .nodeLabel span,
+body.theme-newsprint .mermaid-preview svg .edgeLabel span {
+  font-family: 'PT Serif', Georgia, serif;
+}

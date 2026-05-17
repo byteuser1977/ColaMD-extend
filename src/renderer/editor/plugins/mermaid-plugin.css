@@ -1,0 +1,111 @@
+.mermaid-block {
+  display: block;
+  padding: 0.875em 16px;
+  margin: 1em 0;
+  border-radius: 6px;
+  background: var(--code-block-bg);
+  border: 1px solid var(--border-color);
+  min-height: 100px;
+}
+
+.mermaid-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mermaid-preview svg {
+  max-width: 100%;
+  height: auto;
+  max-height: 600px;
+}
+
+.mermaid-preview svg text {
+  line-height: 1;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+}
+
+.mermaid-preview svg .nodeLabel span,
+.mermaid-preview svg .edgeLabel span {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+}
+
+.mermaid-preview svg .node rect,
+.mermaid-preview svg .node circle,
+.mermaid-preview svg .node ellipse,
+.mermaid-preview svg .node polygon {
+  stroke: var(--border-color);
+}
+
+.mermaid-preview svg .edgePath .path {
+  stroke: var(--border-color);
+}
+
+.mermaid-preview svg .edgeLabel text {
+  fill: var(--text-color);
+}
+
+.mermaid-preview svg .edgeLabel rect {
+  fill: var(--code-block-bg);
+}
+
+.mermaid-preview svg .edgeLabel span {
+  color: var(--text-color);
+}
+
+.mermaid-preview svg .label text,
+.mermaid-preview svg .nodeLabel text {
+  fill: var(--text-color);
+}
+
+.mermaid-preview svg text {
+  fill: var(--text-color);
+}
+
+.mermaid-preview svg .label text,
+.mermaid-preview svg .nodeLabel text,
+.mermaid-preview svg .state-title,
+.mermaid-preview svg .state-description,
+.mermaid-preview svg .pieTitleText,
+.mermaid-preview svg .titleText {
+  transform: translateY(-3px);
+}
+
+.mermaid-preview svg .nodeLabel,
+.mermaid-preview svg .edgeLabel {
+  display: inline-block;
+  position: relative;
+  top: -3px;
+}
+
+.mermaid-source {
+  width: 100%;
+  min-height: 100px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 14px;
+  font-size: 0.875em;
+  font-family: 'SF Mono', 'Fira Code', Menlo, monospace;
+  color: var(--code-block-text, var(--text-color));
+  background: var(--code-block-bg);
+  outline: none;
+  resize: vertical;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.mermaid-source:focus {
+  border-color: var(--link-color);
+}
+
+.mermaid-loading {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.mermaid-error {
+  color: #e74c3c;
+  font-family: monospace;
+  font-size: 0.875em;
+  white-space: pre-wrap;
+}

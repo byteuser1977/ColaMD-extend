@@ -293,9 +293,9 @@ body.theme-elegant {
   --text-muted: #777;
   --border-color: #d8d3ce;
   --link-color: #c44b2b;
-  --code-bg: #e8e4df;
-  --code-block-bg: #2c2c2c;
-  --code-block-text: #e0dcd7;
+  --code-bg: #e0d8cf;
+  --code-block-bg: #e8e2db;
+  --code-block-text: #3d3530;
   --blockquote-border: #c44b2b;
   --blockquote-bg: #eae6e1;
   --table-header-bg: #eae6e1;
@@ -367,4 +367,143 @@ body.theme-newsprint #editor .ProseMirror {
 ::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 3px;
+}
+
+/* Math blocks */
+.math-inline {
+  display: inline;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: var(--code-bg);
+  cursor: default;
+}
+
+.math-inline .katex {
+  font-size: 1.1em;
+}
+
+.math-block {
+  display: block;
+  padding: 0.875em;
+  margin: 1em 0;
+  border-radius: 6px;
+  background: var(--code-block-bg);
+  text-align: center;
+  overflow-x: auto;
+}
+
+.math-block .katex {
+  font-size: 1.2em;
+}
+
+/* Dark theme: KaTeX color overrides */
+body.theme-dark .math-inline,
+body.theme-dark .math-block {
+  color: var(--text-color);
+}
+
+body.theme-dark .katex {
+  color: var(--text-color);
+}
+
+body.theme-dark .katex .mord,
+body.theme-dark .katex .mbin,
+body.theme-dark .katex .mrel,
+body.theme-dark .katex .mopen,
+body.theme-dark .katex .mclose,
+body.theme-dark .katex .mpunct,
+body.theme-dark .katex .minner {
+  color: var(--text-color);
+}
+
+/* KaTeX scrollbar in block math for dark theme */
+body.theme-dark .math-block::-webkit-scrollbar-thumb {
+  background: #30363d;
+}
+
+body.theme-elegant .math-block::-webkit-scrollbar-thumb {
+  background: #c4bbb0;
+}
+
+/* Elegant theme: KaTeX color overrides */
+body.theme-elegant .math-inline,
+body.theme-elegant .math-block {
+  color: var(--text-color);
+}
+
+body.theme-elegant .katex {
+  color: #3d3530;
+}
+
+body.theme-elegant .katex .mord,
+body.theme-elegant .katex .mbin,
+body.theme-elegant .katex .mrel,
+body.theme-elegant .katex .mopen,
+body.theme-elegant .katex .mclose,
+body.theme-elegant .katex .mpunct,
+body.theme-elegant .katex .minner {
+  color: #3d3530;
+}
+
+/* Plugin raw mode — editable inputs */
+.math-inline-raw {
+  width: auto;
+  min-width: 60px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.875em;
+  font-family: 'SF Mono', 'Fira Code', Menlo, monospace;
+  color: var(--text-color);
+  background: var(--code-bg);
+  outline: none;
+}
+.math-inline-raw:focus {
+  border-color: var(--link-color);
+}
+
+textarea.math-block-raw {
+  width: 100%;
+  min-height: 60px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 14px;
+  font-size: 0.875em;
+  font-family: 'SF Mono', 'Fira Code', Menlo, monospace;
+  color: var(--code-block-text, var(--text-color));
+  background: var(--code-block-bg);
+  outline: none;
+  resize: vertical;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+textarea.math-block-raw:focus {
+  border-color: var(--link-color);
+}
+
+/* Inline context menu for PNG export */
+#cola-context-menu {
+  position: fixed;
+  display: none;
+  z-index: 99999;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  min-width: 180px;
+}
+
+.cola-menu-item {
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.cola-menu-item:hover {
+  background: var(--accent-soft, rgba(241, 117, 45, 0.12));
+  color: #F1752D;
 }

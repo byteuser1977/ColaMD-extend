@@ -37,6 +37,9 @@ interface WindowState {
 const windowStates = new Map<number, WindowState>()
 let pendingFilePaths: string[] = []
 
+// Plugin menu state — populated by renderer via register-plugins IPC
+let pluginMenuItems: Electron.MenuItemConstructorOptions[] = []
+
 function getState(win: BrowserWindow): WindowState {
   let state = windowStates.get(win.id)
   if (!state) {
@@ -357,6 +360,25 @@ ipcMain.handle('save-file-as', async (event, content: string) => {
   return saveToPath(win, result.filePath, content)
 })
 
+ipcMain.handle('save-export-file', async (event, dataUrl: string, defaultName: string) => {
+  const win = getWinFromEvent(event)
+  if (!win) return false
+  const ext = (defaultName.match(/\.(\w+)$/)?.[1] || 'png').toLowerCase()
+  const result = await dialog.showSaveDialog(win, {
+    defaultPath: defaultName,
+    filters: [{ name: `${ext.toUpperCase()} File`, extensions: [ext] }]
+  })
+  if (result.canceled || !result.filePath) return false
+  try {
+    const base64 = dataUrl.replace(/^data:[^;]+;base64,/, '')
+    await writeFile(result.filePath, Buffer.from(base64, 'base64'))
+    return true
+  } catch {
+    return false
+  }
+})
+
+
 ipcMain.handle('export-pdf', async (event) => {
   const win = getWinFromEvent(event)
   if (!win) return false
@@ -367,9 +389,8 @@ ipcMain.handle('export-pdf', async (event) => {
   if (result.canceled || !result.filePath) return false
 
   try {
-    // Expand editor to full content height for printing
     const cssKey = await win.webContents.insertCSS(
-      'html, body { height: auto !important; overflow: visible !important; } #titlebar { display: none !important; } #editor { height: auto !important; overflow: visible !important; } #editor .ProseMirror { min-height: auto !important; }'
+      'html, body { height: auto !important; overflow: visible !important; } #titlebar { display: none !important; } #editor { height: auto !important; overflow: visible !important; } #editor .ProseMirror { min-height: auto !important; } .mermaid-error { display: none !important; } .mermaid-loading { display: none !important; } svg .error-icon, svg .error-text { display: none !important; } .math-inline-raw, .math-block-raw, textarea.mermaid-source { display: none !important; }'
     )
     const pdfData = await win.webContents.printToPDF({
       marginType: 0,
@@ -646,6 +667,26 @@ ipcMain.handle('load-theme-css', async (_event, fileName: string) => {
   }
 })
 
+// Plugin menu — receives plugin list from renderer, builds dynamic submenu
+
+ipcMain.handle('register-plugins', (_event, plugins: Array<{ id: string; name: string; enabled: boolean }>) => {
+  pluginMenuItems = plugins.map((p) => ({
+    id: p.id,
+    label: p.name,
+    type: 'checkbox' as const,
+    checked: p.enabled,
+    click: () => sendToFocused('menu-toggle-plugin', p.id)
+  }))
+  buildMenu()
+  return true
+})
+
+ipcMain.handle('sync-plugin-state', (_event, id: string, enabled: boolean) => {
+  const item = pluginMenuItems.find((p: any) => p.id === id)
+  if (item) item.checked = enabled
+  buildMenu()
+})
+
 // Menu — targets the focused window
 
 function getFocusedWindow(): BrowserWindow | null {
@@ -775,7 +816,10 @@ function buildMenu(): void {
         { role: 'zoomIn' },
         { role: 'zoomOut' },
         { type: 'separator' },
-        { role: 'togglefullscreen' }
+        { role: 'togglefullscreen' },
+        ...(pluginMenuItems.length > 0
+          ? [{ type: 'separator' as const }, { label: 'Plugins', submenu: pluginMenuItems }]
+          : [])
       ]
     },
     {

@@ -221,6 +221,107 @@ pre.md-fences code {
     text-align: center;
 }
 
+/* Inline Math */
+.md-inline-math,
+.md-inline-math script,
+.md-math-inline,
+.MathJax {
+    color: #2c2c2c;
+}
+
+/* MathJax SVG elements */
+.MathJax svg,
+.MathJax_Display svg {
+    fill: currentColor;
+    stroke: currentColor;
+}
+
+/* Mermaid Diagrams */
+.md-diagram-panel.md-mermaid {
+    background: #f7f5f2;
+    border: 1px solid #d8d3ce;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 1.5em 0;
+}
+
+.md-diagram-panel.md-mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Mermaid node styling overrides for consistent theming */
+.md-diagram-panel.md-mermaid .node rect,
+.md-diagram-panel.md-mermaid .node circle,
+.md-diagram-panel.md-mermaid .node ellipse,
+.md-diagram-panel.md-mermaid .node polygon {
+    fill: #eae6e1 !important;
+    stroke: #c44b2b !important;
+    stroke-width: 1.5px !important;
+}
+
+.md-diagram-panel.md-mermaid .node .label {
+    color: #2c2c2c !important;
+    font-family: "LXGW WenKai", "Noto Serif SC", Georgia, serif !important;
+}
+
+.md-diagram-panel.md-mermaid .edgePath .path {
+    stroke: #999 !important;
+    stroke-width: 1.5px !important;
+}
+
+.md-diagram-panel.md-mermaid .edgeLabel {
+    background-color: #f7f5f2 !important;
+    color: #555 !important;
+}
+
+.md-diagram-panel.md-mermaid .cluster rect {
+    fill: rgba(196, 75, 43, 0.06) !important;
+    stroke: #c44b2b !important;
+    stroke-width: 1px !important;
+    stroke-dasharray: 4,4;
+}
+
+/* Mermaid sequence diagram specific */
+.md-diagram-panel.md-mermaid .actor {
+    fill: #eae6e1 !important;
+    stroke: #c44b2b !important;
+}
+
+.md-diagram-panel.md-mermaid text.actor {
+    fill: #2c2c2c !important;
+}
+
+.md-diagram-panel.md-mermaid .messageLine0,
+.md-diagram-panel.md-mermaid .messageLine1 {
+    stroke: #999 !important;
+}
+
+.md-diagram-panel.md-mermaid .messageText {
+    fill: #555 !important;
+}
+
+/* Mermaid gantt chart specific */
+.md-diagram-panel.md-mermaid .section0,
+.md-diagram-panel.md-mermaid .section1,
+.md-diagram-panel.md-mermaid .section2,
+.md-diagram-panel.md-mermaid .section3 {
+    fill: rgba(196, 75, 43, 0.1) !important;
+}
+
+.md-diagram-panel.md-mermaid .task0,
+.md-diagram-panel.md-mermaid .task1,
+.md-diagram-panel.md-mermaid .task2,
+.md-diagram-panel.md-mermaid .task3 {
+    fill: #c44b2b !important;
+    stroke: #a33d22 !important;
+}
+
+.md-diagram-panel.md-mermaid .today {
+    stroke: #c44b2b !important;
+    stroke-width: 2px !important;
+}
+
 /* Tables */
 table {
     width: 100%;

@@ -1,6 +1,10 @@
-import { createEditor, getMarkdown, getHTML, setMarkdown } from './editor/editor'
+import { createEditor, getMarkdown, getHTML, setMarkdown, togglePluginMode } from './editor/editor'
 import { applyTheme, loadSavedTheme } from './themes/theme-manager'
+import { getAllPlugins, togglePlugin, findPluginBySelector, findExportCapabilities } from './editor/plugins'
 import './themes/base.css'
+
+const pluginModules = import.meta.glob<{ default?: unknown }>('./editor/plugins/*-plugin.ts', { eager: true })
+Object.keys(pluginModules)
 
 function isSlidesContent(content: string): boolean {
   return /^---\s*\n[\s\S]*?(kicker|chip):/m.test(content)
@@ -54,6 +58,23 @@ async function init(): Promise<void> {
 
   await createEditor('editor')
 
+  // Run plugin init hooks (mermaid initialize, etc.)
+  for (const p of getAllPlugins()) p.onInit?.()
+
+  // Send plugin list to main process for menu
+  api.registerPlugins(getAllPlugins().map((p) => ({ id: p.id, name: p.name, enabled: p.enabled })))
+
+  // Handle plugin toggle from menu
+  api.onMenuTogglePlugin((id) => {
+    togglePlugin(id)
+    const p = getAllPlugins().find((x) => x.id === id)
+    if (p) {
+      const mode = p.enabled ? 'rendered' : 'raw'
+      togglePluginMode(p.nodeTypes, mode)
+      api.syncPluginState(p.id, p.enabled)
+    }
+  })
+
   // Slides button — open as slides
   slidesBtnEl().addEventListener('click', () => api.openAsSlides(getContent()))
 
@@ -62,9 +83,38 @@ async function init(): Promise<void> {
     if (result) setContent(result.content)
   })
 
-  api.onMenuSave(() => api.saveFile(getContent()))
-  api.onMenuSaveAs(() => api.saveFileAs(getContent()))
-  api.onMenuExportPDF(() => api.exportPDF())
+  function syncRawEdits(): void {
+    document.querySelectorAll('.math-block-raw, .math-inline-raw, .mermaid-source').forEach((el) => {
+      if ((el as HTMLElement).matches(':focus')) (el as HTMLElement).blur()
+    })
+  }
+
+  function restoreRenderedMode(): void {
+    for (const p of getAllPlugins()) {
+      if (!p.enabled) {
+        p.enabled = true
+        togglePluginMode(p.nodeTypes, 'rendered')
+        api.syncPluginState(p.id, true)
+      }
+    }
+  }
+
+  api.onMenuSave(async () => {
+    syncRawEdits()
+    const ok = await api.saveFile(getContent())
+    if (ok) restoreRenderedMode()
+  })
+  api.onMenuSaveAs(async () => {
+    syncRawEdits()
+    const ok = await api.saveFileAs(getContent())
+    if (ok) restoreRenderedMode()
+  })
+  api.onMenuExportPDF(async () => {
+    syncRawEdits()
+    restoreRenderedMode()
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
+    await api.exportPDF()
+  })
   api.onMenuExportHTML(() => {
     const s = getComputedStyle(document.body)
     const v = (name: string) => s.getPropertyValue(name).trim()
@@ -93,6 +143,7 @@ async function init(): Promise<void> {
 
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>ColaMD Export</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.46/dist/katex.min.css">
 <style>
 body{max-width:780px;margin:40px auto;padding:20px;font-family:${fontFamily};line-height:1.75;background:${bgColor};color:${textColor}}
 h1{font-size:2em;font-weight:700;border-bottom:1px solid ${borderColor};padding-bottom:.3em}
@@ -110,6 +161,12 @@ th{background:${tableHeaderBg};font-weight:600}
 hr{border:none;border-top:2px solid ${borderColor};margin:2em 0}
 img{max-width:100%}
 ::selection{background:${selectionBg}}
+.math-inline{display:inline;padding:2px 4px;border-radius:3px;background:${codeBg}}
+.math-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${codeBlockBg};text-align:center;overflow-x:auto}
+.mermaid-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${codeBlockBg};border:1px solid ${borderColor}}
+.mermaid-preview{display:flex;justify-content:center;align-items:center}
+.mermaid-preview svg{max-width:100%;height:auto}
+.mermaid-preview svg .label text,.mermaid-preview svg .nodeLabel text,.mermaid-preview svg .state-title,.mermaid-preview svg .state-description,.mermaid-preview svg .pieTitleText,.mermaid-preview svg .titleText{transform:translateY(-2px)}.mermaid-preview svg .nodeLabel,.mermaid-preview svg .edgeLabel{display:inline-block;position:relative;top:-2px}
 </style>
 </head><body>${getHTML()}</body></html>`
     api.exportHTML(html)
@@ -124,7 +181,18 @@ img{max-width:100%}
       setMarkdown(content)
     }
   })
-  api.onSetTheme((theme) => applyTheme(theme))
+  api.onSetTheme((theme) => {
+    applyTheme(theme)
+    // Notify all plugins of theme change
+    for (const p of getAllPlugins()) p.onThemeChange?.(theme)
+    // Force re-render all enabled plugin nodes so they pick up the new theme
+    for (const p of getAllPlugins()) {
+      if (p.enabled) {
+        togglePluginMode(p.nodeTypes, 'raw')
+        requestAnimationFrame(() => togglePluginMode(p.nodeTypes, 'rendered'))
+      }
+    }
+  })
   api.onSetCustomCSS((css) => {
     const theme = loadSavedTheme()
     applyTheme(theme, css)
@@ -155,6 +223,70 @@ img{max-width:100%}
   api.onAgentActivity((state) => {
     if (agentDot) agentDot.className = state === 'idle' ? '' : state
   })
+
+  // --- Export via plugin capabilities (context menu) ---
+  let exportTarget: HTMLElement | null = null
+  let exportCapability: import('./editor/plugins').ExportCapability | null = null
+  let contextMenu: HTMLDivElement | null = null
+
+  function getContextMenu(): HTMLDivElement {
+    if (!contextMenu) {
+      contextMenu = document.createElement('div')
+      contextMenu.id = 'cola-context-menu'
+      document.body.appendChild(contextMenu)
+    }
+    return contextMenu
+  }
+
+  function hideContextMenu(): void {
+    if (contextMenu) contextMenu.style.display = 'none'
+  }
+
+  async function executeExport(cap: import('./editor/plugins').ExportCapability): Promise<void> {
+    const target = exportTarget
+    if (!target) return
+    hideContextMenu()
+    try {
+      const dataUrl = await cap.execute(target)
+      if (!dataUrl) return
+      await api.exportFile(dataUrl, cap.defaultName)
+    } catch (err) {
+      console.error('Export failed:', err)
+    }
+  }
+
+  document.addEventListener('contextmenu', (e) => {
+    if ((e.target as Element).matches('textarea, input, [contenteditable="true"]')) return
+    const target = (e.target as Element).closest('.mermaid-block, .math-block') as HTMLElement | null
+    if (!target) return
+    const capabilities = findExportCapabilities(target.className)
+    if (!capabilities.length) return
+    e.preventDefault()
+    exportTarget = target
+
+    const menu = getContextMenu()
+    menu.innerHTML = capabilities.map((cap) =>
+      `<div class="cola-menu-item" data-export="${cap.label}">${cap.label}</div>`
+    ).join('')
+    menu.style.left = e.clientX + 'px'
+    menu.style.top = e.clientY + 'px'
+    menu.style.display = 'block'
+
+    menu.querySelectorAll('.cola-menu-item').forEach((item) => {
+      item.addEventListener('click', (ev) => {
+        ev.preventDefault()
+        ev.stopPropagation()
+        const cap = capabilities.find((c) => c.label === (ev.target as HTMLElement).dataset.export)
+        if (cap) executeExport(cap)
+      })
+    })
+  })
+
+  document.addEventListener('mousedown', (e) => {
+    if (contextMenu && !contextMenu.contains(e.target as Node)) {
+      hideContextMenu()
+    }
+  }, true)
 
   document.addEventListener('dragover', (e) => e.preventDefault())
   document.addEventListener('drop', async (e) => {

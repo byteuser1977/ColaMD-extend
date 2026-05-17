@@ -29,6 +29,11 @@ export interface ElectronAPI {
   exportSlides: (content: string) => Promise<boolean>
   onMenuExportSlides: (callback: () => void) => void
   onAgentActivity: (callback: (state: string) => void) => void
+  registerPlugins: (plugins: Array<{ id: string; name: string; enabled: boolean }>) => Promise<boolean>
+  syncPluginState: (id: string, enabled: boolean) => Promise<void>
+  onMenuTogglePlugin: (callback: (id: string) => void) => void
+  onMenuImportTheme: (callback: () => void) => void
+  exportFile: (dataUrl: string, defaultName: string) => Promise<boolean>
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -92,5 +97,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onAgentActivity: (callback: (state: string) => void) => {
     ipcRenderer.on('agent-activity', (_event, state) => callback(state))
-  }
+  },
+  registerPlugins: (plugins: Array<{ id: string; name: string; enabled: boolean }>) =>
+    ipcRenderer.invoke('register-plugins', plugins),
+  syncPluginState: (id: string, enabled: boolean) =>
+    ipcRenderer.invoke('sync-plugin-state', id, enabled),
+  onMenuTogglePlugin: (callback: (id: string) => void) => {
+    ipcRenderer.on('menu-toggle-plugin', (_event, id) => callback(id))
+  },
+  exportFile: (dataUrl: string, defaultName: string) =>
+    ipcRenderer.invoke('save-export-file', dataUrl, defaultName),
 } satisfies ElectronAPI)

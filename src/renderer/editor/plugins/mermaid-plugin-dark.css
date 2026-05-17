@@ -1,0 +1,86 @@
+body.theme-dark .mermaid-preview svg .node rect,
+body.theme-dark .mermaid-preview svg .node circle,
+body.theme-dark .mermaid-preview svg .node ellipse,
+body.theme-dark .mermaid-preview svg .node polygon,
+body.theme-dark .mermaid-preview svg .node path {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .edgePath .path {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .cluster rect,
+body.theme-dark .mermaid-preview svg .cluster path {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg defs marker path {
+  fill: #8b949e;
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg rect[stroke="#444444"] {
+  stroke: #8b949e !important;
+}
+
+body.theme-dark .mermaid-preview svg path[stroke="#444444"] {
+  stroke: #8b949e !important;
+}
+
+body.theme-dark .mermaid-preview svg line[stroke="#444444"] {
+  stroke: #8b949e !important;
+}
+
+body.theme-dark .mermaid-preview svg rect[stroke="#000000"] {
+  stroke: #8b949e !important;
+}
+
+body.theme-dark .mermaid-preview svg path[stroke="#000000"] {
+  stroke: #8b949e !important;
+}
+
+body.theme-dark .mermaid-preview svg .edgeLabel text {
+  fill: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .edgeLabel rect {
+  fill: #161b22 !important;
+}
+
+body.theme-dark .mermaid-preview svg .edgeLabel span {
+  color: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .label text {
+  fill: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .nodeLabel text {
+  fill: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .nodeLabel span {
+  color: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg text {
+  fill: #e6edf3;
+}
+
+body.theme-dark .mermaid-preview svg .person rect,
+body.theme-dark .mermaid-preview svg .person path {
+  stroke: #8b949e !important;
+}
+
+body.theme-dark .mermaid-preview svg .person-man text {
+  fill: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .person-man span {
+  color: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg foreignObject span {
+  color: #e6edf3 !important;
+}

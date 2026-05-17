@@ -1,17 +1,17 @@
 {
   "name": "colamd",
   "version": "1.5.0",
-  "description": "The Agent Native Markdown Editor",
+  "description": "The Agent Native Markdown Editor — Extended with Math & Mermaid Plugin System",
   "main": "dist/main/index.js",
   "author": {
-    "name": "marswave.ai",
-    "email": "hello@marswave.ai"
+    "name": "byteuser1977",
+    "email": ""
   },
   "license": "MIT",
-  "homepage": "https://github.com/marswaveai/colamd",
+  "homepage": "https://github.com/byteuser1977/ColaMD-extend",
   "repository": {
     "type": "git",
-    "url": "https://github.com/marswaveai/colamd.git"
+    "url": "https://github.com/byteuser1977/ColaMD-extend.git"
   },
   "scripts": {
     "dev": "electron-vite dev",
@@ -24,9 +24,13 @@
   },
   "dependencies": {
     "@milkdown/kit": "^7.19.2",
-    "remark-breaks": "^4.0.0"
+    "katex": "^0.16.46",
+    "mermaid": "^11.15.0",
+    "remark-breaks": "^4.0.0",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
+    "@types/katex": "^0.16.8",
     "electron": "^34.0.0",
     "electron-builder": "^26.0.0",
     "electron-vite": "^3.0.0",

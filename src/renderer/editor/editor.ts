@@ -1,5 +1,6 @@
-import { Editor, rootCtx, defaultValueCtx, editorViewCtx, serializerCtx, remarkPluginsCtx } from '@milkdown/kit/core'
+import { Editor, rootCtx, defaultValueCtx, editorViewCtx, serializerCtx, remarkPluginsCtx, nodeViewCtx, schemaCtx } from '@milkdown/kit/core'
 import { DOMSerializer } from '@milkdown/kit/prose/model'
+import { EditorView } from '@milkdown/kit/prose/view'
 import remarkBreaks from 'remark-breaks'
 import { commonmark } from '@milkdown/kit/preset/commonmark'
 import { gfm } from '@milkdown/kit/preset/gfm'
@@ -8,6 +9,7 @@ import { listener, listenerCtx } from '@milkdown/kit/plugin/listener'
 import { clipboard } from '@milkdown/kit/plugin/clipboard'
 import { replaceAll } from '@milkdown/kit/utils'
 import { htmlView } from './html-view'
+import { getAllPluginModules } from './plugins'
 
 import '@milkdown/kit/prose/view/style/prosemirror.css'
 
@@ -48,9 +50,22 @@ function enhanceClipboard(e: ClipboardEvent): void {
     })
   }
 
-  // pre > code: override code style inside code blocks
   doc.querySelectorAll('pre code').forEach((el) => {
     ;(el as HTMLElement).setAttribute('style', 'background:none;padding:0;font-size:.875em;line-height:1.6;font-family:Menlo,Monaco,monospace;')
+  })
+
+  doc.querySelectorAll('.math-inline').forEach((el) => {
+    ;(el as HTMLElement).setAttribute('style', 'display:inline;padding:2px 4px;border-radius:3px;background:rgba(175,184,193,0.2);')
+  })
+  doc.querySelectorAll('.math-block').forEach((el) => {
+    ;(el as HTMLElement).setAttribute('style', 'display:block;padding:16px;margin:1em 0;border-radius:6px;background:#f6f8fa;text-align:center;overflow-x:auto;')
+  })
+
+  doc.querySelectorAll('.mermaid-block').forEach((el) => {
+    ;(el as HTMLElement).setAttribute('style', 'display:block;padding:16px;margin:1em 0;border-radius:6px;background:#f6f8fa;border:1px solid #d0d7de;')
+  })
+  doc.querySelectorAll('.mermaid-preview svg').forEach((el) => {
+    ;(el as HTMLElement).setAttribute('style', 'max-width:100%;height:auto;')
   })
 
   e.clipboardData?.setData('text/html', doc.body.innerHTML)
@@ -65,11 +80,16 @@ export async function createEditor(
   const root = document.getElementById(rootId)
   if (!root) throw new Error(`Element #${rootId} not found`)
 
-  editorInstance = await Editor.make()
+  const pluginModules = getAllPluginModules()
+
+  let builder = Editor.make()
     .config((ctx) => {
       ctx.set(rootCtx, root)
       ctx.set(defaultValueCtx, defaultContent)
-      ctx.set(remarkPluginsCtx, [{ plugin: remarkBreaks, options: undefined }])
+      ctx.set(remarkPluginsCtx, [
+        ...pluginModules.map((m) => m.info.remarkPlugin),
+        { plugin: remarkBreaks, options: undefined },
+      ])
       if (onChange) {
         ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => {
           onChange(markdown)
@@ -82,13 +102,46 @@ export async function createEditor(
     .use(listener)
     .use(clipboard)
     .use(htmlView)
-    .create()
 
-  // Enhance clipboard with inline styles for rich text paste (e.g. WeChat)
+  for (const mod of pluginModules) {
+    for (const p of mod.milkdownPlugins) {
+      builder = builder.use(p)
+    }
+  }
+
+  editorInstance = await builder.create()
+
+  editorInstance.action((ctx) => {
+    const nvs = ctx.get(nodeViewCtx)
+    const schema = ctx.get(schemaCtx)
+    const fixed = nvs.map((nv: any, i: number) => {
+      if (nv[0] != null) return nv
+      const viewFn = nv[1]
+      const fallbackNames = ['math_inline', 'math_block', 'mermaid_block']
+      const name = fallbackNames[i - 1]
+      if (name && schema.nodes[name]) {
+        return [name, viewFn]
+      }
+      return nv
+    })
+    ctx.set(nodeViewCtx, fixed)
+
+    const oldView = ctx.get(editorViewCtx)
+    const rootEl = ctx.get(rootCtx)
+    const nodeViews = Object.fromEntries(fixed)
+    const newView = new EditorView(rootEl, {
+      state: oldView.state,
+      nodeViews,
+      dispatchTransaction: oldView.props.dispatchTransaction!,
+    })
+    oldView.destroy()
+    rootEl.appendChild(newView.dom)
+    ctx.set(editorViewCtx, newView)
+  })
+
   root.addEventListener('copy', enhanceClipboard)
   root.addEventListener('cut', enhanceClipboard)
 
-  // Cmd+click (Mac) / Ctrl+click (Win/Linux) to open links in browser
   root.addEventListener('click', (e) => {
     if (!(e.metaKey || e.ctrlKey)) return
     const link = (e.target as HTMLElement).closest('a')
@@ -130,4 +183,22 @@ export function getHTML(): string {
 export function setMarkdown(content: string): void {
   if (!editorInstance) return
   editorInstance.action(replaceAll(content))
+}
+
+export function togglePluginMode(nodeTypes: string[], mode: 'rendered' | 'raw'): void {
+  if (!editorInstance) return
+  editorInstance.action((ctx) => {
+    const view = ctx.get(editorViewCtx)
+    const { state, dispatch } = view
+    const tr = state.tr
+    const nodeTypeSet = new Set(nodeTypes)
+
+    state.doc.descendants((node, pos) => {
+      if (nodeTypeSet.has(node.type.name)) {
+        tr.setNodeMarkup(pos, undefined, { ...node.attrs, mode })
+      }
+    })
+
+    dispatch(tr)
+  })
 }
