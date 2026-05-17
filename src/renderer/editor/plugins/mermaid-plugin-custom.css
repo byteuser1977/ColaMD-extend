@@ -1,0 +1,424 @@
+body.theme-custom .mermaid-preview svg text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+  font-family: var(--mermaid-font-family, inherit) !important;
+  font-size: var(--mermaid-font-size, 12px) !important;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel span,
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+  font-family: var(--mermaid-font-family, inherit) !important;
+  font-size: var(--mermaid-font-size, 14px) !important;
+}
+
+body.theme-custom .mermaid-preview svg foreignObject span {
+  color: var(--mermaid-text-color, var(--text-color)) !important;
+  font-family: var(--mermaid-font-family, inherit) !important;
+  font-size: var(--mermaid-font-size, 14px) !important;
+}
+
+body.theme-custom .mermaid-preview svg .label text,
+body.theme-custom .mermaid-preview svg .nodeLabel text,
+body.theme-custom .mermaid-preview svg .state-title,
+body.theme-custom .mermaid-preview svg .state-description,
+body.theme-custom .mermaid-preview svg .pieTitleText,
+body.theme-custom .mermaid-preview svg .titleText {
+  transform: translateY(-3px) !important;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel,
+body.theme-custom .mermaid-preview svg .edgeLabel {
+  display: inline-block !important;
+  position: relative !important;
+  top: -3px !important;
+}
+
+body.theme-custom .mermaid-preview svg .node rect,
+body.theme-custom .mermaid-preview svg .node circle,
+body.theme-custom .mermaid-preview svg .node ellipse,
+body.theme-custom .mermaid-preview svg .node polygon,
+body.theme-custom .mermaid-preview svg .node path {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .edgePath .path {
+  stroke: var(--mermaid-line-color, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .cluster rect,
+body.theme-custom .mermaid-preview svg .cluster path {
+  stroke: var(--mermaid-cluster-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg defs marker path {
+  fill: var(--mermaid-arrowhead-color, var(--mermaid-line-color, var(--border-color)));
+  stroke: var(--mermaid-arrowhead-color, var(--mermaid-line-color, var(--border-color)));
+}
+
+body.theme-custom .mermaid-preview svg rect[stroke="#444444"] {
+  stroke: var(--mermaid-node-border, var(--border-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg path[stroke="#444444"] {
+  stroke: var(--mermaid-node-border, var(--border-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg rect[stroke="#000000"] {
+  stroke: var(--mermaid-node-border, var(--border-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg path[stroke="#000000"] {
+  stroke: var(--mermaid-node-border, var(--border-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg line[stroke="#444444"] {
+  stroke: var(--mermaid-node-border, var(--border-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg line[stroke="#000000"] {
+  stroke: var(--mermaid-node-border, var(--border-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel rect {
+  fill: var(--mermaid-edge-label-background, var(--code-block-bg)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+  color: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .label text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel span {
+  color: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .person rect,
+body.theme-custom .mermaid-preview svg .person path {
+  stroke: var(--mermaid-person-border, var(--text-color));
+}
+
+body.theme-custom .mermaid-preview svg .person-man text {
+  fill: #ffffff !important;
+}
+
+body.theme-custom .mermaid-preview svg .person-man span {
+  color: #ffffff !important;
+}
+
+body.theme-custom .mermaid-preview svg .actor rect,
+body.theme-custom .mermaid-preview svg .actor path {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg text.actor {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .messageLine0,
+body.theme-custom .mermaid-preview svg .messageLine1 {
+  stroke: var(--mermaid-line-color, var(--border-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .messageText {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .loopText,
+body.theme-custom .mermaid-preview svg .altText,
+body.theme-custom .mermaid-preview svg .optText {
+  fill: var(--mermaid-text-color, var(--text-muted)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .loopLine,
+body.theme-custom .mermaid-preview svg .altLine,
+body.theme-custom .mermaid-preview svg .optLine {
+  stroke: var(--mermaid-line-color, var(--border-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .labelBox {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .labelText {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .loopText tspan,
+body.theme-custom .mermaid-preview svg .altText tspan,
+body.theme-custom .mermaid-preview svg .optText tspan {
+  fill: var(--mermaid-text-color, var(--text-muted)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .classBox rect,
+body.theme-custom .mermaid-preview svg .classBox path {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .classTitle text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .classTitle span {
+  color: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .classText text {
+  fill: var(--mermaid-text-color, var(--text-muted)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .classText span {
+  color: var(--mermaid-text-color, var(--text-muted)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .divider {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .relation {
+  stroke: var(--mermaid-line-color, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .statediagram-state rect,
+body.theme-custom .mermaid-preview svg .statediagram-state circle {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .statediagram-state .nodeLabel text,
+body.theme-custom .mermaid-preview svg .statediagram-state .nodeLabel span {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+  color: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .statediagram-cluster rect {
+  stroke: var(--mermaid-cluster-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .transition {
+  stroke: var(--mermaid-line-color, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel .label text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .statediagram-cluster .outer-title text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .pieTitleText {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .pieCircle {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .slice {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .legend text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .task {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .taskText,
+body.theme-custom .mermaid-preview svg .taskTextOutsideRight,
+body.theme-custom .mermaid-preview svg .taskTextOutsideLeft {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .section rect {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .sectionText,
+body.theme-custom .mermaid-preview svg .sectionTitle {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .today {
+  stroke: var(--mermaid-line-color, var(--border-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .grid .tick line {
+  stroke: var(--mermaid-line-color, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .grid .domain {
+  stroke: var(--mermaid-line-color, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .tick text {
+  fill: var(--mermaid-text-color, var(--text-muted));
+}
+
+body.theme-custom .mermaid-preview svg .mindmap-node rect,
+body.theme-custom .mermaid-preview svg .mindmap-node circle,
+body.theme-custom .mermaid-preview svg .mindmap-node ellipse,
+body.theme-custom .mermaid-preview svg .mindmap-node polygon,
+body.theme-custom .mermaid-preview svg .mindmap-node path {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .mindmap-node text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .mindmap-node .nodeLabel text,
+body.theme-custom .mermaid-preview svg .mindmap-node .nodeLabel span {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+  color: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .mindmap-edge {
+  stroke: var(--mermaid-line-color, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .quadrant rect {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .quadrant text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .quadrant .titleText {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .quadrant .axis text {
+  fill: var(--mermaid-text-color, var(--text-muted)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .quadrant .axis line,
+body.theme-custom .mermaid-preview svg .quadrant .axis path {
+  stroke: var(--mermaid-line-color, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .quadrant .point {
+  fill: var(--mermaid-primary-color, var(--link-color));
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .xychart .axis text {
+  fill: var(--mermaid-text-color, var(--text-muted)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .xychart .axis line,
+body.theme-custom .mermaid-preview svg .xychart .axis path {
+  stroke: var(--mermaid-line-color, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .xychart .plot rect {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .xychart .plot line {
+  stroke: var(--mermaid-line-color, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .xychart .titleText {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .sankey .link {
+  stroke: var(--mermaid-line-color, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .sankey text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .block rect,
+body.theme-custom .mermaid-preview svg .block path {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .block text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .block .nodeLabel text,
+body.theme-custom .mermaid-preview svg .block .nodeLabel span {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+  color: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .er .entityBox rect,
+body.theme-custom .mermaid-preview svg .er .entityBox path {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .er text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .er .relationshipLabel {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .er .relationshipLine {
+  stroke: var(--mermaid-line-color, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .git .commit rect,
+body.theme-custom .mermaid-preview svg .git .commit circle {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .git text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .git .branchLabel text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .journey .task rect {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .journey text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .timeline rect {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .timeline text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .c4 .person rect,
+body.theme-custom .mermaid-preview svg .c4 .person path,
+body.theme-custom .mermaid-preview svg .c4 .system rect,
+body.theme-custom .mermaid-preview svg .c4 .system path,
+body.theme-custom .mermaid-preview svg .c4 .container rect,
+body.theme-custom .mermaid-preview svg .c4 .container path,
+body.theme-custom .mermaid-preview svg .c4 .boundary rect,
+body.theme-custom .mermaid-preview svg .c4 .boundary path {
+  stroke: var(--mermaid-node-border, var(--border-color));
+}
+
+body.theme-custom .mermaid-preview svg .c4 text {
+  fill: var(--mermaid-text-color, var(--text-color)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .c4 span {
+  color: var(--mermaid-text-color, var(--text-color)) !important;
+}

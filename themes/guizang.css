@@ -1,0 +1,352 @@
+/* ============================================
+   归藏 (Guizang) Theme for ColaMD
+   万物莫不归藏于其中
+
+   Install: place in ~/.colamd/themes/ or use
+   Theme > Import Theme in ColaMD.
+   ============================================ */
+
+body.theme-custom {
+    --bg-color: #f5f0e8;
+    --text-color: #2b2520;
+    --text-muted: #7a7068;
+    --border-color: #d4cfc6;
+    --link-color: #8b4513;
+    --code-bg: #e8e0d4;
+    --code-block-bg: #2b2520;
+    --code-block-text: #d8d0c4;
+    --blockquote-border: #8b4513;
+    --blockquote-bg: #ede8df;
+    --table-header-bg: #ede8df;
+    --selection-bg: rgba(139, 69, 19, 0.18);
+
+    --mermaid-background: #f0ebe3;
+    --mermaid-primary-color: #ede8df;
+    --mermaid-primary-border-color: #b0a89f;
+    --mermaid-primary-text-color: #2b2520;
+    --mermaid-secondary-color: #e8e0d4;
+    --mermaid-secondary-border-color: #c4bbb0;
+    --mermaid-line-color: #8a7b6a;
+    --mermaid-text-color: #2b2520;
+    --mermaid-main-bkg: #ede8df;
+    --mermaid-second-bkg: #e8e0d4;
+    --mermaid-label-background: #f0ebe3;
+    --mermaid-label-text-color: #2b2520;
+    --mermaid-node-bkg: #ede8df;
+    --mermaid-node-border: #b0a89f;
+    --mermaid-cluster-bkg: #e8e0d4;
+    --mermaid-cluster-border: #b0a89f;
+    --mermaid-edge-label-background: #f0ebe3;
+    --mermaid-arrowhead-color: #8a7b6a;
+    --mermaid-person-border: #b0a89f;
+    --mermaid-person-bkg: #ede8df;
+    --mermaid-font-family: "LXGW WenKai", "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+    --mermaid-font-size: 12px;
+
+    --mermaid-cscale0: #8b6b4a;
+    --mermaid-cscale1: #5a8a7a;
+    --mermaid-cscale2: #b8963a;
+    --mermaid-cscale3: #6b5a4a;
+    --mermaid-cscale4: #4a7a6b;
+    --mermaid-cscale5: #8a6b3c;
+    --mermaid-cscale6: #5a6b8a;
+    --mermaid-cscale7: #7a6b5a;
+    --mermaid-cscale8: #6b8a5a;
+    --mermaid-cscale9: #9a7a5a;
+    --mermaid-cscale10: #5a7a8a;
+    --mermaid-cscale11: #8a5a6b;
+
+    --mermaid-c4-person-bg: #8b4513;
+    --mermaid-c4-person-border: #6b350f;
+    --mermaid-c4-ext-person-bg: #7a6b5a;
+    --mermaid-c4-ext-person-border: #6a5b4a;
+    --mermaid-c4-system-bg: #5a8a7a;
+    --mermaid-c4-system-border: #4a7a6b;
+    --mermaid-c4-ext-system-bg: #8a6b3c;
+    --mermaid-c4-ext-system-border: #7a5b2c;
+    --mermaid-c4-container-bg: #6b5a4a;
+    --mermaid-c4-container-border: #5a4a3a;
+    --mermaid-c4-ext-container-bg: #9a8a7a;
+    --mermaid-c4-ext-container-border: #8a7a6a;
+    --mermaid-c4-component-bg: #4a7a6b;
+    --mermaid-c4-component-border: #3a6a5b;
+    --mermaid-c4-ext-component-bg: #8a7a6a;
+    --mermaid-c4-ext-component-border: #7a6a5a;
+
+    --katex-color: #3d3530;
+}
+
+body.theme-custom,
+body.theme-custom html {
+    background-color: #f5f0e8;
+    color: #2b2520;
+}
+
+body.theme-custom #editor .ProseMirror {
+    font-family: "LXGW WenKai", "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+    line-height: 1.9;
+}
+
+body.theme-custom #editor .ProseMirror h1,
+body.theme-custom #editor .ProseMirror h2,
+body.theme-custom #editor .ProseMirror h3,
+body.theme-custom #editor .ProseMirror h4,
+body.theme-custom #editor .ProseMirror h5,
+body.theme-custom #editor .ProseMirror h6 {
+    color: #1a1815;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+body.theme-custom #editor .ProseMirror h1 {
+    font-size: 1.8em;
+    border-bottom: 1px solid #d4cfc6;
+}
+
+body.theme-custom #editor .ProseMirror h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid #d4cfc6;
+}
+
+body.theme-custom #editor .ProseMirror h3 {
+    font-size: 1.25em;
+}
+
+body.theme-custom #editor .ProseMirror h4 {
+    font-size: 1.1em;
+}
+
+body.theme-custom #editor .ProseMirror h5 {
+    font-size: 1em;
+}
+
+body.theme-custom #editor .ProseMirror h6 {
+    font-size: 0.95em;
+    color: #7a7068;
+}
+
+body.theme-custom #editor .ProseMirror strong {
+    color: #8b4513;
+    font-weight: 700;
+}
+
+body.theme-custom #editor .ProseMirror em {
+    color: #4a4238;
+}
+
+body.theme-custom #editor .ProseMirror a {
+    color: #8b4513;
+}
+
+body.theme-custom #editor .ProseMirror code {
+    background: #e8e0d4;
+    color: #8b4513;
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+body.theme-custom #editor .ProseMirror pre {
+    background: #2b2520;
+    color: #d8d0c4;
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.88em;
+    line-height: 1.6;
+    padding: 18px 22px;
+    border-radius: 6px;
+}
+
+body.theme-custom #editor .ProseMirror pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: 0.88em;
+}
+
+body.theme-custom #editor .ProseMirror blockquote {
+    border-left: 4px solid #8b4513;
+    background: #ede8df;
+    padding: 15px 20px 15px 25px;
+    color: #5a5048;
+}
+
+body.theme-custom #editor .ProseMirror table th {
+    background: #ede8df;
+    border-bottom: 2px solid #8b4513;
+    color: #1a1815;
+    font-weight: 700;
+}
+
+body.theme-custom #editor .ProseMirror table td {
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid #d4cfc6;
+}
+
+body.theme-custom #editor .ProseMirror table tr:hover td {
+    background: rgba(139, 69, 19, 0.04);
+}
+
+body.theme-custom #editor .ProseMirror hr {
+    border-top: 1px solid #d4cfc6;
+}
+
+body.theme-custom #editor .ProseMirror ::selection {
+    background: rgba(139, 69, 19, 0.18);
+}
+
+body.theme-custom .math-inline {
+    color: #2b2520;
+}
+
+body.theme-custom .math-block {
+    background: #ede8df;
+    color: #2b2520;
+}
+
+body.theme-custom .katex {
+    color: #3d3530;
+}
+
+body.theme-custom .katex .mord,
+body.theme-custom .katex .mbin,
+body.theme-custom .katex .mrel,
+body.theme-custom .katex .mopen,
+body.theme-custom .katex .mclose,
+body.theme-custom .katex .mpunct,
+body.theme-custom .katex .minner {
+    color: #3d3530;
+}
+
+body.theme-custom .math-block::-webkit-scrollbar-thumb {
+    background: #b0a89f;
+}
+
+body.theme-custom .mermaid-block {
+    background: #f0ebe3;
+    border: 1px solid #d4cfc6;
+}
+
+body.theme-custom .mermaid-preview svg .node rect,
+body.theme-custom .mermaid-preview svg .node circle,
+body.theme-custom .mermaid-preview svg .node ellipse,
+body.theme-custom .mermaid-preview svg .node polygon,
+body.theme-custom .mermaid-preview svg .node path {
+    stroke: #b0a89f;
+}
+
+body.theme-custom .mermaid-preview svg .edgePath .path {
+    stroke: #8a7b6a;
+}
+
+body.theme-custom .mermaid-preview svg .cluster rect,
+body.theme-custom .mermaid-preview svg .cluster path {
+    stroke: #c4bbb0;
+}
+
+body.theme-custom .mermaid-preview svg defs marker path {
+    fill: #8a7b6a;
+    stroke: #8a7b6a;
+}
+
+body.theme-custom .mermaid-preview svg rect[stroke="#444444"] {
+    stroke: #b0a89f !important;
+}
+
+body.theme-custom .mermaid-preview svg path[stroke="#444444"] {
+    stroke: #b0a89f !important;
+}
+
+body.theme-custom .mermaid-preview svg rect[stroke="#000000"] {
+    stroke: #b0a89f !important;
+}
+
+body.theme-custom .mermaid-preview svg path[stroke="#000000"] {
+    stroke: #b0a89f !important;
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel text {
+    fill: #2b2520 !important;
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel rect {
+    fill: #4f4d4b !important;
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+    color: #2b2520 !important;
+}
+
+body.theme-custom .mermaid-preview svg .label text {
+    fill: #2b2520 !important;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel text {
+    fill: #2b2520 !important;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel span {
+    color: #2b2520 !important;
+}
+
+body.theme-custom .mermaid-preview svg text {
+    fill: #2b2520;
+    font-family: "LXGW WenKai", "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel span,
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+    font-family: "LXGW WenKai", "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+}
+
+body.theme-custom .mermaid-preview svg .person rect,
+body.theme-custom .mermaid-preview svg .person path {
+    stroke: #3d3530;
+}
+
+body.theme-custom .mermaid-preview svg .person-man text {
+    fill: #ffffff !important;
+}
+
+body.theme-custom .mermaid-preview svg .person-man span {
+    color: #ffffff !important;
+}
+
+body.theme-custom .mermaid-preview svg foreignObject span {
+    color: #2b2520 !important;
+}
+
+body.theme-custom ::-webkit-scrollbar-thumb {
+    background: #c4bbb0;
+}
+
+body.theme-custom ::-webkit-scrollbar-thumb:hover {
+    background: #b0a89f;
+}
+
+body.theme-custom ::selection {
+    background: rgba(139, 69, 19, 0.18);
+}
+
+body.theme-custom #source-editor {
+    background: #f5f0e8;
+    color: #2b2520;
+}
+
+@media print {
+    body.theme-custom,
+    body.theme-custom html {
+        background: #fff;
+    }
+
+    body.theme-custom #editor .ProseMirror pre {
+        background: #f5f0e8;
+        color: #2b2520;
+        border: 1px solid #d4cfc6;
+    }
+
+    body.theme-custom #editor .ProseMirror table th {
+        background: #f5f0e8;
+    }
+}

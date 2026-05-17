@@ -317,7 +317,7 @@ quadrantChart
 ```mermaid
 xychart-beta
     title "ColaMD 月活跃用户增长"
-    x-axis [1月, 2月, 3月, 4月, 5月, 6月]
+    x-axis ["1月", "2月", "3月", "4月", "5月", "6月"]
     y-axis "用户数 (千)" 0 --> 50
     bar [12, 18, 25, 32, 40, 48]
     line [12, 18, 25, 32, 40, 48]
@@ -345,14 +345,14 @@ C4Context
 ```mermaid
 sankey-beta
 %% 源,目标,流量
-ColaMD,Math Plugin,35
-ColaMD,Mermaid Plugin,40
-ColaMD,编辑器核心,25
-Math Plugin,行内公式,15
-Math Plugin,块级公式,20
-Mermaid Plugin,流程图,12
-Mermaid Plugin,时序图,10
-Mermaid Plugin,其他图表,18
+"ColaMD","Math Plugin",35
+"ColaMD","Mermaid Plugin",40
+"ColaMD","编辑器核心",25
+"Math Plugin","行内公式",15
+"Math Plugin","块级公式",20
+"Mermaid Plugin","流程图",12
+"Mermaid Plugin","时序图",10
+"Mermaid Plugin","其他图表",18
 ```
 
 ### 2.16 Block 图（Block Diagram）

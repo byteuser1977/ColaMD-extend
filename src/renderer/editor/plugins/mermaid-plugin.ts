@@ -9,6 +9,7 @@ import './mermaid-plugin.css'
 import './mermaid-plugin-dark.css'
 import './mermaid-plugin-elegant.css'
 import './mermaid-plugin-newsprint.css'
+import './mermaid-plugin-custom.css'
 
 ;(window as any).mermaid = mermaid
 
@@ -16,7 +17,123 @@ function getMermaidTheme(): string {
   const cls = document.body.className
   if (cls.includes('theme-dark')) return 'dark'
   if (cls.includes('theme-newsprint')) return 'neutral'
+  if (cls.includes('theme-custom')) {
+    const style = getComputedStyle(document.body)
+    if (style.getPropertyValue('--mermaid-dark-mode').trim() === 'true') return 'dark'
+  }
   return 'default'
+}
+
+function readCustomVar(name: string, fallback: string): string {
+  const style = getComputedStyle(document.body)
+  return style.getPropertyValue(name).trim() || fallback
+}
+
+function getCustomMermaidFontSize(): number {
+  const raw = readCustomVar('--mermaid-font-size', '')
+  const n = parseInt(raw, 10)
+  return Number.isFinite(n) && n > 0 ? n : 12
+}
+
+function getCustomMermaidThemeVariables(): Record<string, string> {
+  const v = (name: string, fallback: string) => readCustomVar(name, fallback)
+  const baseFont = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'
+  const font = v('--mermaid-font-family', baseFont)
+  const darkMode = v('--mermaid-dark-mode', 'false')
+  const result: Record<string, string> = {
+    darkMode,
+    background: v('--mermaid-background', v('--bg-color', '#ffffff')),
+    primaryColor: v('--mermaid-primary-color', v('--code-block-bg', '#f6f8fa')),
+    primaryBorderColor: v('--mermaid-primary-border-color', v('--border-color', '#d0d7de')),
+    primaryTextColor: v('--mermaid-primary-text-color', v('--text-color', '#24292f')),
+    secondaryColor: v('--mermaid-secondary-color', v('--code-bg', '#f6f8fa')),
+    secondaryBorderColor: v('--mermaid-secondary-border-color', v('--border-color', '#d0d7de')),
+    secondaryTextColor: v('--mermaid-primary-text-color', v('--text-color', '#24292f')),
+    lineColor: v('--mermaid-line-color', v('--border-color', '#d0d7de')),
+    textColor: v('--mermaid-text-color', v('--text-color', '#24292f')),
+    mainBkg: v('--mermaid-main-bkg', v('--code-block-bg', '#f6f8fa')),
+    secondBkg: v('--mermaid-second-bkg', v('--code-bg', '#f6f8fa')),
+    mainContrastColor: v('--mermaid-primary-text-color', v('--text-color', '#24292f')),
+    labelBackground: v('--mermaid-label-background', v('--code-block-bg', '#f6f8fa')),
+    labelTextColor: v('--mermaid-label-text-color', v('--text-color', '#24292f')),
+    nodeBorder: v('--mermaid-node-border', v('--border-color', '#d0d7de')),
+    nodeBkg: v('--mermaid-node-bkg', v('--code-block-bg', '#f6f8fa')),
+    clusterBkg: v('--mermaid-cluster-bkg', v('--code-bg', '#f6f8fa')),
+    clusterBorder: v('--mermaid-cluster-border', v('--border-color', '#d0d7de')),
+    defaultLinkColor: v('--mermaid-line-color', v('--border-color', '#d0d7de')),
+    edgeLabelBackground: v('--mermaid-edge-label-background', v('--code-block-bg', '#f6f8fa')),
+    arrowheadColor: v('--mermaid-arrowhead-color', v('--mermaid-line-color', v('--border-color', '#d0d7de'))),
+    personBorder: v('--mermaid-person-border', v('--border-color', '#d0d7de')),
+    personBkg: v('--mermaid-person-bkg', v('--code-block-bg', '#f6f8fa')),
+    fontFamily: font,
+    cScale0: v('--mermaid-cscale0', '#2d5f8a'),
+    cScale1: v('--mermaid-cscale1', '#3d7a5a'),
+    cScale2: v('--mermaid-cscale2', '#8a6b3c'),
+    cScale3: v('--mermaid-cscale3', '#6b4a7a'),
+    cScale4: v('--mermaid-cscale4', '#3c7a6b'),
+    cScale5: v('--mermaid-cscale5', '#7a4a4a'),
+    cScale6: v('--mermaid-cscale6', '#4a6b8a'),
+    cScale7: v('--mermaid-cscale7', '#5a7a3c'),
+    cScale8: v('--mermaid-cscale8', '#7a3c6b'),
+    cScale9: v('--mermaid-cscale9', '#3c8a5a'),
+    cScale10: v('--mermaid-cscale10', '#8a5a3c'),
+    cScale11: v('--mermaid-cscale11', '#3c5a8a'),
+  }
+  return result
+}
+
+function getCustomMermaidC4Config(): Record<string, string> {
+  const v = (name: string, fallback: string) => readCustomVar(name, fallback)
+  const baseFont = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'
+  const font = v('--mermaid-font-family', baseFont)
+  return {
+    personFontFamily: font,
+    systemFontFamily: font,
+    containerFontFamily: font,
+    componentFontFamily: font,
+    boundaryFontFamily: font,
+    messageFontFamily: font,
+    person_bg_color: v('--mermaid-c4-person-bg', '#2d5f8a'),
+    person_border_color: v('--mermaid-c4-person-border', '#4a7aaa'),
+    external_person_bg_color: v('--mermaid-c4-ext-person-bg', '#4a5568'),
+    external_person_border_color: v('--mermaid-c4-ext-person-border', '#6b7a8a'),
+    system_bg_color: v('--mermaid-c4-system-bg', '#3d7a5a'),
+    system_border_color: v('--mermaid-c4-system-border', '#5a9a7a'),
+    system_db_bg_color: v('--mermaid-c4-system-bg', '#3d7a5a'),
+    system_db_border_color: v('--mermaid-c4-system-border', '#5a9a7a'),
+    system_queue_bg_color: v('--mermaid-c4-system-bg', '#3d7a5a'),
+    system_queue_border_color: v('--mermaid-c4-system-border', '#5a9a7a'),
+    external_system_bg_color: v('--mermaid-c4-ext-system-bg', '#6b4a7a'),
+    external_system_border_color: v('--mermaid-c4-ext-system-border', '#8a6a9a'),
+    external_system_db_bg_color: v('--mermaid-c4-ext-system-bg', '#6b4a7a'),
+    external_system_db_border_color: v('--mermaid-c4-ext-system-border', '#8a6a9a'),
+    external_system_queue_bg_color: v('--mermaid-c4-ext-system-bg', '#6b4a7a'),
+    external_system_queue_border_color: v('--mermaid-c4-ext-system-border', '#8a6a9a'),
+    container_bg_color: v('--mermaid-c4-container-bg', '#8a6b3c'),
+    container_border_color: v('--mermaid-c4-container-border', '#aa8a5c'),
+    container_db_bg_color: v('--mermaid-c4-container-bg', '#8a6b3c'),
+    container_db_border_color: v('--mermaid-c4-container-border', '#aa8a5c'),
+    container_queue_bg_color: v('--mermaid-c4-container-bg', '#8a6b3c'),
+    container_queue_border_color: v('--mermaid-c4-container-border', '#aa8a5c'),
+    external_container_bg_color: v('--mermaid-c4-ext-container-bg', '#5a5a6a'),
+    external_container_border_color: v('--mermaid-c4-ext-container-border', '#7a7a8a'),
+    external_container_db_bg_color: v('--mermaid-c4-ext-container-bg', '#5a5a6a'),
+    external_container_db_border_color: v('--mermaid-c4-ext-container-border', '#7a7a8a'),
+    external_container_queue_bg_color: v('--mermaid-c4-ext-container-bg', '#5a5a6a'),
+    external_container_queue_border_color: v('--mermaid-c4-ext-container-border', '#7a7a8a'),
+    component_bg_color: v('--mermaid-c4-component-bg', '#3c7a6b'),
+    component_border_color: v('--mermaid-c4-component-border', '#5c9a8b'),
+    component_db_bg_color: v('--mermaid-c4-component-bg', '#3c7a6b'),
+    component_db_border_color: v('--mermaid-c4-component-border', '#5c9a8b'),
+    component_queue_bg_color: v('--mermaid-c4-component-bg', '#3c7a6b'),
+    component_queue_border_color: v('--mermaid-c4-component-border', '#5c9a8b'),
+    external_component_bg_color: v('--mermaid-c4-ext-component-bg', '#6a6a6a'),
+    external_component_border_color: v('--mermaid-c4-ext-component-border', '#8a8a8a'),
+    external_component_db_bg_color: v('--mermaid-c4-ext-component-bg', '#6a6a6a'),
+    external_component_db_border_color: v('--mermaid-c4-ext-component-border', '#8a8a8a'),
+    external_component_queue_bg_color: v('--mermaid-c4-ext-component-bg', '#6a6a6a'),
+    external_component_queue_border_color: v('--mermaid-c4-ext-component-border', '#8a8a8a'),
+  }
 }
 
 function getMermaidThemeVariables(): Record<string, string> {
@@ -123,6 +240,9 @@ function getMermaidThemeVariables(): Record<string, string> {
       cScale11: '#3c5a8a',
     }
   }
+  if (cls.includes('theme-custom')) {
+    return getCustomMermaidThemeVariables()
+  }
   return {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif',
   }
@@ -130,6 +250,9 @@ function getMermaidThemeVariables(): Record<string, string> {
 
 function getMermaidC4Config(): Record<string, string> {
   const cls = document.body.className
+  if (cls.includes('theme-custom')) {
+    return getCustomMermaidC4Config()
+  }
   const font = cls.includes('theme-elegant')
     ? '"LXGW WenKai", "Noto Serif SC", Georgia, serif'
     : cls.includes('theme-newsprint')
@@ -248,7 +371,8 @@ function getMermaidC4Config(): Record<string, string> {
 let renderCounter = 0
 
 function adjustNodeHeights(svg: SVGSVGElement): void {
-  const PAD = 6
+  const isCustom = document.body.className.includes('theme-custom')
+  const PAD = isCustom ? 8 : 6
   svg.querySelectorAll('.node > rect').forEach((el) => {
     const h = parseFloat(el.getAttribute('height') || '0')
     if (h > 0) el.setAttribute('height', String(h + PAD))
@@ -406,6 +530,8 @@ function renderMermaidBlock(dom: HTMLElement, node: any, renderIdRef: { current:
     const preview = dom.querySelector('.mermaid-preview')
     if (preview) {
       preview.innerHTML = result.svg
+      const svg = preview.querySelector('svg') as SVGSVGElement | null
+      if (svg) adjustNodeHeights(svg)
       if (result.bindFunctions) result.bindFunctions(dom)
     }
   }).catch((e: Error) => {
@@ -511,23 +637,29 @@ export const mermaidPlugin: RendererPlugin = {
     },
   ],
   onInit: () => {
+    const cls = document.body.className
+    const isCustom = cls.includes('theme-custom')
+    const fontSize = isCustom ? getCustomMermaidFontSize() : 14
     mermaid.initialize({
       startOnLoad: false,
       theme: getMermaidTheme(),
       themeVariables: getMermaidThemeVariables(),
       c4: getMermaidC4Config(),
       securityLevel: 'loose',
-      fontSize: 14,
+      fontSize,
     })
   },
   onThemeChange: () => {
+    const cls = document.body.className
+    const isCustom = cls.includes('theme-custom')
+    const fontSize = isCustom ? getCustomMermaidFontSize() : 16
     mermaid.initialize({
       startOnLoad: false,
       theme: getMermaidTheme(),
       themeVariables: getMermaidThemeVariables(),
       c4: getMermaidC4Config(),
       securityLevel: 'loose',
-      fontSize: 16,
+      fontSize,
     })
   },
 }
