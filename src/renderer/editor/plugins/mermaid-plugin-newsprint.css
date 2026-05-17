@@ -1,3 +1,17 @@
+body.theme-newsprint .mermaid-preview svg text {
+  font-family: 'PT Serif', Georgia, serif;
+}
+
+body.theme-newsprint .mermaid-preview svg .nodeLabel span,
+body.theme-newsprint .mermaid-preview svg .edgeLabel span {
+  font-family: 'PT Serif', Georgia, serif;
+}
+
+body.theme-newsprint .mermaid-preview svg foreignObject span {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ── 标签 & 文本 ── */
 body.theme-newsprint .mermaid-preview svg .edgeLabel text {
   fill: var(--text-color) !important;
 }
@@ -10,11 +24,185 @@ body.theme-newsprint .mermaid-preview svg .edgeLabel span {
   color: var(--text-color) !important;
 }
 
-body.theme-newsprint .mermaid-preview svg text {
-  font-family: 'PT Serif', Georgia, serif;
+body.theme-newsprint .mermaid-preview svg .label text,
+body.theme-newsprint .mermaid-preview svg .nodeLabel text {
+  fill: var(--text-color) !important;
 }
 
-body.theme-newsprint .mermaid-preview svg .nodeLabel span,
-body.theme-newsprint .mermaid-preview svg .edgeLabel span {
-  font-family: 'PT Serif', Georgia, serif;
+body.theme-newsprint .mermaid-preview svg .nodeLabel span {
+  color: var(--text-color) !important;
+}
+
+/* ════════════════════════════════════════════
+   状态图 (State Diagram)
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .statediagram-state .nodeLabel text,
+body.theme-newsprint .mermaid-preview svg .statediagram-state .nodeLabel span {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .statediagram-cluster .outer-title text {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .edgeLabel .label text {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   饼图 (Pie Chart)
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .pieTitleText {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .legend text {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   四象限图 (Quadrant Chart)
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .quadrant text,
+body.theme-newsprint .mermaid-preview svg .quadrant .titleText {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .quadrant .axis text {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   XY Chart / 柱状图
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .xychart .axis text {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .xychart .titleText {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   Sankey 图
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .sankey text {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   时序图 (Sequence Diagram)
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg text.actor {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .messageText {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .loopText,
+body.theme-newsprint .mermaid-preview svg .altText,
+body.theme-newsprint .mermaid-preview svg .optText {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .labelText,
+body.theme-newsprint .mermaid-preview svg .loopText tspan,
+body.theme-newsprint .mermaid-preview svg .altText tspan,
+body.theme-newsprint .mermaid-preview svg .optText tspan {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   类图 (Class Diagram)
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .classTitle text,
+body.theme-newsprint .mermaid-preview svg .classTitle span {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .classText text,
+body.theme-newsprint .mermaid-preview svg .classText span {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   甘特图 (Gantt Chart)
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .taskText,
+body.theme-newsprint .mermaid-preview svg .taskTextOutsideRight,
+body.theme-newsprint .mermaid-preview svg .taskTextOutsideLeft {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .sectionText,
+body.theme-newsprint .mermaid-preview svg .sectionTitle {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+body.theme-newsprint .mermaid-preview svg .tick text {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   思维导图 (Mind Map)
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .mindmap-node text,
+body.theme-newsprint .mermaid-preview svg .mindmap-node .nodeLabel text,
+body.theme-newsprint .mermaid-preview svg .mindmap-node .nodeLabel span {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   Block 图
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .block text,
+body.theme-newsprint .mermaid-preview svg .block .nodeLabel text,
+body.theme-newsprint .mermaid-preview svg .block .nodeLabel span {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   ER 图
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .er text,
+body.theme-newsprint .mermaid-preview svg .er .relationshipLabel {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   Git 图
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .git text,
+body.theme-newsprint .mermaid-preview svg .git .branchLabel text {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   用户旅程图 (Journey)
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .journey text {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   时间线 (Timeline)
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .timeline text {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ════════════════════════════════════════════
+   C4 架构图
+   ════════════════════════════════════════════ */
+body.theme-newsprint .mermaid-preview svg .c4 text,
+body.theme-newsprint .mermaid-preview svg .c4 span {
+  font-family: 'PT Serif', Georgia, serif !important;
+}
+
+/* ── 人物节点 ── */
+body.theme-newsprint .mermaid-preview svg .person-man text,
+body.theme-newsprint .mermaid-preview svg .person-man span {
+  font-family: 'PT Serif', Georgia, serif !important;
 }

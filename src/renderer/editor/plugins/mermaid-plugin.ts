@@ -20,6 +20,7 @@ function getMermaidTheme(): string {
   if (cls.includes('theme-custom')) {
     const style = getComputedStyle(document.body)
     if (style.getPropertyValue('--mermaid-dark-mode').trim() === 'true') return 'dark'
+    return 'base'
   }
   return 'default'
 }
@@ -49,6 +50,9 @@ function getCustomMermaidThemeVariables(): Record<string, string> {
     secondaryColor: v('--mermaid-secondary-color', v('--code-bg', '#f6f8fa')),
     secondaryBorderColor: v('--mermaid-secondary-border-color', v('--border-color', '#d0d7de')),
     secondaryTextColor: v('--mermaid-primary-text-color', v('--text-color', '#24292f')),
+    tertiaryColor: v('--mermaid-tertiary-color', v('--bg-color', '#ffffff')),
+    tertiaryBorderColor: v('--mermaid-tertiary-border-color', v('--border-color', '#d0d7de')),
+    tertiaryTextColor: v('--mermaid-tertiary-text-color', v('--text-color', '#24292f')),
     lineColor: v('--mermaid-line-color', v('--border-color', '#d0d7de')),
     textColor: v('--mermaid-text-color', v('--text-color', '#24292f')),
     mainBkg: v('--mermaid-main-bkg', v('--code-block-bg', '#f6f8fa')),
@@ -192,6 +196,9 @@ function getMermaidThemeVariables(): Record<string, string> {
       secondaryColor: '#e0d8cf',
       secondaryBorderColor: '#c4bbb0',
       secondaryTextColor: '#3d3530',
+      tertiaryColor: '#e8e2db',
+      tertiaryBorderColor: '#d0c8ba',
+      tertiaryTextColor: '#3d3530',
       lineColor: '#b0a89f',
       textColor: '#3d3530',
       mainBkg: '#ddd5cb',

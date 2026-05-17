@@ -1,9 +1,9 @@
 # ColaMD 插件演示文档
 
-> 本文档用于演示 ColaMD 扩展版的 **Math 公式渲染** 与 **Mermaid 图表渲染** 能力。
+> 本文档用于演示 ColaMD 扩展版的 **Math 公式渲染** 与 **Mermaid 图表渲染** 能力。\
 > 每个插件均支持 **Rendered（渲染模式）** 和 **Raw（源码模式）** 一键切换。
 
----
+***
 
 ## 一、Math 数学公式
 
@@ -11,33 +11,42 @@
 
 行内公式使用单个 `$` 包裹，可嵌入段落中：
 
-- 质能方程：$E = mc^2$
-- 欧拉公式：$e^{i\pi} + 1 = 0$
-- 勾股定理：$a^2 + b^2 = c^2$
-- 导数定义：$f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}$
-- 求和公式：$\sum_{i=1}^{n} x_i = x_1 + x_2 + \cdots + x_n$
-- 积分公式：$\int_a^b f(x)\,dx = F(b) - F(a)$
+* 质能方程：$E = mc^2$
+
+* 欧拉公式：$e^{i\pi} + 1 = 0$
+
+* 勾股定理：$a^2 + b^2 = c^2$
+
+* 导数定义：$f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}$
+
+* 求和公式：$\sum_{i=1}^{n} x_i = x_1 + x_2 + \cdots + x_n$
+
+* 积分公式：$\int_a^b f(x)\,dx = F(b) - F(a)$
 
 ### 1.2 块级公式（Block Math）
 
 块级公式使用 `$$` 包裹，居中显示：
 
 **二次方程求根公式：**
+
 $$
 x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
 $$
 
 **高斯积分：**
+
 $$
 \int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
 $$
 
 **傅里叶变换：**
+
 $$
 \hat{f}(\xi) = \int_{-\infty}^{\infty} f(x)\, e^{-2\pi i x \xi}\, dx
 $$
 
 **麦克斯韦方程组（微分形式）：**
+
 $$
 \begin{cases}
 \nabla \cdot \mathbf{E} = \dfrac{\rho}{\varepsilon_0} \\[8pt]
@@ -48,11 +57,13 @@ $$
 $$
 
 **爱因斯坦场方程：**
+
 $$
 G_{\mu\nu} + \Lambda g_{\mu\nu} = \frac{8\pi G}{c^4} T_{\mu\nu}
 $$
 
 **矩阵形式：**
+
 $$
 \mathbf{A} = \begin{bmatrix}
 a_{11} & a_{12} & a_{13} \\
@@ -67,7 +78,7 @@ C_{13} & C_{23} & C_{33}
 \end{bmatrix}
 $$
 
----
+***
 
 ## 二、Mermaid 图表
 
@@ -344,15 +355,14 @@ C4Context
 
 ```mermaid
 sankey-beta
-%% 源,目标,流量
-"ColaMD","Math Plugin",35
-"ColaMD","Mermaid Plugin",40
-"ColaMD","编辑器核心",25
-"Math Plugin","行内公式",15
-"Math Plugin","块级公式",20
-"Mermaid Plugin","流程图",12
-"Mermaid Plugin","时序图",10
-"Mermaid Plugin","其他图表",18
+ColaMD,Math-Plugin,35
+ColaMD,Mermaid-Plugin,40
+ColaMD,编辑器核心,25
+Math-Plugin,行内公式,15
+Math-Plugin,块级公式,20
+Mermaid-Plugin,流程图,12
+Mermaid-Plugin,时序图,10
+Mermaid-Plugin,其他图表,18
 ```
 
 ### 2.16 Block 图（Block Diagram）
@@ -409,7 +419,7 @@ graph TB
     B3 --> C3
 ```
 
----
+***
 
 ## 三、混合内容演示
 
@@ -449,7 +459,7 @@ $$
 
 其中 $\odot$ 表示 Hadamard 积，$\sigma'$ 是激活函数的导数。
 
----
+***
 
 ## 四、操作指南
 
@@ -461,8 +471,9 @@ $$
 
 ### 导出为 PNG
 
-- **Math 公式**：右键点击公式 → **Save Equation as PNG**
-- **Mermaid 图表**：右键点击图表 → **Save Diagram as PNG**
+* **Math 公式**：右键点击公式 → **Save Equation as PNG**
+
+* **Mermaid 图表**：右键点击图表 → **Save Diagram as PNG**
 
 ### 编辑源码
 
@@ -470,6 +481,6 @@ $$
 2. 在文本框中直接修改 LaTeX 或 Mermaid 代码
 3. 点击编辑器其他区域失焦，自动保存并重新渲染
 
----
+***
 
 > **提示**：本文档中的所有公式和图表均可在 **Rendered** 和 **Raw** 模式之间自由切换，体验 ColaMD 的插件渲染控制能力。

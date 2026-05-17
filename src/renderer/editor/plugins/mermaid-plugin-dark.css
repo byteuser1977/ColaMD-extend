@@ -1,3 +1,17 @@
+body.theme-dark .mermaid-preview svg text {
+  fill: #e6edf3;
+}
+
+body.theme-dark .mermaid-preview svg .nodeLabel span,
+body.theme-dark .mermaid-preview svg .edgeLabel span {
+  color: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg foreignObject span {
+  color: #e6edf3 !important;
+}
+
+/* ── 通用节点 ── */
 body.theme-dark .mermaid-preview svg .node rect,
 body.theme-dark .mermaid-preview svg .node circle,
 body.theme-dark .mermaid-preview svg .node ellipse,
@@ -20,6 +34,7 @@ body.theme-dark .mermaid-preview svg defs marker path {
   stroke: #8b949e;
 }
 
+/* ── 硬编码色值覆盖 ── */
 body.theme-dark .mermaid-preview svg rect[stroke="#444444"] {
   stroke: #8b949e !important;
 }
@@ -40,18 +55,11 @@ body.theme-dark .mermaid-preview svg path[stroke="#000000"] {
   stroke: #8b949e !important;
 }
 
-body.theme-dark .mermaid-preview svg .edgeLabel text {
-  fill: #e6edf3 !important;
+body.theme-dark .mermaid-preview svg line[stroke="#000000"] {
+  stroke: #8b949e !important;
 }
 
-body.theme-dark .mermaid-preview svg .edgeLabel rect {
-  fill: #161b22 !important;
-}
-
-body.theme-dark .mermaid-preview svg .edgeLabel span {
-  color: #e6edf3 !important;
-}
-
+/* ── 标签 & 文本 ── */
 body.theme-dark .mermaid-preview svg .label text {
   fill: #e6edf3 !important;
 }
@@ -64,10 +72,348 @@ body.theme-dark .mermaid-preview svg .nodeLabel span {
   color: #e6edf3 !important;
 }
 
-body.theme-dark .mermaid-preview svg text {
-  fill: #e6edf3;
+body.theme-dark .mermaid-preview svg .edgeLabel text {
+  fill: #e6edf3 !important;
 }
 
+body.theme-dark .mermaid-preview svg .edgeLabel rect {
+  fill: #161b22 !important;
+}
+
+body.theme-dark .mermaid-preview svg .edgeLabel span {
+  color: #e6edf3 !important;
+}
+
+/* ════════════════════════════════════════════
+   状态图 (State Diagram)
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .statediagram-state rect,
+body.theme-dark .mermaid-preview svg .statediagram-state circle {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .statediagram-state .nodeLabel text,
+body.theme-dark .mermaid-preview svg .statediagram-state .nodeLabel span {
+  fill: #e6edf3 !important;
+  color: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .statediagram-cluster rect {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .statediagram-cluster .outer-title text {
+  fill: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .transition {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .edgeLabel .label text {
+  fill: #e6edf3 !important;
+}
+
+/* ════════════════════════════════════════════
+   饼图 (Pie Chart)
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .pieCircle {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .slice {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .pieTitleText {
+  fill: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .legend text {
+  fill: #e6edf3 !important;
+}
+
+/* ════════════════════════════════════════════
+   四象限图 (Quadrant Chart)
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .quadrant rect {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .quadrant text,
+body.theme-dark .mermaid-preview svg .quadrant .titleText {
+  fill: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .quadrant .axis text {
+  fill: #8b949e !important;
+}
+
+body.theme-dark .mermaid-preview svg .quadrant .axis line,
+body.theme-dark .mermaid-preview svg .quadrant .axis path {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .quadrant .point {
+  fill: #58a6ff;
+  stroke: #8b949e;
+}
+
+/* ════════════════════════════════════════════
+   XY Chart / 柱状图
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .xychart .axis text {
+  fill: #8b949e !important;
+}
+
+body.theme-dark .mermaid-preview svg .xychart .axis line,
+body.theme-dark .mermaid-preview svg .xychart .axis path {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .xychart .plot rect {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .xychart .plot line {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .xychart .titleText {
+  fill: #e6edf3 !important;
+}
+
+/* ════════════════════════════════════════════
+   Sankey 图
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .sankey .link {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .sankey text {
+  fill: #e6edf3 !important;
+}
+
+/* ════════════════════════════════════════════
+   时序图 (Sequence Diagram)
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .actor rect,
+body.theme-dark .mermaid-preview svg .actor path {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg text.actor {
+  fill: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .messageLine0,
+body.theme-dark .mermaid-preview svg .messageLine1 {
+  stroke: #8b949e !important;
+}
+
+body.theme-dark .mermaid-preview svg .messageText {
+  fill: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .loopText,
+body.theme-dark .mermaid-preview svg .altText,
+body.theme-dark .mermaid-preview svg .optText {
+  fill: #8b949e !important;
+}
+
+body.theme-dark .mermaid-preview svg .loopLine,
+body.theme-dark .mermaid-preview svg .altLine,
+body.theme-dark .mermaid-preview svg .optLine {
+  stroke: #8b949e !important;
+}
+
+body.theme-dark .mermaid-preview svg .labelBox {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .labelText,
+body.theme-dark .mermaid-preview svg .loopText tspan,
+body.theme-dark .mermaid-preview svg .altText tspan,
+body.theme-dark .mermaid-preview svg .optText tspan {
+  fill: #e6edf3 !important;
+}
+
+/* ════════════════════════════════════════════
+   类图 (Class Diagram)
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .classBox rect,
+body.theme-dark .mermaid-preview svg .classBox path {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .classTitle text,
+body.theme-dark .mermaid-preview svg .classTitle span {
+  fill: #e6edf3 !important;
+  color: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .classText text,
+body.theme-dark .mermaid-preview svg .classText span {
+  fill: #8b949e !important;
+  color: #8b949e !important;
+}
+
+body.theme-dark .mermaid-preview svg .divider {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .relation {
+  stroke: #8b949e;
+}
+
+/* ════════════════════════════════════════════
+   甘特图 (Gantt Chart)
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .task {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .taskText,
+body.theme-dark .mermaid-preview svg .taskTextOutsideRight,
+body.theme-dark .mermaid-preview svg .taskTextOutsideLeft {
+  fill: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .section rect {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .sectionText,
+body.theme-dark .mermaid-preview svg .sectionTitle {
+  fill: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .today {
+  stroke: #58a6ff !important;
+}
+
+body.theme-dark .mermaid-preview svg .grid .tick line {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .grid .domain {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .tick text {
+  fill: #8b949e;
+}
+
+/* ════════════════════════════════════════════
+   思维导图 (Mind Map)
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .mindmap-node rect,
+body.theme-dark .mermaid-preview svg .mindmap-node circle,
+body.theme-dark .mermaid-preview svg .mindmap-node ellipse,
+body.theme-dark .mermaid-preview svg .mindmap-node polygon,
+body.theme-dark .mermaid-preview svg .mindmap-node path {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .mindmap-node text,
+body.theme-dark .mermaid-preview svg .mindmap-node .nodeLabel text,
+body.theme-dark .mermaid-preview svg .mindmap-node .nodeLabel span {
+  fill: #e6edf3 !important;
+  color: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .mindmap-edge {
+  stroke: #8b949e;
+}
+
+/* ════════════════════════════════════════════
+   Block 图
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .block rect,
+body.theme-dark .mermaid-preview svg .block path {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .block text,
+body.theme-dark .mermaid-preview svg .block .nodeLabel text,
+body.theme-dark .mermaid-preview svg .block .nodeLabel span {
+  fill: #e6edf3 !important;
+  color: #e6edf3 !important;
+}
+
+/* ════════════════════════════════════════════
+   ER 图
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .er .entityBox rect,
+body.theme-dark .mermaid-preview svg .er .entityBox path {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .er text,
+body.theme-dark .mermaid-preview svg .er .relationshipLabel {
+  fill: #e6edf3 !important;
+}
+
+body.theme-dark .mermaid-preview svg .er .relationshipLine {
+  stroke: #8b949e;
+}
+
+/* ════════════════════════════════════════════
+   Git 图
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .git .commit rect,
+body.theme-dark .mermaid-preview svg .git .commit circle {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .git text,
+body.theme-dark .mermaid-preview svg .git .branchLabel text {
+  fill: #e6edf3 !important;
+}
+
+/* ════════════════════════════════════════════
+   用户旅程图 (Journey)
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .journey .task rect {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .journey text {
+  fill: #e6edf3 !important;
+}
+
+/* ════════════════════════════════════════════
+   时间线 (Timeline)
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .timeline rect {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .timeline text {
+  fill: #e6edf3 !important;
+}
+
+/* ════════════════════════════════════════════
+   C4 架构图
+   ════════════════════════════════════════════ */
+body.theme-dark .mermaid-preview svg .c4 .person rect,
+body.theme-dark .mermaid-preview svg .c4 .person path,
+body.theme-dark .mermaid-preview svg .c4 .system rect,
+body.theme-dark .mermaid-preview svg .c4 .system path,
+body.theme-dark .mermaid-preview svg .c4 .container rect,
+body.theme-dark .mermaid-preview svg .c4 .container path,
+body.theme-dark .mermaid-preview svg .c4 .boundary rect,
+body.theme-dark .mermaid-preview svg .c4 .boundary path {
+  stroke: #8b949e;
+}
+
+body.theme-dark .mermaid-preview svg .c4 text,
+body.theme-dark .mermaid-preview svg .c4 span {
+  fill: #e6edf3 !important;
+  color: #e6edf3 !important;
+}
+
+/* ── 人物节点 ── */
 body.theme-dark .mermaid-preview svg .person rect,
 body.theme-dark .mermaid-preview svg .person path {
   stroke: #8b949e !important;
@@ -78,9 +424,5 @@ body.theme-dark .mermaid-preview svg .person-man text {
 }
 
 body.theme-dark .mermaid-preview svg .person-man span {
-  color: #e6edf3 !important;
-}
-
-body.theme-dark .mermaid-preview svg foreignObject span {
   color: #e6edf3 !important;
 }

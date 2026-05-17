@@ -20,9 +20,16 @@ body.theme-custom .mermaid-preview svg .label text,
 body.theme-custom .mermaid-preview svg .nodeLabel text,
 body.theme-custom .mermaid-preview svg .state-title,
 body.theme-custom .mermaid-preview svg .state-description,
-body.theme-custom .mermaid-preview svg .pieTitleText,
+body.theme-custom .mermaid-preview svg .pieTitleText {
+  transform: translateY(-3px) !important;
+}
+
 body.theme-custom .mermaid-preview svg .titleText {
   transform: translateY(-3px) !important;
+}
+
+body.theme-custom .mermaid-preview svg .xychart .axis text {
+  transform: translateY(0) !important;
 }
 
 body.theme-custom .mermaid-preview svg .nodeLabel,
