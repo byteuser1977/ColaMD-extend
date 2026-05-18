@@ -144,28 +144,22 @@ export async function createEditor(
   root.addEventListener('cut', enhanceClipboard)
 
   // IME composition tracking for mobile CJK input
-  let isComposing = false
-
-  root.addEventListener('compositionstart', () => {
-    isComposing = true
-  })
-
-  root.addEventListener('compositionend', () => {
-    isComposing = false
-    // Force ProseMirror to sync after composition ends
-    editorInstance?.action((ctx) => {
-      const view = ctx.get(editorViewCtx)
-      view.dom.dispatchEvent(new Event('input', { bubbles: true }))
+  if (/android|iphone|ipad/i.test(navigator.userAgent)) {
+    root.addEventListener('compositionstart', () => {
+      // Let the browser handle IME natively — no interruption
     })
-  })
 
-  // During IME composition, prevent ProseMirror from interfering
-  // with the composition text by stopping its beforeinput handler
-  root.addEventListener('beforeinput', (e) => {
-    if (isComposing && e.inputType === 'insertCompositionText') {
-      e.stopImmediatePropagation()
-    }
-  }, true)
+    root.addEventListener('compositionend', () => {
+      // After composition, let ProseMirror sync its internal state
+      editorInstance?.action((ctx) => {
+        const view = ctx.get(editorViewCtx)
+        if (view) {
+          // Force a DOM update cycle so ProseMirror picks up the mutated text
+          view.dom.dispatchEvent(new Event('input', { bubbles: true }))
+        }
+      })
+    })
+  }
 
   root.addEventListener('click', (e) => {
     if (!(e.metaKey || e.ctrlKey)) return

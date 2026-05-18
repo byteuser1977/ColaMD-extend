@@ -5,6 +5,32 @@ import { createCapacitorAPI } from './capacitor-api'
 import './themes/base.css'
 import './mobile.css'
 
+/**
+ * 调用原生桥接层检查是否有通过文件管理器 Intent 待打开的文件。
+ * 使用 pull 模式：JS 主动向 Java 查询，避免注入时序问题。
+ */
+function checkAndOpenPendingFile(): void {
+  const bridge = (window as any).ColaMDNative
+  if (!bridge || typeof bridge.checkPendingFile !== 'function') return
+  try {
+    const result = bridge.checkPendingFile()
+    if (result && result !== 'null') {
+      const data = JSON.parse(result)
+      if (data && data.content) {
+        setContent(data.content)
+      }
+    }
+  } catch (e) { /* ignore */ }
+}
+
+/**
+ * 轮询原生桥接层，获取待打开的文件。
+ * Android onNewIntent 在 WebView 重载前触发，需要轮询等待。
+ */
+function processPendingIntentFile(): void {
+  checkAndOpenPendingFile()
+}
+
 const pluginModules = import.meta.glob<{ default?: unknown }>('./editor/plugins/*-plugin.ts', { eager: true })
 Object.keys(pluginModules)
 
@@ -79,12 +105,8 @@ async function init(): Promise<void> {
   // Run plugin init hooks (mermaid initialize, etc.)
   for (const p of getAllPlugins()) p.onInit?.()
 
-  // Listen for files opened from Android file manager (Intent)
-  window.addEventListener('colamd-open-file', ((e: CustomEvent) => {
-    if (e.detail?.content) {
-      setContent(e.detail.content)
-    }
-  }) as EventListener)
+  // Check for file opened via Android file manager (Intent)
+  checkAndOpenPendingFile()
 
   // Send plugin list to main process for menu
   api.registerPlugins(getAllPlugins().map((p) => ({ id: p.id, name: p.name, enabled: p.enabled })))
@@ -102,6 +124,9 @@ async function init(): Promise<void> {
 
   // ─── Mobile menu setup ───
   setupMobileMenu(api, savedTheme)
+
+  // Continuously check for Intent files (APP already running, new file opened)
+  setInterval(processPendingIntentFile, 1000)
 
   // Slides button — open as slides
   slidesBtnEl().addEventListener('click', () => api.openAsSlides(getContent()))

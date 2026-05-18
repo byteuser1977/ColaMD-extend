@@ -258,9 +258,10 @@
     -webkit-user-select: text;
     user-select: text;
     touch-action: manipulation;
+    -webkit-user-modify: read-write-plaintext-only;
   }
 
-  .ProseMirror [contenteditable="true"] {
+  .ProseMirror-focused {
     -webkit-user-modify: read-write-plaintext-only;
   }
 

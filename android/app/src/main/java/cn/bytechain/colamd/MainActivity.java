@@ -6,26 +6,25 @@ import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
 import android.view.View;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebSettings;
 
 import com.getcapacitor.BridgeActivity;
-import com.getcapacitor.JSObject;
-import com.getcapacitor.Plugin;
-import com.getcapacitor.PluginCall;
-import com.getcapacitor.PluginMethod;
-import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URI;
 
 /**
  * 主活动类，继承自 Capacitor 的 BridgeActivity。
- * 支持 IME 中文输入、文件管理器打开 .md 文件、原生 PDF 打印。
+ * 支持 IME 中文输入、文件管理器打开文件、原生 PDF 打印。
+ * 使用 JavascriptInterface 替代 Capacitor Plugin 实现更可靠的 JS-原生桥接。
  */
 public class MainActivity extends BridgeActivity {
+
+    private String pendingFileName = null;
+    private String pendingFileContent = null;
 
     /**
      * 活动创建时的初始化方法。
@@ -34,7 +33,6 @@ public class MainActivity extends BridgeActivity {
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        registerPlugin(ColamdPrintPlugin.class);
         super.onCreate(savedInstanceState);
 
         WebView webView = getBridge().getWebView();
@@ -51,6 +49,10 @@ public class MainActivity extends BridgeActivity {
             settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
             webView.setFocusable(true);
             webView.setFocusableInTouchMode(true);
+
+            // 注入 Java 桥接对象，供 JS 调用原生功能
+            webView.addJavascriptInterface(new ColaMDNativeBridge(), "ColaMDNative");
+
             setupIMEFocus(webView);
         }
 
@@ -60,7 +62,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * 处理新 Intent（singleTask 模式下再次打开文件时触发）。
+     * 处理新 Intent（singleTask 下再次打开文件时触发）。
      */
     @Override
     protected void onNewIntent(android.content.Intent intent) {
@@ -70,7 +72,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * 解析 Intent 中的文件数据，读取内容并通过 JS 事件传递给前端。
+     * 解析 Intent 中的文件数据并缓存。
      */
     private void handleIntent(android.content.Intent intent) {
         if (intent == null || !android.content.Intent.ACTION_VIEW.equals(intent.getAction())) return;
@@ -81,8 +83,8 @@ public class MainActivity extends BridgeActivity {
         try {
             String content = readContentFromUri(uri);
             if (content != null && !content.isEmpty()) {
-                String fileName = getFileName(uri);
-                sendFileToJS(fileName, content);
+                pendingFileName = getFileName(uri);
+                pendingFileContent = content;
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -90,7 +92,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * 从 content URI 读取文件文本内容。
+     * 从 content URI 读取文件文本内容（UTF-8）。
      */
     private String readContentFromUri(android.net.Uri uri) {
         StringBuilder sb = new StringBuilder();
@@ -125,29 +127,6 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * 通过 WebView 执行 JS 将文件内容传递给前端。
-     */
-    private void sendFileToJS(String fileName, String content) {
-        WebView webView = getBridge().getWebView();
-        if (webView == null) return;
-
-        String escapedContent = content
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
-
-        String js = String.format(
-                "setTimeout(function(){ window.dispatchEvent(new CustomEvent('colamd-open-file',{detail:{name:'%s',content:'%s'}})); }, 500);",
-                fileName.replace("'", "\\'"),
-                escapedContent.replace("'", "\\'")
-        );
-
-        runOnUiThread(() -> webView.evaluateJavascript(js, null));
-    }
-
-    /**
      * 设置 WebView 的 IME 焦点处理。
      */
     private void setupIMEFocus(WebView webView) {
@@ -167,39 +146,43 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * Capacitor 插件：调用 Android 原生 PrintManager 打印 WebView 内容。
-     * 用户可在打印对话框中选择"保存为 PDF"来生成真正的 PDF 文件。
+     * JS-原生桥接类，暴露给 WebView 的原生能力。
+     * JS 通过 window.ColaMDNative.{method}() 调用。
      */
-    @CapacitorPlugin(name = "ColamdPrint")
-    public static class ColamdPrintPlugin extends Plugin {
+    public class ColaMDNativeBridge {
 
-        /**
-         * 调用系统打印对话框，打印当前 WebView 内容。
-         * Android 打印对话框自带"保存为 PDF"选项。
-         *
-         * @param call Capacitor 插件调用
-         */
-        @PluginMethod
-        public void print(PluginCall call) {
-            try {
-                WebView webView = getBridge().getWebView();
-                if (webView == null) {
-                    call.reject("WebView not available");
-                    return;
-                }
-
-                String jobName = "ColaMD Document";
-                PrintManager printManager = (PrintManager) getActivity().getSystemService(Context.PRINT_SERVICE);
-                PrintDocumentAdapter printAdapter = webView.createPrintDocumentAdapter(jobName);
-
-                printManager.print(jobName, printAdapter, new PrintAttributes.Builder().build());
-
-                JSObject result = new JSObject();
-                result.put("success", true);
-                call.resolve(result);
-            } catch (Exception e) {
-                call.reject("Print failed: " + e.getMessage());
+        /** JS 主动调用检查是否有待打开的文件 */
+        @JavascriptInterface
+        public String checkPendingFile() {
+            if (pendingFileName != null && pendingFileContent != null) {
+                String name = pendingFileName;
+                String content = pendingFileContent;
+                pendingFileName = null;
+                pendingFileContent = null;
+                // 返回 JSON，JS 端解析
+                String escapedName = name.replace("\\", "\\\\").replace("\"", "\\\"");
+                String escapedContent = content.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
+                return "{\"name\":\"" + escapedName + "\",\"content\":\"" + escapedContent + "\"}";
             }
+            return "null";
+        }
+
+        /** 调用系统打印对话框（含"保存为PDF"选项） */
+        @JavascriptInterface
+        public void printDocument(final String jobName) {
+            runOnUiThread(() -> {
+                try {
+                    WebView wv = getBridge().getWebView();
+                    if (wv == null) return;
+
+                    PrintManager pm = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+                    PrintDocumentAdapter adapter = wv.createPrintDocumentAdapter(
+                            jobName != null && !jobName.isEmpty() ? jobName : "ColaMD Document");
+                    pm.print(jobName, adapter, new PrintAttributes.Builder().build());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
         }
     }
 }
