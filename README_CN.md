@@ -239,6 +239,7 @@ graph TD
 | **Dark** | GitHub Dark | 系统默认 | `#0d1117` 背景, `#8b949e` 边框文字 |
 | **Elegant** | 自定义暖色系 | 霞鹜文楷 | `#e8e2db` 背景, 暖棕色调 cScale |
 | **Newsprint** | 印刷风格 | PT Serif | 衬线字体, 新闻纸质感 |
+| **Forest Ink** (自定义) | 森林墨绿系 | Noto Serif SC | `#f5f1e8` 宣纸底, `#3d6b4a` 森林绿强调, 墨绿连线 |
 
 ---
 
@@ -391,9 +392,15 @@ ColaMD 内置 **4 个主题**，所有显示插件均会跟随主题自动适配
 | **Elegant** | `theme-elegant` | 优雅主题，暖色衬线体风格（默认主题） |
 | **Newsprint** | `theme-newsprint` | 新闻印刷风格 |
 
-自定义主题支持：将 CSS 文件放入 `~/.colamd/themes/` 目录，通过 **Theme > Import Theme** 导入。导入的主题会持久化保存，重启后仍然可用。
+可下载的外置主题（位于 [`themes/`](themes/) 目录）：
 
-从 [`themes/`](themes/) 文件夹可以下载社区贡献的主题。
+| 主题文件 | 风格说明 |
+|----------|----------|
+| [elegant.css](themes/elegant.css) | 典雅暖调，朱砂红强调色、霞鹜文楷衬线体 |
+| [guizang.css](themes/guizang.css) | 归藏古风，赭石强调色、松烟墨代码块 |
+| [forest-ink.css](themes/forest-ink.css) | 🌲 森林墨，宣纸暖白底 + 松烟墨绿文字 + 森林绿强调色 |
+
+自定义主题支持：将 CSS 文件放入 `~/.colamd/themes/` 目录，通过 **Theme > Import Theme** 导入。导入的主题会持久化保存，重启后仍然可用。
 
 ---
 

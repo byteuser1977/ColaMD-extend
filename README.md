@@ -240,6 +240,7 @@ graph TD
 | **Dark** | GitHub Dark | System default | `#0d1117` background, `#8b949e` border/text |
 | **Elegant** | Custom warm palette | LXGW WenKai | `#e8e2db` background, warm brown cScale |
 | **Newsprint** | Print style | PT Serif | Serif font, newsprint texture |
+| **Forest Ink** (custom) | Forest green palette | Noto Serif SC | `#f5f1e8` paper base, `#3d6b4a` forest green accent, ink-green lines |
 
 ---
 
@@ -387,9 +388,15 @@ ColaMD includes **4 built-in themes**, and all renderer plugins automatically ad
 | **Elegant** | `theme-elegant` | Elegant theme, warm serif style (**default theme**) |
 | **Newsprint** | `theme-newsprint` | Newsprint style |
 
-Custom theme support: Place CSS files in `~/.colamd/themes/` directory, then import via **Theme > Import Theme**. Imported themes persist across sessions.
+Downloadable external themes (located in [`themes/`](themes/) directory):
 
-Community-contributed themes can be downloaded from the [`themes/`](themes/) folder.
+| Theme File | Style Description |
+|------------|-------------------|
+| [elegant.css](themes/elegant.css) | Warm serif with terracotta accents, LXGW WenKai font |
+| [guizang.css](themes/guizang.css) | Ancient Guizang style, ochre accents, ink-black code blocks |
+| [forest-ink.css](themes/forest-ink.css) | 🌲 Forest Ink, warm paper base + forest green ink text + forest green accent |
+
+Custom theme support: Place CSS files in `~/.colamd/themes/` directory, then import via **Theme > Import Theme**. Imported themes persist across sessions.
 
 ---
 
