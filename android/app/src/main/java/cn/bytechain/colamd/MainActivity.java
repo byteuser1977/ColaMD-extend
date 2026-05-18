@@ -1,120 +1,88 @@
 package cn.bytechain.colamd;
 
-import android.content.Intent;
-import android.net.Uri;
+import android.content.Context;
 import android.os.Bundle;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintManager;
 import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebSettings;
 
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.JSObject;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
 
-import java.io.InputStream;
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
 
 /**
  * 主活动类，继承自 Capacitor 的 BridgeActivity。
- * 针对 Android WebView 的中文输入法 (IME) 兼容性进行了特殊处理。
- * 支持通过 Intent 打开 Markdown 文件。
+ * 支持 IME 中文输入、文件管理器打开 .md 文件、原生 PDF 打印。
  */
 public class MainActivity extends BridgeActivity {
 
-    private Uri pendingFileUri = null;
-
     /**
      * 活动创建时的初始化方法。
-     * 配置 WebView 以支持中文输入法的正常工作。
      *
      * @param savedInstanceState 保存的实例状态
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(ColamdPrintPlugin.class);
         super.onCreate(savedInstanceState);
-
-        Intent intent = getIntent();
-        if (intent != null && Intent.ACTION_VIEW.equals(intent.getAction())) {
-            Uri uri = intent.getData();
-            if (uri != null) {
-                pendingFileUri = uri;
-            }
-        }
 
         WebView webView = getBridge().getWebView();
         if (webView != null) {
             WebSettings settings = webView.getSettings();
-
             settings.setJavaScriptEnabled(true);
             settings.setDomStorageEnabled(true);
             settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-
             settings.setSupportZoom(true);
             settings.setBuiltInZoomControls(true);
             settings.setDisplayZoomControls(false);
-
             settings.setUseWideViewPort(true);
             settings.setLoadWithOverviewMode(true);
-
             settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
-
             webView.setFocusable(true);
             webView.setFocusableInTouchMode(true);
-
             setupIMEFocus(webView);
         }
-    }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        if (intent != null && Intent.ACTION_VIEW.equals(intent.getAction())) {
-            Uri uri = intent.getData();
-            if (uri != null) {
-                handleFileUri(uri);
-            }
-        }
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        if (pendingFileUri != null) {
-            handleFileUri(pendingFileUri);
-            pendingFileUri = null;
+        if (savedInstanceState == null) {
+            handleIntent(getIntent());
         }
     }
 
     /**
-     * 处理从 Intent 接收到的文件 URI。
-     * 读取文件内容并通过 JavaScript 传递给 WebView。
-     *
-     * @param uri 文件的 content:// URI
+     * 处理新 Intent（singleTask 模式下再次打开文件时触发）。
      */
-    private void handleFileUri(Uri uri) {
+    @Override
+    protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIntent(intent);
+    }
+
+    /**
+     * 解析 Intent 中的文件数据，读取内容并通过 JS 事件传递给前端。
+     */
+    private void handleIntent(android.content.Intent intent) {
+        if (intent == null || !android.content.Intent.ACTION_VIEW.equals(intent.getAction())) return;
+
+        android.net.Uri uri = intent.getData();
+        if (uri == null) return;
+
         try {
-            InputStream inputStream = getContentResolver().openInputStream(uri);
-            if (inputStream == null) return;
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
-            StringBuilder stringBuilder = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                stringBuilder.append(line).append("\n");
-            }
-            reader.close();
-            inputStream.close();
-
-            String content = stringBuilder.toString();
-            String fileName = getFileNameFromUri(uri);
-
-            WebView webView = getBridge().getWebView();
-            if (webView != null) {
-                final String jsCode = String.format(
-                    "window.dispatchEvent(new CustomEvent('intent-file-opened', {detail: {path: '%s', content: %s}}));",
-                    escapeJsString(fileName),
-                    escapeJsString(content)
-                );
-                webView.post(() -> webView.evaluateJavascript(jsCode, null));
+            String content = readContentFromUri(uri);
+            if (content != null && !content.isEmpty()) {
+                String fileName = getFileName(uri);
+                sendFileToJS(fileName, content);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -122,67 +90,65 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * 从 URI 中提取文件名。
-     *
-     * @param uri 文件 URI
-     * @return 文件名
+     * 从 content URI 读取文件文本内容。
      */
-    private String getFileNameFromUri(Uri uri) {
-        String fileName = "untitled.md";
-        String path = uri.getPath();
-        if (path != null) {
-            int lastSlash = path.lastIndexOf('/');
-            if (lastSlash >= 0 && lastSlash < path.length() - 1) {
-                fileName = path.substring(lastSlash + 1);
+    private String readContentFromUri(android.net.Uri uri) {
+        StringBuilder sb = new StringBuilder();
+        try (InputStream is = getContentResolver().openInputStream(uri);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append("\n");
             }
+            return sb.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
-        return fileName;
     }
 
     /**
-     * 转义 JavaScript 字符串中的特殊字符。
-     *
-     * @param str 原始字符串
-     * @return 转义后的字符串
+     * 从 URI 中提取文件名。
      */
-    private String escapeJsString(String str) {
-        if (str == null) return "''";
-        StringBuilder sb = new StringBuilder();
-        sb.append("'");
-        for (int i = 0; i < str.length(); i++) {
-            char c = str.charAt(i);
-            switch (c) {
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '\'':
-                    sb.append("\\'");
-                    break;
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                default:
-                    sb.append(c);
-            }
+    private String getFileName(android.net.Uri uri) {
+        String name = "document.md";
+        if ("content".equals(uri.getScheme())) {
+            try (android.database.Cursor cursor = getContentResolver().query(
+                    uri, new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                    if (idx >= 0) name = cursor.getString(idx);
+                }
+            } catch (Exception e) { /* ignore */ }
         }
-        sb.append("'");
-        return sb.toString();
+        return name;
+    }
+
+    /**
+     * 通过 WebView 执行 JS 将文件内容传递给前端。
+     */
+    private void sendFileToJS(String fileName, String content) {
+        WebView webView = getBridge().getWebView();
+        if (webView == null) return;
+
+        String escapedContent = content
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+
+        String js = String.format(
+                "setTimeout(function(){ window.dispatchEvent(new CustomEvent('colamd-open-file',{detail:{name:'%s',content:'%s'}})); }, 500);",
+                fileName.replace("'", "\\'"),
+                escapedContent.replace("'", "\\'")
+        );
+
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
     }
 
     /**
      * 设置 WebView 的 IME 焦点处理。
-     * 解决 Android WebView 中文输入法无法正常输入的问题。
-     *
-     * @param webView 需要配置的 WebView 实例
      */
     private void setupIMEFocus(WebView webView) {
         webView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
@@ -198,5 +164,42 @@ public class MainActivity extends BridgeActivity {
                 }
             }
         });
+    }
+
+    /**
+     * Capacitor 插件：调用 Android 原生 PrintManager 打印 WebView 内容。
+     * 用户可在打印对话框中选择"保存为 PDF"来生成真正的 PDF 文件。
+     */
+    @CapacitorPlugin(name = "ColamdPrint")
+    public static class ColamdPrintPlugin extends Plugin {
+
+        /**
+         * 调用系统打印对话框，打印当前 WebView 内容。
+         * Android 打印对话框自带"保存为 PDF"选项。
+         *
+         * @param call Capacitor 插件调用
+         */
+        @PluginMethod
+        public void print(PluginCall call) {
+            try {
+                WebView webView = getBridge().getWebView();
+                if (webView == null) {
+                    call.reject("WebView not available");
+                    return;
+                }
+
+                String jobName = "ColaMD Document";
+                PrintManager printManager = (PrintManager) getActivity().getSystemService(Context.PRINT_SERVICE);
+                PrintDocumentAdapter printAdapter = webView.createPrintDocumentAdapter(jobName);
+
+                printManager.print(jobName, printAdapter, new PrintAttributes.Builder().build());
+
+                JSObject result = new JSObject();
+                result.put("success", true);
+                call.resolve(result);
+            } catch (Exception e) {
+                call.reject("Print failed: " + e.getMessage());
+            }
+        }
     }
 }

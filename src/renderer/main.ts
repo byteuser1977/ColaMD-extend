@@ -79,6 +79,13 @@ async function init(): Promise<void> {
   // Run plugin init hooks (mermaid initialize, etc.)
   for (const p of getAllPlugins()) p.onInit?.()
 
+  // Listen for files opened from Android file manager (Intent)
+  window.addEventListener('colamd-open-file', ((e: CustomEvent) => {
+    if (e.detail?.content) {
+      setContent(e.detail.content)
+    }
+  }) as EventListener)
+
   // Send plugin list to main process for menu
   api.registerPlugins(getAllPlugins().map((p) => ({ id: p.id, name: p.name, enabled: p.enabled })))
 
@@ -95,13 +102,6 @@ async function init(): Promise<void> {
 
   // ─── Mobile menu setup ───
   setupMobileMenu(api, savedTheme)
-
-  // ─── Intent file opened (Android) ───
-  window.addEventListener('intent-file-opened', ((e: CustomEvent<{ path: string; content: string }>) => {
-    const { path, content } = e.detail
-    console.log('Intent file opened:', path)
-    setContent(content)
-  }) as EventListener)
 
   // Slides button — open as slides
   slidesBtnEl().addEventListener('click', () => api.openAsSlides(getContent()))
@@ -448,7 +448,7 @@ function setupMobileMenu(api: any, currentTheme: string): void {
           break
         }
         case 'about':
-          api.openExternal('https://github.com/marswaveai/colamd')
+          api.openExternal('https://github.com/byteuser1977/ColaMD-extend')
           break
         case 'exit':
           try {

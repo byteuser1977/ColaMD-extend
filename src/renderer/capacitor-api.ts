@@ -319,14 +319,23 @@ export function createCapacitorAPI(): CapacitorBridgeAPI {
     /**
      * 导出 PDF。
      * Web 平台使用 window.print()；
-     * 原生平台将内容导出为 HTML 文件并通过系统分享。
+     * 原生平台通过自定义 ColamdPrint 插件调用 Android PrintManager，
+     * 用户可在打印对话框中选择"保存为 PDF"生成真正的 PDF 文件。
      */
     async exportPDF(): Promise<boolean> {
       if (!isNativePlatform()) {
         window.print()
         return true
       }
-      return true
+      try {
+        const { registerPlugin } = await import('@capacitor/core')
+        const ColamdPrint: any = registerPlugin('ColamdPrint')
+        const result = await ColamdPrint.print()
+        return result?.success === true
+      } catch (err) {
+        console.error('PDF export failed:', err)
+        return false
+      }
     },
 
     /**
@@ -381,16 +390,15 @@ Edit this file in ColaMD and see your changes in real time.
      * 以幻灯片模式打开内容。
      * @param _content Markdown 内容
      */
-    async openAsSlides(_content: string): Promise<boolean> {
+    async openAsSlides(content: string): Promise<boolean> {
       if (!isNativePlatform()) {
         const newWindow = window.open('', '_blank')
         if (newWindow) {
-          newWindow.document.write(`<pre>${_content}</pre>`)
+          newWindow.document.write(`<pre>${content}</pre>`)
         }
         return !!newWindow
       }
-      console.warn('Slides preview uses browser — limited on native')
-      return false
+      return writeAndShareFile('colamd-slides-preview.html', content)
     },
 
     /**

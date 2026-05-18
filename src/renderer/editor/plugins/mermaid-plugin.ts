@@ -653,6 +653,7 @@ export const mermaidPlugin: RendererPlugin = {
       themeVariables: getMermaidThemeVariables(),
       c4: getMermaidC4Config(),
       securityLevel: 'loose',
+      logLevel: 'error',
       fontSize,
     })
   },
@@ -666,6 +667,7 @@ export const mermaidPlugin: RendererPlugin = {
       themeVariables: getMermaidThemeVariables(),
       c4: getMermaidC4Config(),
       securityLevel: 'loose',
+      logLevel: 'error',
       fontSize,
     })
   },
