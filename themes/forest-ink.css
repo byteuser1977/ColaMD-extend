@@ -1,0 +1,664 @@
+/*
+ * ColaMD 主题：Forest Ink (森林墨)
+ * 配色：宣纸底 + 松烟墨绿
+ * 灵感来源：wanhua-ppt 的 Forest Ink 设计规范
+ * 兼容：ColaMD (body.theme-custom) / Typora
+ */
+
+/* ── 1. 根变量 & 主题变量 ── */
+:root {
+    --side-bar-bg-color: #ede8df;
+    --control-text-color: #555;
+    --active-file-bg-color: #e0dcd7;
+    --active-file-text-color: #1a2e1f;
+    --active-file-border-color: #3d6b4a;
+    --bg-color: #f5f1e8;
+    --text-color: #1a2e1f;
+    --select-text-bg-color: rgba(61, 107, 74, 0.18);
+    --select-text-font-color: #1a2e1f;
+    --rawblock-edit-panel-bd: #d4cfc4;
+}
+
+body.theme-custom {
+    --bg-color: #f5f1e8;
+    --text-color: #1a2e1f;
+    --heading-color: #1a2e1f;
+    --border-color: #d4cfc4;
+    --code-bg: #ede8df;
+    --code-color: #3d6b4a;
+    --code-block-bg: #1a2e1f;
+    --code-block-text: #e8e4de;
+    --code-block-color: #e8e4de;
+    --blockquote-bg: #ece7da;
+    --blockquote-border: #3d6b4a;
+    --link-color: #3d6b4a;
+    --accent-color: #3d6b4a;
+    --accent-dark: #2d5538;
+    --accent-light: #d4cfc4;
+    --surface-color: #ece7da;
+    --surface-alt: #faf8f3;
+    --text-muted: #555;
+    --text-dim: #777;
+    --selection-bg: rgba(61, 107, 74, 0.18);
+    --table-header-bg: #ede8df;
+    --table-stripe: rgba(61, 107, 74, 0.04);
+    --scrollbar-thumb: #c4c0b8;
+    --scrollbar-thumb-hover: #ada9a2;
+    --hr-color: #d4cfc4;
+    --mermaid-font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+    --mermaid-font-size: 12px;
+    --mermaid-dark-mode: false;
+    --mermaid-background: #f0ebe1;
+    --mermaid-primary-color: #ddd8c9;
+    --mermaid-primary-border-color: #3d6b4a;
+    --mermaid-primary-text-color: #1a2e1f;
+    --mermaid-secondary-color: #e8e0d2;
+    --mermaid-secondary-border-color: #5a7a64;
+    --mermaid-secondary-text-color: #1a2e1f;
+    --mermaid-tertiary-color: #f5f1e8;
+    --mermaid-tertiary-border-color: #6a8a74;
+    --mermaid-tertiary-text-color: #555;
+    --mermaid-line-color: #6a8a74;
+    --mermaid-text-color: #1a2e1f;
+    --mermaid-main-bkg: #ddd8c9;
+    --mermaid-second-bkg: #f0ebe1;
+    --mermaid-main-contrast-color: #3d6b4a;
+    --mermaid-label-background: #f5f1e8;
+    --mermaid-label-text-color: #1a2e1f;
+    --mermaid-node-border: #3d6b4a;
+    --mermaid-node-bkg: #ddd8c9;
+    --mermaid-cluster-bkg: rgba(61, 107, 74, 0.10);
+    --mermaid-cluster-border: #3d6b4a;
+    --mermaid-default-link-color: #6a8a74;
+    --mermaid-edge-label-background: #f5f1e8;
+    --mermaid-arrowhead-color: #6a8a74;
+    --mermaid-person-border: #1a2e1f;
+    --mermaid-person-bkg: #ddd8c9;
+}
+
+pre { --select-text-bg-color: #243528; --select-text-font-color: #fff; }
+
+/* ── 2. 全局 ── */
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+body.theme-custom, html, body {
+    background-color: #f5f1e8;
+    color: #1a2e1f;
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, "Times New Roman", serif;
+    line-height: 1.9;
+}
+body.theme-custom { -webkit-font-smoothing: antialiased; }
+#write { max-width: 820px; margin: 0 auto; padding: 30px 60px 100px; }
+#write > ul:first-child, #write > ol:first-child { margin-top: 30px; }
+
+@media only screen and (min-width:1400px) { #write { max-width: 920px; } }
+@media only screen and (max-width:768px) { #write { padding: 20px 20px 60px; } }
+
+/* ── 3. 标题 ── */
+h1, h2, h3, h4, h5, h6,
+body.theme-custom h1, body.theme-custom h2, body.theme-custom h3,
+body.theme-custom h4, body.theme-custom h5, body.theme-custom h6 {
+    position: relative;
+    color: #1a2e1f;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-top: 1.8em;
+    margin-bottom: 0.6em;
+}
+h1, body.theme-custom h1 { font-size: 1.8em; padding-bottom: 0.3em; cursor: text; }
+h2, body.theme-custom h2 { font-size: 1.5em; padding-bottom: 0.2em; cursor: text; }
+h3, body.theme-custom h3 { font-size: 1.25em; cursor: text; }
+h4, body.theme-custom h4 { font-size: 1.1em; cursor: text; }
+h5, body.theme-custom h5 { font-size: 1em; cursor: text; }
+h6, body.theme-custom h6 { font-size: 0.95em; color: #555; cursor: text; }
+
+h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor,
+h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor { text-decoration: none; }
+
+/* ── 4. 内联元素 ── */
+p { margin: 0.8em 0; line-height: 1.9; text-align: justify; }
+
+strong, body.theme-custom strong { color: #3d6b4a; font-weight: 700; }
+em, body.theme-custom em { font-style: italic; color: #444; }
+em strong, strong em, body.theme-custom em strong, body.theme-custom strong em { color: #3d6b4a; }
+
+a, body.theme-custom a { color: #3d6b4a; text-decoration: none; }
+a:hover, body.theme-custom a:hover { text-decoration: underline; }
+
+u, body.theme-custom u {
+    text-decoration: none;
+    border-bottom: 2px solid #3d6b4a;
+    padding-bottom: 1px;
+}
+
+mark, body.theme-custom mark {
+    background: rgba(61, 107, 74, 0.15);
+    color: #1a2e1f;
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+del, s { color: #999; }
+
+/* ── 5. 引用块 ── */
+blockquote, body.theme-custom blockquote {
+    margin: 1.5em 0;
+    padding: 15px 20px 15px 25px;
+    border-left: 4px solid #3d6b4a;
+    background: #ece7da;
+    color: #444;
+}
+blockquote p, body.theme-custom blockquote p { margin: 0.5em 0; }
+
+/* ── 6. 分割线 ── */
+hr, body.theme-custom hr { border: none; border-top: 1px solid #d4cfc4; margin: 2.5em 0; height: 0; }
+
+/* ── 7. 列表 ── */
+ul, ol, body.theme-custom ul, body.theme-custom ol { padding-left: 1.8em; margin: 0.8em 0; }
+li, body.theme-custom li { margin: 0.35em 0; line-height: 1.8; }
+ul li { list-style-type: disc; list-style-position: outside; }
+ol li { list-style-type: decimal; list-style-position: outside; }
+.md-task-list-item > input { margin-left: -1.3em; margin-top: 0.3em; }
+
+/* ── 8. 内联代码 ── */
+code, tt,
+body.theme-custom code, body.theme-custom tt {
+    font-family: "IBM Plex Mono", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.9em;
+    padding: 2px 6px;
+    margin: 0 2px;
+    background: #ede8df;
+    border-radius: 3px;
+    color: #3d6b4a;
+}
+
+/* ── 9. 代码块 ── */
+pre.md-fences {
+    font-family: "IBM Plex Mono", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.88em;
+    line-height: 1.6;
+    background: #1a2e1f;
+    color: #e8e4de;
+    padding: 18px 22px;
+    border-radius: 6px;
+    margin: 1.5em 0;
+    overflow-x: auto;
+}
+pre.md-fences code { background: transparent; color: inherit; padding: 0; margin: 0; border-radius: 0; }
+
+body.theme-custom #editor .ProseMirror pre {
+    font-family: "IBM Plex Mono", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.88em;
+    line-height: 1.6;
+    background: #1a2e1f !important;
+    color: #e8e4de !important;
+    padding: 18px 22px;
+    border-radius: 6px;
+    margin: 1.5em 0;
+    overflow-x: auto;
+}
+body.theme-custom #editor .ProseMirror pre code {
+    background: transparent !important;
+    color: #e8e4de !important;
+    padding: 0; margin: 0; border-radius: 0;
+}
+
+/* ── 10. 代码语法高亮 ── */
+.cm-s-inner { font-family: "IBM Plex Mono", "JetBrains Mono", "Fira Code", monospace; font-size: 0.9em; line-height: 1.6; }
+
+/* 注释 / 引用 / 分隔线 */
+body.theme-custom .token.comment, body.theme-custom .token.prolog,
+body.theme-custom .token.doctype, body.theme-custom .token.cdata,
+.cm-s-inner .cm-comment, .cm-s-inner .cm-quote, .cm-s-inner .cm-hr { color: #7a8075; font-style: italic; }
+
+/* 标点 / 元数据 */
+body.theme-custom .token.punctuation, .cm-s-inner .cm-meta { color: #c4c0b8; }
+
+/* 关键字 (粗体) */
+body.theme-custom .token.keyword, body.theme-custom .token.important,
+.cm-s-inner .cm-keyword { color: #3d6b4a; font-weight: 700; }
+
+/* 布尔 / 内建 / 标签 / 选择器 / 常量 / 删除 / 原子 / 错误 */
+body.theme-custom .token.boolean, body.theme-custom .token.builtin,
+body.theme-custom .token.tag, body.theme-custom .token.selector,
+body.theme-custom .token.constant, body.theme-custom .token.deleted,
+.cm-s-inner .cm-atom, .cm-s-inner .cm-builtin,
+.cm-s-inner .cm-tag, .cm-s-inner .cm-error { color: #3d6b4a; }
+
+/* 字符串 / 属性值 / 符号 / 插入 */
+body.theme-custom .token.string, body.theme-custom .token.attr-value,
+body.theme-custom .token.symbol, body.theme-custom .token.inserted,
+.cm-s-inner .cm-string { color: #7ba86a; }
+
+/* 数字 */
+body.theme-custom .token.number, .cm-s-inner .cm-number { color: #b8a35a; }
+
+/* 函数 / 类名 / 变量 / 属性名 / 实体 / 定义 */
+body.theme-custom .token.function, body.theme-custom .token.class-name,
+body.theme-custom .token.variable, body.theme-custom .token.attr-name,
+body.theme-custom .token.property, body.theme-custom .token.entity,
+.cm-s-inner .cm-def, .cm-s-inner .cm-variable-2,
+.cm-s-inner .cm-attribute, .cm-s-inner .cm-property,
+.cm-s-inner .cm-header { color: #c9a85a; }
+
+.cm-s-inner .cm-header { font-weight: 700; }
+body.theme-custom .token.url, .cm-s-inner .cm-link { color: #c9a85a; text-decoration: underline; }
+
+/* 运算符 */
+body.theme-custom .token.operator, .cm-s-inner .cm-operator { color: #b5b0a8; }
+
+/* 正则 / 代码文本色 */
+body.theme-custom .token.regex { color: #c99a5e; }
+.cm-s-inner .cm-variable { color: #e8e4de; }
+
+/* ── 11. 表格 ── */
+table, body.theme-custom table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5em 0;
+    font-size: 0.95em;
+}
+table th, body.theme-custom table th {
+    background: #ede8df;
+    font-weight: 700;
+    color: #1a2e1f;
+    padding: 10px 14px;
+    border-bottom: 2px solid #3d6b4a;
+    text-align: left;
+}
+table td, body.theme-custom table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #d4cfc4;
+}
+table tr:hover td, body.theme-custom table tr:hover td {
+    background: rgba(61, 107, 74, 0.04);
+}
+
+/* ── 12. 图片 ── */
+img, body.theme-custom img { max-width: 100%; }
+p > img:only-child, body.theme-custom p > img:only-child { display: block; margin: 1.5em auto; }
+body.theme-custom figure { margin: 1.5em 0; text-align: center; }
+body.theme-custom figcaption { font-size: 0.9em; color: var(--text-muted); margin-top: 0.6em; }
+
+/* ── 13. 数学公式 ── */
+
+/* ColaMD */
+body.theme-custom .math-block {
+    background: #ece7da;
+    padding: 16px 0;
+    margin: 1.5em 0;
+    border-radius: 6px;
+    border: 1px solid #d4cfc4;
+    text-align: center;
+    overflow-x: auto;
+}
+body.theme-custom .math-block .katex,
+body.theme-custom .math-block .katex-display,
+body.theme-custom .math-block .MathJax,
+body.theme-custom .math-block .katex *,
+body.theme-custom .math-block .MathJax *,
+body.theme-custom .math-block .katex .mord,
+body.theme-custom .math-block .katex .mbin,
+body.theme-custom .math-block .katex .mrel,
+body.theme-custom .math-block .katex .mopen,
+body.theme-custom .math-block .katex .mclose,
+body.theme-custom .math-block .katex .mpunct,
+body.theme-custom .math-block .katex .minner { color: #1a2e1f !important; }
+
+/* Typora */
+.md-math-block, .MathJax_Display { margin: 1.5em 0 !important; text-align: center; }
+.md-inline-math, .md-inline-math script, .md-math-inline, .MathJax { color: #1a2e1f; }
+.MathJax svg, .MathJax_Display svg { fill: currentColor; stroke: currentColor; }
+
+/* ── 14. Mermaid ── */
+
+/* 容器 */
+.md-diagram-panel { margin: 1.5em 0; }
+.md-diagram-panel.md-mermaid,
+body.theme-custom .mermaid-block,
+body.theme-custom .mermaid-preview {
+    background: #f0ebe1;
+    border: 1px solid #c4bfb5;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 1.5em 0;
+}
+.md-diagram-panel.md-mermaid svg,
+body.theme-custom .mermaid-preview svg { max-width: 100%; height: auto; }
+
+/* 全局字体 */
+.md-diagram-panel.md-mermaid svg text,
+body.theme-custom .mermaid-preview svg text {
+    fill: #1a2e1f;
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+}
+body.theme-custom .mermaid-preview svg .nodeLabel span,
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+}
+body.theme-custom .mermaid-preview svg foreignObject span {
+    color: #1a2e1f !important;
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif !important;
+    font-size: 14px !important;
+}
+.md-diagram-panel.md-mermaid .node .label {
+    color: #1a2e1f !important;
+    font-family: "Noto Serif SC", "Source Han Serif SC", Georgia, serif !important;
+}
+
+/* 通用节点 & 连线 (ColaMD) */
+body.theme-custom .mermaid-preview svg .node rect,
+body.theme-custom .mermaid-preview svg .node circle,
+body.theme-custom .mermaid-preview svg .node ellipse,
+body.theme-custom .mermaid-preview svg .node polygon,
+body.theme-custom .mermaid-preview svg .node path {
+    stroke: #3d6b4a;
+    fill: #ddd8c9 !important;
+}
+body.theme-custom .mermaid-preview svg .edgePath .path { stroke: #6a8a74; }
+body.theme-custom .mermaid-preview svg .cluster rect,
+body.theme-custom .mermaid-preview svg .cluster path { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg defs marker path { fill: #6a8a74; stroke: #6a8a74; }
+
+/* 通用节点 & 连线 (Typora) */
+.md-diagram-panel.md-mermaid .node rect,
+.md-diagram-panel.md-mermaid .node circle,
+.md-diagram-panel.md-mermaid .node ellipse,
+.md-diagram-panel.md-mermaid .node polygon {
+    fill: #ddd8c9 !important;
+    stroke: #3d6b4a !important;
+    stroke-width: 1.5px !important;
+}
+.md-diagram-panel.md-mermaid .edgePath .path {
+    stroke: #6a8a74 !important;
+    stroke-width: 1.5px !important;
+}
+.md-diagram-panel.md-mermaid .edgeLabel {
+    background-color: #f0ebe1 !important;
+    color: #333 !important;
+}
+.md-diagram-panel.md-mermaid .cluster rect {
+    fill: rgba(61, 107, 74, 0.12) !important;
+    stroke: #3d6b4a !important;
+    stroke-width: 1px !important;
+    stroke-dasharray: 4,4;
+}
+
+/* 硬编码色值覆盖 */
+body.theme-custom .mermaid-preview svg rect[stroke="#444444"],
+body.theme-custom .mermaid-preview svg path[stroke="#444444"],
+body.theme-custom .mermaid-preview svg line[stroke="#444444"],
+body.theme-custom .mermaid-preview svg rect[stroke="#000000"],
+body.theme-custom .mermaid-preview svg path[stroke="#000000"],
+body.theme-custom .mermaid-preview svg line[stroke="#000000"] { stroke: #3d6b4a !important; }
+
+/* 标签 & 文本 (ColaMD) */
+body.theme-custom .mermaid-preview svg .label text,
+body.theme-custom .mermaid-preview svg .nodeLabel text { fill: #1a2e1f !important; }
+body.theme-custom .mermaid-preview svg .nodeLabel span { color: #1a2e1f !important; }
+body.theme-custom .mermaid-preview svg .edgeLabel text { fill: #1a2e1f !important; }
+body.theme-custom .mermaid-preview svg .edgeLabel rect { fill: #f0ebe1 !important; }
+body.theme-custom .mermaid-preview svg .edgeLabel span { color: #1a2e1f !important; }
+
+/* 文本偏移 */
+body.theme-custom .mermaid-preview svg .label text,
+body.theme-custom .mermaid-preview svg .nodeLabel text { transform: translateY(-3px) !important; }
+body.theme-custom .mermaid-preview svg .titleText { transform: translateY(-1px) !important; }
+body.theme-custom .mermaid-preview svg .xychart .axis text { transform: translateY(0) !important; }
+body.theme-custom .mermaid-preview svg .nodeLabel,
+body.theme-custom .mermaid-preview svg .edgeLabel {
+    display: inline-block !important;
+    position: relative !important;
+    top: -3px !important;
+}
+
+/* 状态图 */
+body.theme-custom .mermaid-preview svg .statediagram-state rect,
+body.theme-custom .mermaid-preview svg .statediagram-state circle { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .statediagram-state .nodeLabel text,
+body.theme-custom .mermaid-preview svg .statediagram-state .nodeLabel span,
+body.theme-custom .mermaid-preview svg .statediagram-cluster .outer-title text,
+body.theme-custom .mermaid-preview svg .edgeLabel .label text { fill: #1a2e1f !important; color: #1a2e1f !important; }
+body.theme-custom .mermaid-preview svg .statediagram-cluster rect { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .transition { stroke: #6a8a74; }
+
+/* 饼图 */
+body.theme-custom .mermaid-preview svg .pieCircle,
+body.theme-custom .mermaid-preview svg .slice { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .pieTitleText,
+body.theme-custom .mermaid-preview svg .legend text { fill: #1a2e1f !important; }
+
+/* 四象限图 */
+body.theme-custom .mermaid-preview svg .quadrant rect { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .quadrant text,
+body.theme-custom .mermaid-preview svg .quadrant .titleText { fill: #1a2e1f !important; }
+body.theme-custom .mermaid-preview svg .quadrant .axis text { fill: #777 !important; }
+body.theme-custom .mermaid-preview svg .quadrant .axis line,
+body.theme-custom .mermaid-preview svg .quadrant .axis path { stroke: #6a8a74; }
+body.theme-custom .mermaid-preview svg .quadrant .point { fill: #3d6b4a; stroke: #3d6b4a; }
+
+/* XY Chart */
+body.theme-custom .mermaid-preview svg .xychart .axis text { fill: #777 !important; }
+body.theme-custom .mermaid-preview svg .xychart .axis line,
+body.theme-custom .mermaid-preview svg .xychart .axis path { stroke: #6a8a74; }
+body.theme-custom .mermaid-preview svg .xychart .plot rect { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .xychart .plot line { stroke: #c4bfb5; }
+body.theme-custom .mermaid-preview svg .xychart .titleText { fill: #1a2e1f !important; }
+
+/* Sankey */
+body.theme-custom .mermaid-preview svg .sankey .link { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .sankey text { fill: #1a2e1f !important; }
+
+/* 时序图 (ColaMD) */
+body.theme-custom .mermaid-preview svg .actor rect,
+body.theme-custom .mermaid-preview svg .actor path { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg text.actor { fill: #1a2e1f !important; }
+body.theme-custom .mermaid-preview svg .messageLine0,
+body.theme-custom .mermaid-preview svg .messageLine1 { stroke: #6a8a74 !important; }
+body.theme-custom .mermaid-preview svg .messageText,
+body.theme-custom .mermaid-preview svg .labelText,
+body.theme-custom .mermaid-preview svg .loopText tspan,
+body.theme-custom .mermaid-preview svg .altText tspan,
+body.theme-custom .mermaid-preview svg .optText tspan { fill: #1a2e1f !important; }
+body.theme-custom .mermaid-preview svg .loopText,
+body.theme-custom .mermaid-preview svg .altText,
+body.theme-custom .mermaid-preview svg .optText { fill: #777 !important; }
+body.theme-custom .mermaid-preview svg .loopLine,
+body.theme-custom .mermaid-preview svg .altLine,
+body.theme-custom .mermaid-preview svg .optLine { stroke: #6a8a74 !important; }
+body.theme-custom .mermaid-preview svg .labelBox { stroke: #b5b0a8; }
+
+/* 时序图 (Typora) */
+.md-diagram-panel.md-mermaid .actor { fill: #ddd8c9 !important; stroke: #3d6b4a !important; }
+.md-diagram-panel.md-mermaid text.actor { fill: #1a2e1f !important; }
+.md-diagram-panel.md-mermaid .messageLine0,
+.md-diagram-panel.md-mermaid .messageLine1 { stroke: #6a8a74 !important; }
+.md-diagram-panel.md-mermaid .messageText { fill: #555 !important; }
+
+/* 类图 */
+body.theme-custom .mermaid-preview svg .classBox rect,
+body.theme-custom .mermaid-preview svg .classBox path { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .classTitle text,
+body.theme-custom .mermaid-preview svg .classTitle span { fill: #1a2e1f !important; color: #1a2e1f !important; }
+body.theme-custom .mermaid-preview svg .classText text,
+body.theme-custom .mermaid-preview svg .classText span { fill: #555 !important; color: #555 !important; }
+body.theme-custom .mermaid-preview svg .divider { stroke: #b5b0a8; }
+body.theme-custom .mermaid-preview svg .relation { stroke: #6a8a74; }
+
+/* 甘特图 (ColaMD) */
+body.theme-custom .mermaid-preview svg .task { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .taskText,
+body.theme-custom .mermaid-preview svg .taskTextOutsideRight,
+body.theme-custom .mermaid-preview svg .taskTextOutsideLeft,
+body.theme-custom .mermaid-preview svg .sectionText,
+body.theme-custom .mermaid-preview svg .sectionTitle { fill: #1a2e1f !important; }
+body.theme-custom .mermaid-preview svg .section rect { stroke: #b5b0a8; }
+body.theme-custom .mermaid-preview svg .today { stroke: #3d6b4a !important; }
+body.theme-custom .mermaid-preview svg .grid .tick line { stroke: #c4bfb5; }
+body.theme-custom .mermaid-preview svg .grid .domain { stroke: #6a8a74; }
+body.theme-custom .mermaid-preview svg .tick text { fill: #777; }
+
+/* 甘特图 (Typora) */
+.md-diagram-panel.md-mermaid .section0,
+.md-diagram-panel.md-mermaid .section1,
+.md-diagram-panel.md-mermaid .section2,
+.md-diagram-panel.md-mermaid .section3 { fill: rgba(61, 107, 74, 0.14) !important; }
+.md-diagram-panel.md-mermaid .task0,
+.md-diagram-panel.md-mermaid .task1,
+.md-diagram-panel.md-mermaid .task2,
+.md-diagram-panel.md-mermaid .task3 { fill: #3d6b4a !important; stroke: #2d5538 !important; }
+.md-diagram-panel.md-mermaid .today { stroke: #3d6b4a !important; stroke-width: 2px !important; }
+
+/* 思维导图 */
+body.theme-custom .mermaid-preview svg .mindmap-node rect,
+body.theme-custom .mermaid-preview svg .mindmap-node circle,
+body.theme-custom .mermaid-preview svg .mindmap-node ellipse,
+body.theme-custom .mermaid-preview svg .mindmap-node polygon,
+body.theme-custom .mermaid-preview svg .mindmap-node path { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .mindmap-node text,
+body.theme-custom .mermaid-preview svg .mindmap-node .nodeLabel text,
+body.theme-custom .mermaid-preview svg .mindmap-node .nodeLabel span { fill: #1a2e1f !important; color: #1a2e1f !important; }
+body.theme-custom .mermaid-preview svg .mindmap-edge { stroke: #6a8a74; }
+
+/* Block 图 */
+body.theme-custom .mermaid-preview svg .block rect,
+body.theme-custom .mermaid-preview svg .block path { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .block text,
+body.theme-custom .mermaid-preview svg .block .nodeLabel text,
+body.theme-custom .mermaid-preview svg .block .nodeLabel span { fill: #1a2e1f !important; color: #1a2e1f !important; }
+
+/* ER 图 */
+body.theme-custom .mermaid-preview svg .er .entityBox rect,
+body.theme-custom .mermaid-preview svg .er .entityBox path { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .er text,
+body.theme-custom .mermaid-preview svg .er .relationshipLabel { fill: #1a2e1f !important; }
+body.theme-custom .mermaid-preview svg .er .relationshipLine { stroke: #6a8a74; }
+
+/* Git 图 */
+body.theme-custom .mermaid-preview svg .git .commit rect,
+body.theme-custom .mermaid-preview svg .git .commit circle { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .git text,
+body.theme-custom .mermaid-preview svg .git .branchLabel text { fill: #1a2e1f !important; }
+
+/* 用户旅程图 */
+body.theme-custom .mermaid-preview svg .journey .task rect { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .journey text { fill: #1a2e1f !important; }
+
+/* 时间线 */
+body.theme-custom .mermaid-preview svg .timeline rect { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .timeline text { fill: #1a2e1f !important; }
+
+/* C4 架构图 */
+body.theme-custom .mermaid-preview svg .c4 .person rect,
+body.theme-custom .mermaid-preview svg .c4 .person path,
+body.theme-custom .mermaid-preview svg .c4 .system rect,
+body.theme-custom .mermaid-preview svg .c4 .system path,
+body.theme-custom .mermaid-preview svg .c4 .container rect,
+body.theme-custom .mermaid-preview svg .c4 .container path,
+body.theme-custom .mermaid-preview svg .c4 .boundary rect,
+body.theme-custom .mermaid-preview svg .c4 .boundary path { stroke: #3d6b4a; }
+body.theme-custom .mermaid-preview svg .c4 text,
+body.theme-custom .mermaid-preview svg .c4 span { fill: #1a2e1f !important; color: #1a2e1f !important; }
+
+/* 人物节点 */
+body.theme-custom .mermaid-preview svg .person rect,
+body.theme-custom .mermaid-preview svg .person path { stroke: #1a2e1f; }
+body.theme-custom .mermaid-preview svg .person-man text { fill: #ffffff !important; }
+body.theme-custom .mermaid-preview svg .person-man span { color: #ffffff !important; }
+
+/* ── 15. YAML 元数据 ── */
+pre.md-meta-block,
+body.theme-custom .frontmatter,
+body.theme-custom .yaml-front-matter {
+    font-family: "IBM Plex Mono", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.85em;
+    background: #ece7da;
+    border: 1px solid #d4cfc4;
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin-bottom: 2em;
+    color: #666;
+}
+
+/* ── 16. 脚注 ── */
+.md-footnote { font-size: 0.85em; color: #3d6b4a; }
+sup.md-footnote { background: transparent; }
+
+/* ── 17. 目录 ── */
+.md-toc { font-size: 0.9em; }
+.md-toc-content { margin-left: 0; }
+.md-toc-item { color: #1a2e1f; }
+.md-toc-h1 .md-toc-inner { font-weight: 700; }
+
+/* ── 18. 侧边栏 ── */
+.sidebar-content { font-family: inherit; }
+.file-node-content { line-height: 1.6; }
+.file-node-title { font-size: 1em; }
+
+/* ── 19. 聚焦模式 ── */
+.on-focus-mode .md-end-block:not(.md-focus):not(.md-focus-container) * { color: #bbb !important; }
+.on-focus-mode .md-end-block:not(.md-focus):not(.md-focus-container) img { opacity: 0.5; }
+
+/* ── 20. 搜索 & 选择 ── */
+::selection, body.theme-custom ::selection { background: rgba(61, 107, 74, 0.18); }
+#write .md-search-hit { background: rgba(61, 107, 74, 0.18); border-radius: 2px; }
+
+/* ── 21. 滚动条 ── */
+::-webkit-scrollbar,
+body.theme-custom ::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb,
+body.theme-custom ::-webkit-scrollbar-thumb { background: #c4c0b8; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover,
+body.theme-custom ::-webkit-scrollbar-thumb:hover { background: #ada9a2; }
+::-webkit-scrollbar-track,
+body.theme-custom ::-webkit-scrollbar-track { background: transparent; }
+
+/* ── 22. Megamenu ── */
+.megamenu-content { font-family: inherit; }
+#megamenu-back-btn { color: #1a2e1f; }
+
+/* ── 23. 大纲 ── */
+.outline-content { font-size: 0.9em; }
+.outline-item { padding: 4px 0; }
+.outline-active, .outline-item:hover { color: #3d6b4a; }
+
+/* ── 24. 工具提示 ── */
+.ty-tooltip { font-size: 0.85em; background: #333; color: #eee; border-radius: 4px; }
+
+/* ── 25. 打印 ── */
+@media print {
+    html { font-size: 13px; }
+    html, body { background: #fff; }
+    #write { max-width: none; padding: 0; }
+    pre.md-fences { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+    table th { background: #f5f5f5; }
+    body.theme-custom { background: #fff !important; color: #000 !important; }
+    body.theme-custom pre {
+        background: #f5f5f5 !important;
+        color: #333 !important;
+        border: 1px solid #ddd !important;
+    }
+    body.theme-custom .math-block { background: #fafafa !important; border: 1px solid #ddd !important; }
+    body.theme-custom .mermaid-block,
+    body.theme-custom .mermaid-preview,
+    .md-diagram-panel.md-mermaid { background: #fafafa !important; border: 1px solid #ddd !important; }
+}
+
+/* ── 26. 移动端适配 ── */
+@media only screen and (max-width:768px) {
+    body.theme-custom { font-size: 15px; line-height: 1.8; }
+    body.theme-custom h1 { font-size: 1.5em; }
+    body.theme-custom h2 { font-size: 1.3em; }
+    body.theme-custom h3 { font-size: 1.15em; }
+    body.theme-custom pre { padding: 14px 16px; font-size: 0.82em; }
+    body.theme-custom table { font-size: 0.85em; }
+    body.theme-custom table th,
+    body.theme-custom table td { padding: 8px 10px; }
+    body.theme-custom blockquote { padding: 12px 14px 12px 18px; }
+    body.theme-custom .math-block { padding: 12px 0; overflow-x: auto; }
+    body.theme-custom .mermaid-block,
+    body.theme-custom .mermaid-preview,
+    .md-diagram-panel.md-mermaid { padding: 12px; margin: 1em 0; }
+    body.theme-custom .mermaid-preview svg { max-width: 100% !important; height: auto !important; }
+    body.theme-custom .mermaid-preview svg text { font-size: 10px !important; }
+    body.theme-custom .mermaid-preview svg .titleText { font-size: 12px !important; }
+}
