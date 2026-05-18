@@ -96,6 +96,13 @@ async function init(): Promise<void> {
   // ─── Mobile menu setup ───
   setupMobileMenu(api, savedTheme)
 
+  // ─── Intent file opened (Android) ───
+  window.addEventListener('intent-file-opened', ((e: CustomEvent<{ path: string; content: string }>) => {
+    const { path, content } = e.detail
+    console.log('Intent file opened:', path)
+    setContent(content)
+  }) as EventListener)
+
   // Slides button — open as slides
   slidesBtnEl().addEventListener('click', () => api.openAsSlides(getContent()))
 

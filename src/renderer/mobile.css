@@ -258,10 +258,27 @@
     -webkit-user-select: text;
     user-select: text;
     touch-action: manipulation;
+    -webkit-user-modify: read-write-plaintext-only;
+    outline: none;
+  }
+
+  .ProseMirror-focused {
+    outline: none;
   }
 
   .ProseMirror [contenteditable="true"] {
     -webkit-user-modify: read-write-plaintext-only;
+    outline: none;
+  }
+
+  /* Android IME fix: ensure proper caret handling */
+  .ProseMirror .ProseMirror-cursor {
+    display: inline-block !important;
+  }
+
+  /* Fix for Android WebView IME composition */
+  .ProseMirror[data-ime-mode="composing"] {
+    background: transparent !important;
   }
 
   .ProseMirror h1 { font-size: 1.5em !important; margin-top: 0.8em !important; }

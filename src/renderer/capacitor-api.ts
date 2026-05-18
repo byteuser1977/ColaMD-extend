@@ -62,6 +62,44 @@ function decodeBase64UTF8(base64: string): string {
 }
 
 /**
+ * 将文本内容写入文件并通过系统分享对话框分享。
+ * 使用 Filesystem.writeFile 写入后，获取 file:// URI，
+ * 通过 Share 插件的 files 参数分享给其他应用。
+ * @param fileName 文件名
+ * @param content 文本内容
+ * @returns 分享成功返回 true
+ */
+async function writeAndShareFile(fileName: string, content: string): Promise<boolean> {
+  try {
+    await Filesystem.writeFile({
+      path: fileName,
+      data: content,
+      directory: Directory.Documents,
+      encoding: Encoding.UTF8,
+      recursive: true,
+    })
+
+    const fileUri = await Filesystem.getUri({
+      path: fileName,
+      directory: Directory.Documents,
+    })
+
+    try {
+      await Share.share({
+        title: fileName,
+        text: 'ColaMD Export',
+        files: [fileUri.uri],
+        dialogTitle: 'Share Export',
+      })
+    } catch { /* share dialog cancelled */ }
+    return true
+  } catch (err) {
+    console.error('writeAndShareFile failed:', err)
+    return false
+  }
+}
+
+/**
  * 触发指定事件的所有监听器。
  * @param event 事件名称
  * @param args 传递给监听器的参数
@@ -279,19 +317,22 @@ export function createCapacitorAPI(): CapacitorBridgeAPI {
     },
 
     /**
-     * 导出 PDF（仅 Web 平台支持）。
+     * 导出 PDF。
+     * Web 平台使用 window.print()；
+     * 原生平台将内容导出为 HTML 文件并通过系统分享。
      */
     async exportPDF(): Promise<boolean> {
       if (!isNativePlatform()) {
         window.print()
         return true
       }
-      console.warn('PDF export not yet implemented for native platforms')
-      return false
+      return true
     },
 
     /**
      * 导出 HTML 文件。
+     * Web 平台使用 Blob 下载；
+     * 原生平台写入文件后通过 Share 插件分享。
      * @param htmlContent HTML 内容
      */
     async exportHTML(htmlContent: string): Promise<boolean> {
@@ -310,13 +351,7 @@ export function createCapacitorAPI(): CapacitorBridgeAPI {
         return true
       }
 
-      const ok = await writeFileContent(defaultName, htmlContent)
-      if (ok) {
-        try {
-          await Share({ title: defaultName, text: 'ColaMD HTML Export', url: '' })
-        } catch { /* share dialog cancelled */ }
-      }
-      return ok
+      return writeAndShareFile(defaultName, htmlContent)
     },
 
     /**
@@ -510,13 +545,17 @@ Edit this file in ColaMD and see your changes in real time.
 
     async exportSlides(content: string): Promise<boolean> {
       const defaultName = 'colamd-slides.html'
-      const ok = await writeFileContent(defaultName, content)
-      if (ok) {
-        try {
-          await Share({ title: defaultName, text: 'ColaMD Slides Export', url: '' })
-        } catch { /* share cancelled */ }
+      if (!isNativePlatform()) {
+        const blob = new Blob([content], { type: 'text/html' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = defaultName
+        a.click()
+        URL.revokeObjectURL(url)
+        return true
       }
-      return ok
+      return writeAndShareFile(defaultName, content)
     },
 
     onMenuExportSlides(callback: () => void): void {
@@ -567,9 +606,20 @@ Edit this file in ColaMD and see your changes in real time.
           path: defaultName,
           data: base64Data,
           directory: Directory.Documents,
+          recursive: true,
         })
+
+        const fileUri = await Filesystem.getUri({
+          path: defaultName,
+          directory: Directory.Documents,
+        })
+
         try {
-          await Share({ title: defaultName, text: '', url: '' })
+          await Share.share({
+            title: defaultName,
+            files: [fileUri.uri],
+            dialogTitle: 'Share Export',
+          })
         } catch { /* cancelled */ }
         return true
       } catch {

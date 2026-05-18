@@ -129,10 +129,21 @@ export async function createEditor(
     const oldView = ctx.get(editorViewCtx)
     const rootEl = ctx.get(rootCtx)
     const nodeViews = Object.fromEntries(fixed)
+
+    // Check if running on Android
+    const isAndroid = /android/i.test(navigator.userAgent)
+
     const newView = new EditorView(rootEl, {
       state: oldView.state,
       nodeViews,
       dispatchTransaction: oldView.props.dispatchTransaction!,
+      // Android-specific IME handling
+      handleDOMEvents: isAndroid ? {
+        compositionstart: () => true,
+        compositionupdate: () => true,
+        compositionend: () => true,
+        beforeinput: () => true,
+      } : undefined,
     })
     oldView.destroy()
     rootEl.appendChild(newView.dom)
@@ -144,11 +155,25 @@ export async function createEditor(
 
   // IME composition handling for mobile Chinese/Japanese/Korean input
   let isComposing = false
+  let compositionData = ''
+
   root.addEventListener('compositionstart', () => {
     isComposing = true
+    compositionData = ''
   })
-  root.addEventListener('compositionend', () => {
+
+  root.addEventListener('compositionupdate', (e: CompositionEvent) => {
+    compositionData = e.data || ''
+  })
+
+  root.addEventListener('compositionend', (e: CompositionEvent) => {
     isComposing = false
+    compositionData = ''
+    // Force a document update after composition ends
+    editorInstance?.action((ctx) => {
+      const view = ctx.get(editorViewCtx)
+      view.dom.dispatchEvent(new Event('input', { bubbles: true }))
+    })
   })
 
   // Prevent ProseMirror from handling beforeinput during IME composition
@@ -156,8 +181,16 @@ export async function createEditor(
     if (isComposing && e.inputType && (
       e.inputType.startsWith('insert') ||
       e.inputType.startsWith('delete') ||
-      e.inputType === 'insertCompositionText'
+      e.inputType === 'insertCompositionText' ||
+      e.inputType === 'insertText'
     )) {
+      e.stopImmediatePropagation()
+    }
+  }, true)
+
+  // Handle input events during IME composition
+  root.addEventListener('input', (e) => {
+    if (isComposing) {
       e.stopImmediatePropagation()
     }
   }, true)
