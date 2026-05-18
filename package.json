@@ -1,5 +1,5 @@
 {
-  "name": "colamd",
+  "name": "@bytechain.cn/colamd",
   "version": "1.5.0",
   "description": "The Agent Native Markdown Editor — Extended with Math & Mermaid Plugin System",
   "main": "dist/main/index.js",
