@@ -8,9 +8,63 @@
 </head>
 <body>
   <div id="titlebar">
+    <button id="menu-btn" title="Menu">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <rect y="3" width="20" height="2" rx="1" fill="currentColor"/>
+        <rect y="9" width="20" height="2" rx="1" fill="currentColor"/>
+        <rect y="15" width="20" height="2" rx="1" fill="currentColor"/>
+      </svg>
+    </button>
     <div id="agent-dot"></div>
     <button id="slides-btn" title="Open as Slides">&#9654;</button>
   </div>
+  <nav id="mobile-menu">
+    <div id="menu-overlay"></div>
+    <div id="menu-panel">
+      <div id="menu-header">
+        <span id="menu-title">ColaMD</span>
+        <button id="menu-close-btn" title="Close">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <rect x="4" y="3" width="2" height="20" rx="1" transform="rotate(45 4 3)" fill="currentColor"/>
+            <rect x="3" y="17" width="2" height="20" rx="1" transform="rotate(-45 3 17)" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+      <div id="menu-body">
+        <div class="menu-section">
+          <div class="menu-section-title">File</div>
+          <button class="menu-item" data-action="new">New</button>
+          <button class="menu-item" data-action="open">Open...</button>
+          <button class="menu-item" data-action="save">Save</button>
+          <button class="menu-item" data-action="save-as">Save As...</button>
+        </div>
+        <div class="menu-section">
+          <div class="menu-section-title">Export</div>
+          <button class="menu-item" data-action="export-pdf">Export PDF</button>
+          <button class="menu-item" data-action="export-html">Export HTML</button>
+          <button class="menu-item" data-action="export-slides">Export Slides</button>
+        </div>
+        <div class="menu-section">
+          <div class="menu-section-title">Slides</div>
+          <button class="menu-item" data-action="new-slides">New Slides</button>
+          <button class="menu-item" data-action="open-as-slides">Open as Slides</button>
+        </div>
+        <div class="menu-section">
+          <div class="menu-section-title">Theme</div>
+          <div id="menu-theme-list"></div>
+          <button class="menu-item" data-action="import-theme">Import Theme...</button>
+        </div>
+        <div class="menu-section" id="menu-plugins-section" style="display:none">
+          <div class="menu-section-title">Plugins</div>
+          <div id="menu-plugin-list"></div>
+        </div>
+        <div class="menu-section">
+          <div class="menu-section-title">About</div>
+          <button class="menu-item" data-action="about">About ColaMD</button>
+        </div>
+      </div>
+    </div>
+  </nav>
   <div id="editor"></div>
   <textarea id="source-editor" spellcheck="false"></textarea>
   <script type="module" src="./main.ts"></script>

@@ -1,6 +1,6 @@
 {
   "name": "@bytechain.cn/colamd",
-  "version": "1.5.0",
+  "version": "1.5.1-beta.0",
   "description": "The Agent Native Markdown Editor — Extended with Math & Mermaid Plugin System",
   "main": "dist/main/index.js",
   "author": {
@@ -20,9 +20,27 @@
     "dist": "electron-vite build && electron-builder",
     "dist:mac": "electron-vite build && electron-builder --mac",
     "dist:win": "electron-vite build && electron-builder --win",
-    "dist:linux": "electron-vite build && electron-builder --linux"
+    "dist:linux": "electron-vite build && electron-builder --linux",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "cap:open:ios": "npx cap open ios",
+    "cap:run:android": "npm run build && npx cap sync android && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home npx cap run android",
+    "cap:run:ios": "npm run build && npx cap sync ios && npx cap run ios",
+    "cap:build:android": "npm run build && npx cap sync android && cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ./gradlew assembleDebug",
+    "cap:build:android:release": "npm run build && npx cap sync android && cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ./gradlew assembleRelease",
+    "cap:build:ios": "npm run build && npx cap sync ios"
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/filesystem": "^6.0.4",
+    "@capacitor/haptics": "^6.0.3",
+    "@capacitor/ios": "^6.2.1",
+    "@capacitor/share": "^6.0.4",
+    "@capacitor/status-bar": "^6.0.3",
+    "@capawesome/capacitor-file-picker": "^6.2.0",
     "@milkdown/kit": "^7.19.2",
     "katex": "^0.16.46",
     "mermaid": "^11.15.0",

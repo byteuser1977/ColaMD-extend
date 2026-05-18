@@ -142,6 +142,26 @@ export async function createEditor(
   root.addEventListener('copy', enhanceClipboard)
   root.addEventListener('cut', enhanceClipboard)
 
+  // IME composition handling for mobile Chinese/Japanese/Korean input
+  let isComposing = false
+  root.addEventListener('compositionstart', () => {
+    isComposing = true
+  })
+  root.addEventListener('compositionend', () => {
+    isComposing = false
+  })
+
+  // Prevent ProseMirror from handling beforeinput during IME composition
+  root.addEventListener('beforeinput', (e) => {
+    if (isComposing && e.inputType && (
+      e.inputType.startsWith('insert') ||
+      e.inputType.startsWith('delete') ||
+      e.inputType === 'insertCompositionText'
+    )) {
+      e.stopImmediatePropagation()
+    }
+  }, true)
+
   root.addEventListener('click', (e) => {
     if (!(e.metaKey || e.ctrlKey)) return
     const link = (e.target as HTMLElement).closest('a')
@@ -149,7 +169,8 @@ export async function createEditor(
     const href = link.getAttribute('href')
     if (href) {
       e.preventDefault()
-      window.electronAPI.openExternal(href)
+      window.electronAPI?.openExternal(href)
+      window.capacitorAPI?.openExternal(href)
     }
   })
 

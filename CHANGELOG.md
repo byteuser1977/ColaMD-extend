@@ -5,6 +5,87 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-05-18
+
+### Added
+
+#### Capacitor 6 — Mobile Platform Support (Cross-Platform Extension)
+- **Capacitor 6 integration** for building native Android (.apk) and iOS (.ipa) apps
+- **Platform bridge layer** ([`capacitor-api.ts`](src/renderer/capacitor-api.ts)): Full replacement of Electron IPC with Capacitor native plugins
+  - Filesystem plugin for file read/write on mobile devices
+  - Share plugin for content sharing and export
+  - App plugin for lifecycle management and deep linking
+  - Status bar plugin for mobile UI integration
+  - Haptics plugin for tactile feedback support
+- **Auto-detection runtime**: `window.electronAPI || createCapacitorAPI()` — seamless switching between desktop (Electron) and mobile (Capacitor) environments
+- **Mobile responsive UI** ([`mobile.css`](src/renderer/mobile.css)):
+  - Touch-optimized interactions with `-webkit-tap-highlight-color: transparent`
+  - Safe area insets support (`env(safe-area-inset-*)`) for notched devices
+  - Responsive breakpoints: 768px (tablet), 480px (phone)
+  - Optimized font sizes, padding, and scroll behavior for mobile screens
+  - Context menu adaptation for touch interfaces
+
+#### Android Platform Configuration
+- Android project initialized at [`android/`](android/) with Gradle build system
+- **File association**: Registered `.md` / `.markdown` file handlers in `AndroidManifest.xml`
+- **Storage permissions**: `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, `MANAGE_EXTERNAL_STORAGE`
+- **Network security config**: Cleartext traffic allowed for local development
+- **Soft input mode**: `adjustResize` for proper keyboard handling in editor
+- **5 Capacitor plugins auto-detected**: @capacitor/app, filesystem, haptics, share, status-bar
+
+#### iOS Platform Configuration
+- Xcode project initialized at [`ios/`](ios/) with CocoaPods dependency management
+- Requires Xcode + CocoaPods for full build (pod install)
+- Web assets synced to `ios/App/App/public/`
+
+#### Build Scripts & Workflow
+- New npm scripts for Capacitor development workflow:
+
+| Script | Purpose |
+|--------|---------|
+| `npm run cap:sync` | Sync web assets to native platforms |
+| `npm run cap:open:android` | Open in Android Studio |
+| `npm run cap:open:ios` | Open in Xcode |
+| `npm run cap:run:android` | Build → Sync → Run on Android device/emulator |
+| `npm run cap:run:ios` | Build → Sync → Run on iOS simulator |
+| `npm run cap:build:android` | Build debug APK |
+| `npm run cap:build:ios` | Build iOS project |
+
+#### Dual-Platform Architecture
+```
+┌─────────────────────────────────────┐
+│         src/renderer/main.ts         │
+│   api = electronAPI || capacitorAPI  │ ← Auto-detect platform
+├──────────────┬──────────────────────┤
+│  Electron    │     Capacitor 6      │
+│  (Desktop)   │     (Mobile)          │
+│              │                      │
+│ IPC comm     │ Filesystem Plugin    │
+│ dialog       │ Share Plugin         │
+│ shell.open   │ App Plugin           │
+│ fs module    │ localStorage storage │
+└──────────────┴──────────────────────┘
+```
+
+### Changed
+- Updated [`editor.ts`](src/renderer/editor/editor.ts): Added fallback `window.capacitorAPI?.openExternal()` for link handling on mobile
+- Updated [`env.d.ts`](src/renderer/env.d.ts): Extended type declarations to include `window.capacitorAPI`
+- Package version bumped to **1.5.1**
+
+### Dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| @capacitor/core | ^6.2.1 | Capacitor core runtime |
+| @capacitor/cli | ^6.2.1 | Capacitor CLI tools |
+| @capacitor/android | ^6.2.1 | Android native bridge |
+| @capacitor/ios | ^6.2.1 | iOS native bridge |
+| @capacitor/filesystem | ^6.0.4 | Mobile file I/O |
+| @capacitor/share | ^6.0.4 | Native sharing |
+| @capacitor/app | ^6.0.3 | App lifecycle |
+| @capacitor/haptics | ^6.0.3 | Tactile feedback |
+| @capacitor/status-bar | ^6.0.3 | Status bar control |
+
 ## [1.5.0] - 2026-05-18
 
 ### Added
@@ -89,5 +170,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.5.1]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1
 [1.5.0]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.0
 [1.4.0]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.4.0

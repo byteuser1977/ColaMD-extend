@@ -11,7 +11,7 @@ Real-time collaboration between humans and AI agents — see your agent's change
 
 **This Extended Edition**: [git@github.com:byteuser1977/ColaMD-extend.git](https://github.com/byteuser1977/ColaMD-extend)
 
-[Features](#features) | [Renderer Plugins](#renderer-plugin-system) | [Plug Menu](#plug-menu--plugin-render-control) | [Quick Start](#quick-start) | [Themes](#theme-system) | [Architecture](#technical-architecture) | [中文](README_CN.md)
+[Features](#features) | [Renderer Plugins](#renderer-plugin-system) | [Plug Menu](#plug-menu--plugin-render-control) | [Quick Start](#quick-start) | [Mobile Build](#mobile-build--capacitor-6) | [Themes](#theme-system) | [Architecture](#technical-architecture) | [中文](README_CN.md)
 
 ---
 
@@ -38,6 +38,7 @@ This repository extends **[marswaveai/ColaMD](https://github.com/marswaveai/cola
 | Math support | ❌ | ✅ KaTeX inline/block equations, live editing, PNG export |
 | Diagram support | ❌ | ✅ Mermaid full-type diagrams (17+ types), multi-theme adaptation, PNG export |
 | Dual-mode toggle | N/A | ✅ Each plugin supports **Rendered / Source Edit mode** one-click toggle |
+| Mobile platform | ❌ Desktop only | ✅ **Android (.apk) + iOS (.ipa)** via Capacitor 6 |
 
 > All original features are fully preserved: Agent real-time sync, activity indicator, WYSIWYG editor, slide system, themes & export, etc.
 
@@ -374,6 +375,118 @@ npm run dist:linux    # Linux (.AppImage / .deb)
 | macOS | `.dmg` |
 | Windows | `.exe` |
 | Linux | `.AppImage` / `.deb` |
+| Android | `.apk` (via Capacitor) |
+| iOS | `.ipa` (via Capacitor, requires Xcode) |
+
+---
+
+## Mobile Build — Capacitor 6
+
+> Starting from v1.5.1, ColaMD supports building native mobile apps via **[Capacitor 6](https://capacitorjs.com/)** — the cross-platform runtime by Ionic. The same codebase that powers the Electron desktop app now runs on Android and iOS devices.
+
+### Architecture: Dual-Platform Bridge
+
+ColaMD uses an **auto-detection bridge layer** that seamlessly switches between Electron (desktop) and Capacitor (mobile) APIs at runtime:
+
+```
+┌─────────────────────────────────────┐
+│         src/renderer/main.ts         │
+│   api = electronAPI || capacitorAPI  │ ← Auto-detect platform
+├──────────────┬──────────────────────┤
+│  Electron    │     Capacitor 6      │
+│  (Desktop)   │     (Mobile)          │
+│              │                      │
+│ IPC comm     │ Filesystem Plugin    │
+│ dialog       │ Share Plugin         │
+│ shell.open   │ App Plugin           │
+│ fs module    │ localStorage storage │
+└──────────────┴──────────────────────┘
+```
+
+**Key files**:
+- [`capacitor-api.ts`](src/renderer/capacitor-api.ts) — Full Capacitor bridge implementing the same API surface as `electronAPI`
+- [`capacitor.config.ts`](capacitor.config.ts) — Capacitor configuration (appId, webDir, plugins)
+- [`mobile.css`](src/renderer/mobile.css) — Touch-optimized responsive styles
+
+### Prerequisites for Mobile Build
+
+| Platform | Requirements |
+|----------|-------------|
+| **Android** | Android Studio + SDK (API 34+) + **Java 21** (`brew install openjdk@21`) |
+| **iOS** | Xcode 15+ + CocoaPods + macOS |
+
+### Quick Start — Android
+
+```bash
+# 1. Install dependencies (Capacitor packages included)
+npm install
+
+# 2. Build web assets
+npm run build
+
+# 3. Sync to Android platform
+npx cap sync android
+
+# 4. Open in Android Studio
+npx cap open android
+
+# 5. Or build APK directly
+npm run cap:build:android
+# Output: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Quick Start — iOS
+
+```bash
+# 1. Sync to iOS platform
+npx cap sync ios
+
+# 2. Open in Xcode
+npx cap open ios
+
+# 3. Build in Xcode (⌘R) or use:
+npm run cap:build:ios
+```
+
+### Available NPM Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run cap:sync` | Sync web assets to all platforms |
+| `npm run cap:open:android` | Open Android project in Android Studio |
+| `npm run cap:open:ios` | Open iOS project in Xcode |
+| `npm run cap:run:android` | Full pipeline: build → sync → run on device/emulator |
+| `npm run cap:run:ios` | Full pipeline: build → sync → run on simulator |
+| `npm run cap:build:android` | Build debug APK |
+| `npm run cap:build:ios` | Prepare iOS project for Xcode build |
+
+### Mobile Features & Limitations
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Markdown editing ✏️ | ✅ Fully supported | Milkdown editor runs in WebView |
+| Math rendering (KaTeX) 📐 | ✅ Fully supported | Same as desktop |
+| Mermaid diagrams 🔀 | ✅ Fully supported | SVG renders in WebView |
+| Plugin system | ✅ Fully supported | Toggle via UI, state in localStorage |
+| Themes | ✅ Fully supported | All themes work on mobile |
+| File open/save | ✅ Supported | Uses Capacitor Filesystem plugin |
+| Export HTML/PDF | ⚠️ Partial | HTML export works; PDF uses `window.print()` |
+| Agent file watch | ⚠️ Polling mode | Uses 2s interval instead of `fs.watch` |
+| Slides preview | ⚠️ Limited | Opens new browser window on desktop; basic on mobile |
+| External links | ✅ Supported | Opens in system browser via `_system` target |
+
+### Responsive Design
+
+The mobile CSS ([`mobile.css`](src/renderer/mobile.css)) provides:
+
+- **Touch optimization**: Disabled tap highlight, proper touch-action
+- **Safe area support**: Automatic padding for notched devices (iPhone X+, modern Android)
+- **Responsive breakpoints**: 
+  - ≤768px: Tablet layout adjustments
+  - ≤480px: Phone layout with smaller fonts
+- **Editor adaptation**: Fixed-position editor filling viewport below header
+- **Scroll behavior**: `-webkit-overflow-scrolling: touch` for smooth scrolling
+- **Context menu**: Touch-friendly with larger tap targets (12px padding, 15px font)
 
 ---
 
@@ -403,23 +516,39 @@ Custom theme support: Place CSS files in `~/.colamd/themes/` directory, then imp
 ## Technical Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│                  Electron Shell               │
-│  ┌──────────┐  ┌───────────┐  ┌───────────┐  │
-│  │ Main     │  │ Preload   │  │ Renderer  │  │
-│  │ Process  │──│ IPC Bridge│──│ Process   │  │
-│  └──────────┘  └───────────┘  └─────┬─────┘  │
-│                                    │         │
-│                         ┌──────────▼────────┐ │
-│                         │    Milkdown Editor │ │
-│                         │  (ProseMirror)      │ │
-│                         │  ┌──────────────┐  │ │
-│                         │  │ Plugin System │  │ │
-│                         │  │ ├─ 📐 Math    │  │ │
-│                         │  │ └─ 🔀 Mermaid │  │ │
-│                         │  └──────────────┘  │ │
-│                         └───────────────────┘ │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    ColaMD — Dual Platform                     │
+│                                                              │
+│  ┌──────────────────────┐   ┌────────────────────────────┐  │
+│  │    Desktop (Electron) │   │     Mobile (Capacitor 6)    │  │
+│  │                       │   │                            │  │
+│  │  ┌─────────┐ ┌──────┐ │   │  ┌──────────────────────┐  │  │
+│  │  │ Main    │ │Preload│ │   │  │  Capacitor Runtime   │  │  │
+│  │  │Process  │ │Bridge │ │   │  │  (WebView / WKWebView)│  │  │
+│  │  └────┬────┘ └──┬───┘ │   │  └──────────┬───────────┘  │  │
+│  │       │   IPC   │     │   │             │ Plugins       │  │
+│  │       └────┬────┘     │   │             ├─ Filesystem    │  │
+│  │            ▼          │   │             ├─ Share         │  │
+│  │  ┌─────────────────┐  │   │             ├─ App           │  │
+│  │  │   Renderer      │  │   │             ├─ StatusBar     │  │
+│  │  │   Process       │◄─┼───┼─────────────┤               │  │
+│  │  └────────┬────────┘  │   │            └─ Haptics       │  │
+│  │           ▼           │   └──────────────┬───────────────┘  │
+│  │  ┌──────────────────┐ │                  │                  │
+│  │  │  Milkdown Editor │◄┘                  │                  │
+│  │  │  (ProseMirror)   │                    │                  │
+│  │  │  ┌────────────┐  │                    │                  │
+│  │  │  │Plugin Syst.│  │                    │                  │
+│  │  │  │├─ 📐 Math  │  │                    │                  │
+│  │  │  │└─ 🔀Mermaid│  │                    │                  │
+│  │  │  └────────────┘  │                    │                  │
+│  │  └──────────────────┘                    │                  │
+│  └──────────────────────┘                    │                  │
+│                   ┌──────────────────────────┘                  │
+│                   ▼                                             │
+│          Auto-detection:                                         │
+│          api = electronAPI || capacitorAPI                       │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Tech Stack
@@ -427,6 +556,7 @@ Custom theme support: Place CSS files in `~/.colamd/themes/` directory, then imp
 | Technology | Purpose | Version | Documentation |
 |------------|---------|---------|---------------|
 | [Electron](https://www.electronjs.org/) | Cross-platform desktop framework | ^34.0.0 | [📖 Docs](https://www.electronjs.org/docs/latest/) |
+| [Capacitor](https://capacitorjs.com/) | Cross-platform mobile runtime (Android/iOS) | ^6.2.1 | [📖 Docs](https://capacitorjs.com/docs/) |
 | [Milkdown](https://milkdown.dev/) | WYSIWYG Markdown editor core (ProseMirror-based) | ^7.19.2 | [📖 Docs](https://milkdown.dev/docs) |
 | [ProseMirror](https://prosemirror.net/) | Underlying rich text editing engine | — | [📖 Docs](https://prosemirror.net/docs/) |
 | [KaTeX](https://katex.org/) | Math equation rendering engine | ^0.16.46 | [📖 Docs](https://katex.org/docs/) |
@@ -435,7 +565,7 @@ Custom theme support: Place CSS files in `~/.colamd/themes/` directory, then imp
 | [electron-vite](https://electron-vite.org/) | Electron build toolchain | ^3.0.0 | [📖 Docs](https://electron-vite.org/guide/) |
 | [Vite](https://vitejs.dev/) | Underlying build engine | ^6.0.0 | [📖 Docs](https://vitejs.dev/guide/) |
 
-> 💡 **Dev Tip**: The official documentation of each library is the best reference for developing new plugins and custom features. In particular, the [KaTeX supported syntax](https://katex.org/docs/supported.html) and [Mermaid diagram syntax](https://mermaid.js.org/intro/syntax-reference.html) are essential for extending plugin capabilities.
+> 💡 **Dev Tip**: The official documentation of each library is the best reference for developing new plugins and custom features. In particular, the [KaTeX supported syntax](https://katex.org/docs/supported.html), [Mermaid diagram syntax](https://mermaid.js.org/intro/syntax-reference.html), and [Capacitor plugins API](https://capacitorjs.com/docs/apis) are essential for extending capabilities across platforms.
 
 ### Project Structure
 
@@ -444,12 +574,15 @@ src/
 ├── main/
 │   └── index.ts              # Main process: window management, file I/O, menus, file watching
 ├── preload/
-│   └── index.ts              # Secure IPC bridge layer
+│   └── index.ts              # Secure IPC bridge layer (Electron)
 └── renderer/
     ├── index.html            # Entry HTML
-    ├── main.ts               # Renderer process entry, connects editor and IPC
+    ├── main.ts               # Renderer entry: auto-detects Electron or Capacitor
+    ├── capacitor-api.ts      # ★ Capacitor bridge layer (replaces Electron APIs on mobile)
+    ├── mobile.css            # ★ Touch-optimized responsive styles
     ├── editor/
     │   ├── editor.ts         # Editor orchestration core (plugin integration)
+    │   └── plugins/          # ★ Renderer plugin system
     │   ├── html-view.ts      # HTML inline node view
     │   └── plugins/          # ★ Renderer plugin system
     │       ├── index.ts      # Plugin manager (register/query/toggle)

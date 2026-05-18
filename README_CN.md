@@ -11,7 +11,7 @@
 
 **本扩展版仓库**: [git@github.com:byteuser1977/ColaMD-extend.git](https://github.com/byteuser1977/ColaMD-extend)
 
-[功能特性](#功能特性) | [显示插件](#显示插件系统) | [Plug 菜单](#plug-菜单--插件渲染控制) | [快速开始](#快速开始) | [主题系统](#主题系统) | [技术架构](#技术架构) | [English](README.md)
+[功能特性](#功能特性) | [显示插件](#显示插件系统) | [Plug 菜单](#plug-菜单--插件渲染控制) | [快速开始](#快速开始) | [移动端构建](#移动端构建--capacitor-6) | [主题系统](#主题系统) | [技术架构](#技术架构) | [English](README.md)
 
 ***
 
@@ -38,6 +38,7 @@ AI Agent 正在改变我们的工作方式。它们编辑文件、生成文档�
 | 公式支持  | ❌                               | ✅ KaTeX 行内/块级公式，实时编辑，PNG 导出         |
 | 图表支持  | ❌                               | ✅ Mermaid 全类型图表（17+ 种），多主题适配，PNG 导出 |
 | 双模式切换 | N/A                             | ✅ 每个插件均支持 **渲染模式 / 源码编辑模式** 一键切换    |
+| 移动端平台 | ❌ 仅桌面端                        | ✅ **Android (.apk) + iOS (.ipa)** 通过 Capacitor 6 实现  |
 
 > 原版所有功能完整保留：Agent 实时同步、活动指示器、所见即所得编辑器、幻灯片系统、主题与导出等。
 
@@ -378,6 +379,118 @@ npm run dist:linux    # Linux (.AppImage / .deb)
 | macOS | `.dmg` |
 | Windows | `.exe` |
 | Linux | `.AppImage` / `.deb` |
+| Android | `.apk`（通过 Capacitor 构建） |
+| iOS | `.ipa`（通过 Capacitor 构建，需 Xcode） |
+
+---
+
+## 移动端构建 — Capacitor 6
+
+> 从 v1.5.1 起，ColaMD 支持通过 **[Capacitor 6](https://capacitorjs.com/)** 构建原生移动应用 — Ionic 出品的跨平台运行时。驱动 Electron 桌面端的同一套代码，现在也能运行在 Android 和 iOS 设备上。
+
+### 架构：双平台桥接层
+
+ColaMD 采用 **自动检测桥接层**，在运行时无缝切换 Electron（桌面端）和 Capacitor（移动端）API：
+
+```
+┌─────────────────────────────────────┐
+│         src/renderer/main.ts         │
+│   api = electronAPI || capacitorAPI  │ ← 自动检测运行环境
+├──────────────┬──────────────────────┤
+│  Electron    │     Capacitor 6      │
+│  (桌面端)     │     (移动端)          │
+│              │                      │
+│ IPC 通信      │ Filesystem Plugin    │
+│ dialog       │ Share Plugin         │
+│ shell.open   │ App Plugin           │
+│ fs 模块      │ localStorage 存储    │
+└──────────────┴──────────────────────┘
+```
+
+**核心文件**：
+- [`capacitor-api.ts`](src/renderer/capacitor-api.ts) — 完整的 Capacitor 桥接层，实现与 `electronAPI` 相同的 API 接口
+- [`capacitor.config.ts`](capacitor.config.ts) — Capacitor 配置文件（appId、webDir、插件设置）
+- [`mobile.css`](src/renderer/mobile.css) — 触控优化的响应式样式
+
+### 移动端构建环境要求
+
+| 平台 | 环境要求 |
+|------|----------|
+| **Android** | Android Studio + SDK (API 33+) + Java 17 |
+| **iOS** | Xcode 15+ + CocoaPods + macOS |
+
+### 快速开始 — Android
+
+```bash
+# 1. 安装依赖（包含 Capacitor 相关包）
+npm install
+
+# 2. 构建前端 Web 资源
+npm run build
+
+# 3. 同步到 Android 平台
+npx cap sync android
+
+# 4. 用 Android Studio 打开项目
+npx cap open android
+
+# 5. 或直接构建 APK
+npm run cap:build:android
+# 输出路径：android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### 快速开始 — iOS
+
+```bash
+# 1. 同步到 iOS 平台
+npx cap sync ios
+
+# 2. 用 Xcode 打开项目
+npx cap open ios
+
+# 3. 在 Xcode 中构建（⌘R）或使用：
+npm run cap:build:ios
+```
+
+### 可用 NPM 脚本
+
+| 脚本 | 说明 |
+|------|------|
+| `npm run cap:sync` | 同步 Web 资源到所有原生平台 |
+| `npm run cap:open:android` | 用 Android Studio 打开 Android 项目 |
+| `npm run cap:open:ios` | 用 Xcode 打开 iOS 项目 |
+| `npm run cap:run:android` | 完整流程：构建 → 同步 → 在设备/模拟器上运行 |
+| `npm run cap:run:ios` | 完整流程：构建 → 同步 → 在模拟器上运行 |
+| `npm run cap:build:android` | 构建 Debug APK |
+| `npm run cap:build:ios` | 准备 iOS 项目供 Xcode 构建 |
+
+### 移动端功能支持情况
+
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| Markdown 编辑 ✏️ | ✅ 完整支持 | Milkdown 编辑器在 WebView 中正常运行 |
+| 数学公式渲染 (KaTeX) 📐 | ✅ 完整支持 | 与桌面端一致 |
+| Mermaid 图表渲染 🔀 | ✅ 完整支持 | SVG 在 WebView 中正常渲染 |
+| 插件系统 | ✅ 完整支持 | 通过 UI 切换，状态存储于 localStorage |
+| 主题系统 | ✅ 完整支持 | 所有主题在移动端均可正常工作 |
+| 文件打开/保存 | ✅ 支持 | 使用 Capacitor Filesystem 插件 |
+| 导出 HTML/PDF | ⚠️ 部分支持 | HTML 导出正常；PDF 使用 `window.print()` |
+| Agent 文件监听 | ⚠️ 轮询模式 | 使用 2 秒间隔轮询替代 `fs.watch` |
+| 幻灯片预览 | ⚠️ 受限 | 桌面端打开新浏览器窗口；移动端基础可用 |
+| 外部链接 | ✅ 支持 | 通过 `_system` target 在系统浏览器中打开 |
+
+### 响应式设计
+
+移动端 CSS ([`mobile.css`](src/renderer/mobile.css)) 提供：
+
+- **触控优化**：禁用点击高亮、正确的 touch-action 行为
+- **安全区域适配**：自动为刘海屏设备添加内边距（iPhone X+、现代 Android）
+- **响应式断点**：
+  - ≤768px：平板布局调整
+  - ≤480px：手机布局，更小的字号
+- **编辑器适配**：固定定位编辑器填充标题栏下方视口
+- **滚动行为**：`-webkit-overflow-scrolling: touch` 实现流畅滚动
+- **右键菜单**：触控友好的更大点击区域（12px 内边距、15px 字号）
 
 ---
 
@@ -407,23 +520,39 @@ ColaMD 内置 **4 个主题**，所有显示插件均会跟随主题自动适配
 ## 技术架构
 
 ```
-┌─────────────────────────────────────────────┐
-│                  Electron Shell               │
-│  ┌──────────┐  ┌───────────┐  ┌───────────┐  │
-│  │ Main     │  │ Preload   │  │ Renderer  │  │
-│  │ Process  │──│ IPC Bridge│──│ Process   │  │
-│  └──────────┘  └───────────┘  └─────┬─────┘  │
-│                                    │         │
-│                         ┌──────────▼────────┐ │
-│                         │    Milkdown Editor │ │
-│                         │  (ProseMirror)      │ │
-│                         │  ┌──────────────┐  │ │
-│                         │  │ Plugin System │  │ │
-│                         │  │ ├─ 📐 Math    │  │ │
-│                         │  │ └─ 🔀 Mermaid │  │ │
-│                         │  └──────────────┘  │ │
-│                         └───────────────────┘ │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    ColaMD — 双平台架构                        │
+│                                                              │
+│  ┌──────────────────────┐   ┌────────────────────────────┐  │
+│  │    桌面端 (Electron)  │   │     移动端 (Capacitor 6)    │  │
+│  │                       │   │                            │  │
+│  │  ┌─────────┐ ┌──────┐ │   │  ┌──────────────────────┐  │  │
+│  │  │主进程   │ │Preload│ │   │  │  Capacitor 运行时    │  │  │
+│  │  │        │ │Bridge │ │   │  │ (WebView / WKWebView) │  │  │
+│  │  └────┬────┘ └──┬───┘ │   │  └──────────┬───────────┘  │  │
+│  │       │  IPC   │     │   │             │ 原生插件       │  │
+│  │       └────┬────┘     │   │             ├─ Filesystem    │  │
+│  │            ▼          │   │             ├─ Share         │  │
+│  │  ┌─────────────────┐  │   │             ├─ App           │  │
+│  │  │   渲染进程       │  │   │             ├─ StatusBar     │  │
+│  │  │                │◄─┼───┼─────────────┤               │  │
+│  │  └────────┬────────┘  │   │            └─ Haptics       │  │
+│  │           ▼           │   └──────────────┬───────────────┘  │
+│  │  ┌──────────────────┐ │                  │                  │
+│  │  │  Milkdown 编辑器 │◄┘                  │                  │
+│  │  │  (ProseMirror)   │                    │                  │
+│  │  │  ┌────────────┐  │                    │                  │
+│  │  │  │插件系统    │  │                    │                  │
+│  │  │  │├─ 📐 Math  │  │                    │                  │
+│  │  │  │└─ 🔀Mermaid│  │                    │                  │
+│  │  │  └────────────┘  │                    │                  │
+│  │  └──────────────────┘                    │                  │
+│  └──────────────────────┘                    │                  │
+│                   ┌──────────────────────────┘                  │
+│                   ▼                                             │
+│          自动检测：                                              │
+│          api = electronAPI || capacitorAPI                      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### 技术栈
@@ -431,6 +560,7 @@ ColaMD 内置 **4 个主题**，所有显示插件均会跟随主题自动适配
 | 技术 | 用途 | 版本 | 官方文档 |
 |------|------|------|----------|
 | [Electron](https://www.electronjs.org/) | 跨平台桌面应用框架 | ^34.0.0 | [📖 文档](https://www.electronjs.org/docs/latest/) |
+| [Capacitor](https://capacitorjs.com/) | 跨平台移动端运行时（Android/iOS） | ^6.2.1 | [📖 文档](https://capacitorjs.com/docs/) |
 | [Milkdown](https://milkdown.dev/) | WYSIWYG Markdown 编辑器内核（基于 ProseMirror） | ^7.19.2 | [📖 文档](https://milkdown.dev/docs) |
 | [ProseMirror](https://prosemirror.net/) | 底层富文本编辑引擎 | — | [📖 文档](https://prosemirror.net/docs/) |
 | [KaTeX](https://katex.org/) | 数学公式渲染引擎 | ^0.16.46 | [📖 文档](https://katex.org/docs/) |
@@ -439,7 +569,7 @@ ColaMD 内置 **4 个主题**，所有显示插件均会跟随主题自动适配
 | [electron-vite](https://electron-vite.org/) | Electron 构建工具链 | ^3.0.0 | [📖 文档](https://electron-vite.org/guide/) |
 | [Vite](https://vitejs.dev/) | 底层构建引擎 | ^6.0.0 | [📖 文档](https://vitejs.dev/guide/) |
 
-> 💡 **开发提示**：各库的官方文档是开发新插件和自定义功能的最佳参考。特别是 [KaTeX 支持的语法](https://katex.org/docs/supported.html) 和 [Mermaid 图表语法](https://mermaid.js.org/intro/syntax-reference.html) 对扩展插件功能至关重要。
+> 💡 **开发提示**：各库的官方文档是开发新插件和自定义功能的最佳参考。特别是 [KaTeX 支持的语法](https://katex.org/docs/supported.html)、[Mermaid 图表语法](https://mermaid.js.org/intro/syntax-reference.html) 和 [Capacitor 插件 API](https://capacitorjs.com/docs/apis) 对跨平台扩展功能至关重要。
 
 ### 项目结构
 
@@ -448,12 +578,15 @@ src/
 ├── main/
 │   └── index.ts              # 主进程：窗口管理、文件 I/O、菜单、文件监听
 ├── preload/
-│   └── index.ts              # 安全 IPC 桥接层
+│   └── index.ts              # 安全 IPC 桥接层（Electron）
 └── renderer/
  ├── index.html            # 入口 HTML
- ├── main.ts               # 渲染进程入口，连接编辑器和 IPC
+ ├── main.ts               # 渲染进程入口，自动检测 Electron 或 Capacitor
+ ├── capacitor-api.ts      # ★ Capacitor 桥接层（移动端替代 Electron API）
+ ├── mobile.css            # ★ 触控优化的响应式样式
  ├── editor/
  │   ├── editor.ts         # 编辑器编排核心（插件集成）
+ │   └── plugins/          # ★ 显示插件系统
  │   ├── html-view.ts      # HTML 内联节点视图
  │   └── plugins/          # ★ 显示插件系统
  │       ├── index.ts      # 插件管理器（注册/查询/启停）
