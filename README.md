@@ -407,6 +407,20 @@ ColaMD uses an **auto-detection bridge layer** that seamlessly switches between 
 - [`capacitor-api.ts`](src/renderer/capacitor-api.ts) — Full Capacitor bridge implementing the same API surface as `electronAPI`
 - [`capacitor.config.ts`](capacitor.config.ts) — Capacitor configuration (appId, webDir, plugins)
 - [`mobile.css`](src/renderer/mobile.css) — Touch-optimized responsive styles
+- [`MainActivity.java`](android/app/src/main/java/cn/bytechain/colamd/MainActivity.java) — Android WebView IME support
+
+### Technology Stack for Mobile
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Runtime** | Capacitor 6.x | Cross-platform native bridge |
+| **WebView Engine** | Android WebView / iOS WKWebView | Renders web content |
+| **File Access** | `@capacitor/filesystem` | Read/write local files |
+| **File Picker** | `@capawesome/capacitor-file-picker` | Native file selection dialog |
+| **Sharing** | `@capacitor/share` | System share sheet integration |
+| **App Lifecycle** | `@capacitor/app` | Handle app events (pause, resume) |
+| **Status Bar** | `@capacitor/status-bar` | Status bar styling |
+| **Haptics** | `@capacitor/haptics` | Haptic feedback |
 
 ### Prerequisites for Mobile Build
 
@@ -448,17 +462,77 @@ npx cap open ios
 npm run cap:build:ios
 ```
 
-### Available NPM Scripts
+### Build Commands
 
-| Script | Description |
-|--------|-------------|
-| `npm run cap:sync` | Sync web assets to all platforms |
-| `npm run cap:open:android` | Open Android project in Android Studio |
-| `npm run cap:open:ios` | Open iOS project in Xcode |
-| `npm run cap:run:android` | Full pipeline: build → sync → run on device/emulator |
-| `npm run cap:run:ios` | Full pipeline: build → sync → run on simulator |
-| `npm run cap:build:android` | Build debug APK |
-| `npm run cap:build:ios` | Prepare iOS project for Xcode build |
+| Command | Description | Output |
+|---------|-------------|--------|
+| `npm run cap:sync` | Sync web assets to all platforms | Updated `android/` and `ios/` |
+| `npm run cap:open:android` | Open Android project in Android Studio | — |
+| `npm run cap:open:ios` | Open iOS project in Xcode | — |
+| `npm run cap:run:android` | Build → Sync → Run on device/emulator | Live app on device |
+| `npm run cap:run:ios` | Build → Sync → Run on simulator | Live app in simulator |
+| `npm run cap:build:android` | Build **Debug APK** | `android/app/build/outputs/apk/debug/app-debug.apk` |
+| `npm run cap:build:android:release` | Build **Release APK** (signed) | `android/app/build/outputs/apk/release/app-release.apk` |
+| `npm run cap:build:ios` | Prepare iOS project for Xcode build | — |
+
+### Release Build — Android
+
+For production release builds, the project includes a signing configuration:
+
+```bash
+# Build signed release APK
+npm run cap:build:android:release
+
+# Output location
+android/app/build/outputs/apk/release/app-release.apk
+```
+
+The release keystore is located at `android/app/release.keystore` with credentials stored in `build.gradle`.
+
+### Release Build — iOS
+
+1. Open the project in Xcode:
+   ```bash
+   npx cap open ios
+   ```
+
+2. In Xcode:
+   - Select **Product → Archive**
+   - Once archived, click **Distribute App**
+   - Choose distribution method (App Store Connect, Ad Hoc, etc.)
+
+3. For App Store submission:
+   - Configure signing certificates in Xcode
+   - Upload to App Store Connect via Xcode or Transporter
+
+### Chinese IME Support (Android)
+
+ColaMD includes special handling for Chinese/Japanese/Korean input methods on Android WebView:
+
+**Implementation** ([`MainActivity.java`](android/app/src/main/java/cn/bytechain/colamd/MainActivity.java)):
+- WebView focus optimization for IME connection
+- Soft keyboard auto-show on focus
+- Touch mode focusability enabled
+
+**Known Limitations**:
+- ProseMirror/Milkdown has known IME composition issues on Android WebView
+- Some input methods may require tapping the editor area to activate
+- If input seems stuck, try tapping elsewhere then back to the editor
+
+### File Picker Integration
+
+Mobile platforms use `@capawesome/capacitor-file-picker` for native file selection:
+
+```typescript
+// Example usage (internal)
+const result = await FilePicker.pickFiles({
+  types: ['text/markdown', 'text/plain'],
+  multiple: false,
+  readData: true,
+})
+```
+
+**Supported file types**: `.md`, `.markdown`, `.txt`, `.css` (for themes)
 
 ### Mobile Features & Limitations
 
@@ -469,7 +543,8 @@ npm run cap:build:ios
 | Mermaid diagrams 🔀 | ✅ Fully supported | SVG renders in WebView |
 | Plugin system | ✅ Fully supported | Toggle via UI, state in localStorage |
 | Themes | ✅ Fully supported | All themes work on mobile |
-| File open/save | ✅ Supported | Uses Capacitor Filesystem plugin |
+| File open/save | ✅ Supported | Native file picker via FilePicker plugin |
+| Chinese/Japanese/Korean input | ⚠️ Partial | IME support implemented, may have edge cases |
 | Export HTML/PDF | ⚠️ Partial | HTML export works; PDF uses `window.print()` |
 | Agent file watch | ⚠️ Polling mode | Uses 2s interval instead of `fs.watch` |
 | Slides preview | ⚠️ Limited | Opens new browser window on desktop; basic on mobile |
@@ -487,6 +562,31 @@ The mobile CSS ([`mobile.css`](src/renderer/mobile.css)) provides:
 - **Editor adaptation**: Fixed-position editor filling viewport below header
 - **Scroll behavior**: `-webkit-overflow-scrolling: touch` for smooth scrolling
 - **Context menu**: Touch-friendly with larger tap targets (12px padding, 15px font)
+
+### Troubleshooting Mobile Issues
+
+**Chinese input not working**:
+- Tap the editor area to ensure focus
+- Try switching to another app and back
+- Check that the soft keyboard is visible
+
+**File picker not opening**:
+- Ensure storage permissions are granted
+- On Android 11+, check "Allow all the time" for storage permission
+
+**App crashes on launch**:
+- Run `npx cap sync android` to ensure latest web assets
+- Check Android Studio logcat for errors
+- Ensure Java 21 is correctly configured
+
+**Build fails**:
+```bash
+# Clean and rebuild
+cd android
+./gradlew clean
+cd ..
+npm run cap:build:android
+```
 
 ---
 

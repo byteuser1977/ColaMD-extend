@@ -411,12 +411,26 @@ ColaMD 采用 **自动检测桥接层**，在运行时无缝切换 Electron（�
 - [`capacitor-api.ts`](src/renderer/capacitor-api.ts) — 完整的 Capacitor 桥接层，实现与 `electronAPI` 相同的 API 接口
 - [`capacitor.config.ts`](capacitor.config.ts) — Capacitor 配置文件（appId、webDir、插件设置）
 - [`mobile.css`](src/renderer/mobile.css) — 触控优化的响应式样式
+- [`MainActivity.java`](android/app/src/main/java/cn/bytechain/colamd/MainActivity.java) — Android WebView 中文输入法支持
+
+### 移动端技术栈
+
+| 组件 | 技术 | 用途 |
+|------|------|------|
+| **运行时** | Capacitor 6.x | 跨平台原生桥接 |
+| **WebView 引擎** | Android WebView / iOS WKWebView | 渲染 Web 内容 |
+| **文件访问** | `@capacitor/filesystem` | 读写本地文件 |
+| **文件选择器** | `@capawesome/capacitor-file-picker` | 原生文件选择对话框 |
+| **分享** | `@capacitor/share` | 系统分享面板集成 |
+| **应用生命周期** | `@capacitor/app` | 处理应用事件（暂停、恢复） |
+| **状态栏** | `@capacitor/status-bar` | 状态栏样式控制 |
+| **触觉反馈** | `@capacitor/haptics` | 触觉反馈 |
 
 ### 移动端构建环境要求
 
 | 平台 | 环境要求 |
 |------|----------|
-| **Android** | Android Studio + SDK (API 33+) + Java 17 |
+| **Android** | Android Studio + SDK (API 34+) + **Java 21** (`brew install openjdk@21`) |
 | **iOS** | Xcode 15+ + CocoaPods + macOS |
 
 ### 快速开始 — Android
@@ -452,17 +466,77 @@ npx cap open ios
 npm run cap:build:ios
 ```
 
-### 可用 NPM 脚本
+### 构建命令
 
-| 脚本 | 说明 |
-|------|------|
-| `npm run cap:sync` | 同步 Web 资源到所有原生平台 |
-| `npm run cap:open:android` | 用 Android Studio 打开 Android 项目 |
-| `npm run cap:open:ios` | 用 Xcode 打开 iOS 项目 |
-| `npm run cap:run:android` | 完整流程：构建 → 同步 → 在设备/模拟器上运行 |
-| `npm run cap:run:ios` | 完整流程：构建 → 同步 → 在模拟器上运行 |
-| `npm run cap:build:android` | 构建 Debug APK |
-| `npm run cap:build:ios` | 准备 iOS 项目供 Xcode 构建 |
+| 命令 | 说明 | 输出 |
+|------|------|------|
+| `npm run cap:sync` | 同步 Web 资源到所有原生平台 | 更新 `android/` 和 `ios/` |
+| `npm run cap:open:android` | 用 Android Studio 打开 Android 项目 | — |
+| `npm run cap:open:ios` | 用 Xcode 打开 iOS 项目 | — |
+| `npm run cap:run:android` | 构建 → 同步 → 在设备/模拟器上运行 | 设备上的实时应用 |
+| `npm run cap:run:ios` | 构建 → 同步 → 在模拟器上运行 | 模拟器中的实时应用 |
+| `npm run cap:build:android` | 构建 **Debug APK** | `android/app/build/outputs/apk/debug/app-debug.apk` |
+| `npm run cap:build:android:release` | 构建 **Release APK**（已签名） | `android/app/build/outputs/apk/release/app-release.apk` |
+| `npm run cap:build:ios` | 准备 iOS 项目供 Xcode 构建 | — |
+
+### Release 构建 — Android
+
+生产环境发布版本构建，项目已包含签名配置：
+
+```bash
+# 构建已签名的 Release APK
+npm run cap:build:android:release
+
+# 输出位置
+android/app/build/outputs/apk/release/app-release.apk
+```
+
+Release 签名密钥位于 `android/app/release.keystore`，签名凭据存储在 `build.gradle` 中。
+
+### Release 构建 — iOS
+
+1. 在 Xcode 中打开项目：
+   ```bash
+   npx cap open ios
+   ```
+
+2. 在 Xcode 中：
+   - 选择 **Product → Archive**
+   - 归档完成后，点击 **Distribute App**
+   - 选择分发方式（App Store Connect、Ad Hoc 等）
+
+3. 提交到 App Store：
+   - 在 Xcode 中配置签名证书
+   - 通过 Xcode 或 Transporter 上传到 App Store Connect
+
+### 中文输入法支持（Android）
+
+ColaMD 针对 Android WebView 上的中文/日文/韩文输入法进行了特殊处理：
+
+**实现方式**（[`MainActivity.java`](android/app/src/main/java/cn/bytechain/colamd/MainActivity.java)）：
+- WebView 焦点优化，确保 IME 正确连接
+- 获得焦点时自动弹出软键盘
+- 启用触控模式的焦点能力
+
+**已知限制**：
+- ProseMirror/Milkdown 在 Android WebView 上存在已知的 IME 组合输入问题
+- 部分输入法可能需要点击编辑区域才能激活
+- 如果输入无响应，尝试点击其他区域后再回到编辑器
+
+### 文件选择器集成
+
+移动端使用 `@capawesome/capacitor-file-picker` 实现原生文件选择：
+
+```typescript
+// 内部使用示例
+const result = await FilePicker.pickFiles({
+  types: ['text/markdown', 'text/plain'],
+  multiple: false,
+  readData: true,
+})
+```
+
+**支持的文件类型**：`.md`、`.markdown`、`.txt`、`.css`（主题文件）
 
 ### 移动端功能支持情况
 
@@ -473,7 +547,8 @@ npm run cap:build:ios
 | Mermaid 图表渲染 🔀 | ✅ 完整支持 | SVG 在 WebView 中正常渲染 |
 | 插件系统 | ✅ 完整支持 | 通过 UI 切换，状态存储于 localStorage |
 | 主题系统 | ✅ 完整支持 | 所有主题在移动端均可正常工作 |
-| 文件打开/保存 | ✅ 支持 | 使用 Capacitor Filesystem 插件 |
+| 文件打开/保存 | ✅ 支持 | 通过 FilePicker 插件使用原生文件选择器 |
+| 中文/日文/韩文输入 | ⚠️ 部分支持 | 已实现 IME 支持，可能存在边缘情况 |
 | 导出 HTML/PDF | ⚠️ 部分支持 | HTML 导出正常；PDF 使用 `window.print()` |
 | Agent 文件监听 | ⚠️ 轮询模式 | 使用 2 秒间隔轮询替代 `fs.watch` |
 | 幻灯片预览 | ⚠️ 受限 | 桌面端打开新浏览器窗口；移动端基础可用 |
@@ -491,6 +566,31 @@ npm run cap:build:ios
 - **编辑器适配**：固定定位编辑器填充标题栏下方视口
 - **滚动行为**：`-webkit-overflow-scrolling: touch` 实现流畅滚动
 - **右键菜单**：触控友好的更大点击区域（12px 内边距、15px 字号）
+
+### 移动端问题排查
+
+**中文输入无法使用**：
+- 点击编辑区域确保获得焦点
+- 尝试切换到其他应用再切回来
+- 检查软键盘是否可见
+
+**文件选择器无法打开**：
+- 确保已授予存储权限
+- Android 11+ 上，检查存储权限是否设为"始终允许"
+
+**应用启动崩溃**：
+- 运行 `npx cap sync android` 确保使用最新的 Web 资源
+- 在 Android Studio 中查看 logcat 错误日志
+- 确认 Java 21 配置正确
+
+**构建失败**：
+```bash
+# 清理并重新构建
+cd android
+./gradlew clean
+cd ..
+npm run cap:build:android
+```
 
 ---
 
