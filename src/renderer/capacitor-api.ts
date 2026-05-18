@@ -46,6 +46,22 @@ let currentFilePath: string | null = null
 const eventListeners: Record<string, Array<(...args: any[]) => void>> = {}
 
 /**
+ * 将 base64 编码字符串安全解码为 UTF-8 文本。
+ * atob() 仅支持 Latin1，中文等多字节字符会乱码，
+ * 因此先解码为 Uint8Array 再通过 TextDecoder 转为 UTF-8。
+ * @param base64 base64 编码的字符串
+ * @returns 解码后的 UTF-8 文本
+ */
+function decodeBase64UTF8(base64: string): string {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return new TextDecoder('utf-8').decode(bytes)
+}
+
+/**
  * 触发指定事件的所有监听器。
  * @param event 事件名称
  * @param args 传递给监听器的参数
@@ -135,7 +151,7 @@ async function pickAndReadFile(): Promise<{ path: string; content: string } | nu
 
     let content = ''
     if (file.data) {
-      content = atob(file.data)
+      content = decodeBase64UTF8(file.data)
     } else if (file.path) {
       const readResult = await Filesystem.readFile({
         path: file.path,
@@ -169,7 +185,7 @@ async function pickCSSFile(): Promise<{ name: string; css: string } | null> {
 
     let css = ''
     if (file.data) {
-      css = file.data
+      css = decodeBase64UTF8(file.data)
     } else if (file.path) {
       const readResult = await Filesystem.readFile({
         path: file.path,
@@ -551,7 +567,6 @@ Edit this file in ColaMD and see your changes in real time.
           path: defaultName,
           data: base64Data,
           directory: Directory.Documents,
-          encoding: Encoding.UTF8,
         })
         try {
           await Share({ title: defaultName, text: '', url: '' })

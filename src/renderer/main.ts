@@ -443,6 +443,14 @@ function setupMobileMenu(api: any, currentTheme: string): void {
         case 'about':
           api.openExternal('https://github.com/marswaveai/colamd')
           break
+        case 'exit':
+          try {
+            const { App } = await import('@capacitor/app')
+            await App.exitApp()
+          } catch {
+            window.close()
+          }
+          break
       }
     })
   })
