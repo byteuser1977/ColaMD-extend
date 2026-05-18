@@ -101,6 +101,7 @@
 .mermaid-loading {
   color: var(--text-muted);
   font-style: italic;
+  display: none;
 }
 
 .mermaid-error {
@@ -108,4 +109,5 @@
   font-family: monospace;
   font-size: 0.875em;
   white-space: pre-wrap;
+  display: none;
 }

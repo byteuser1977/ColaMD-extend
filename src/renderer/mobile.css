@@ -387,3 +387,41 @@
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
+
+@media print {
+  #titlebar,
+  #menu-btn,
+  #agent-dot,
+  #slides-btn,
+  #mobile-menu,
+  #cola-context-menu,
+  .mermaid-error,
+  .mermaid-loading,
+  .mermaid-source,
+  textarea.mermaid-source,
+  .math-block-raw,
+  .math-inline-raw,
+  .hidden {
+    display: none !important;
+  }
+
+  #editor {
+    position: static !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .ProseMirror {
+    min-height: auto !important;
+    font-size: 14px !important;
+  }
+
+  .mermaid-preview svg {
+    max-height: none !important;
+  }
+
+  @page {
+    margin: 15mm;
+    size: A4;
+  }
+}

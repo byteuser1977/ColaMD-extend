@@ -318,27 +318,17 @@ export function createCapacitorAPI(): CapacitorBridgeAPI {
 
     /**
      * 导出 PDF。
-     * Web 平台使用 window.print()；
-     * Android 通过 JavascriptInterface 桥接调用 PrintManager，
-     * 用户可在打印对话框中选择"保存为 PDF"生成真正的 PDF 文件。
+     * 使用 window.print() 触发 Android 原生打印对话框。
+     * @media print CSS 控制布局、分页和隐藏元素。
+     * 打印对话框自带"保存为 PDF"选项。
      */
     async exportPDF(): Promise<boolean> {
       if (!isNativePlatform()) {
         window.print()
         return true
       }
-      try {
-        const bridge = (window as any).ColaMDNative
-        if (bridge && typeof bridge.printDocument === 'function') {
-          bridge.printDocument('ColaMD Document')
-          return true
-        }
-        console.error('ColaMDNative bridge not available')
-        return false
-      } catch (err) {
-        console.error('PDF export failed:', err)
-        return false
-      }
+      window.print()
+      return true
     },
 
     /**

@@ -149,8 +149,14 @@ async function init(): Promise<void> {
   api.onMenuExportPDF(async () => {
     syncRawEdits()
     restoreRenderedMode(api)
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
+    // 等待 mermaid/math 等异步渲染完成
+    await new Promise(r => setTimeout(r, 600))
     await api.exportPDF()
+    // 打印后清理可能残留的 mermaid loading/error 图层
+    setTimeout(() => {
+      document.querySelectorAll('.mermaid-loading, .mermaid-error')
+        .forEach(el => (el as HTMLElement).style.display = 'none')
+    }, 1000)
   })
   api.onMenuExportHTML(() => {
     const s = getComputedStyle(document.body)
@@ -450,8 +456,12 @@ function setupMobileMenu(api: any, currentTheme: string): void {
         case 'export-pdf':
           syncRawEdits()
           restoreRenderedMode(api)
-          await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
+          await new Promise(r => setTimeout(r, 600))
           await api.exportPDF()
+          setTimeout(() => {
+            document.querySelectorAll('.mermaid-loading, .mermaid-error')
+              .forEach(el => (el as HTMLElement).style.display = 'none')
+          }, 1000)
           break
         case 'export-html':
           api.exportHTML(buildExportHTML())

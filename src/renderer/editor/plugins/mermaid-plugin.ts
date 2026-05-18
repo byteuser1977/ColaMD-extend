@@ -654,6 +654,7 @@ export const mermaidPlugin: RendererPlugin = {
       c4: getMermaidC4Config(),
       securityLevel: 'loose',
       logLevel: 'error',
+      suppressErrorRendering: true,
       fontSize,
     })
   },
@@ -668,6 +669,7 @@ export const mermaidPlugin: RendererPlugin = {
       c4: getMermaidC4Config(),
       securityLevel: 'loose',
       logLevel: 'error',
+      suppressErrorRendering: true,
       fontSize,
     })
   },
