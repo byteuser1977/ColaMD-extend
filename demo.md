@@ -352,7 +352,9 @@ C4Context
 ```
 
 ### 2.15 Sankey 图（Sankey Diagram）
+
 （桑吉图目前支持 beta 版本）
+
 ```mermaid
     sankey-beta
     Agricultural 'waste',Bio-conversion,124.729
@@ -479,34 +481,7 @@ graph TB
     B3 --> C3
 ```
 
-### 2.18  ZENUML图
-```mermaid
-zenuml
-    title Order Service
-
-    @Actor Client #FFEBE6
-    @Boundary OrderController #0747A6
-    @EC2 <<BFF>> OrderService #E3FCEF
-
-    group BusinessService {
-      @Lambda PurchaseService
-      @AzureFunction InvoiceService
-    }
-
-    @Starter(Client)
-    // POST /orders
-    OrderController.post(payload) {
-      OrderService.create(payload) {
-        order = new Order(payload)
-        if (order != null) {
-          par {
-            PurchaseService.createPO(order)
-            InvoiceService.createInvoice(order)
-          }
-        }
-      }
-    }
-```
+##
 
 ***
 
