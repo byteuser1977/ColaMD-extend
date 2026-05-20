@@ -382,8 +382,9 @@ ipcMain.handle('save-export-file', async (event, dataUrl: string, defaultName: s
 ipcMain.handle('export-pdf', async (event) => {
   const win = getWinFromEvent(event)
   if (!win) return false
+  const defaultName = (suggestFileName(win) || 'colamd-print') + '.pdf'
   const result = await dialog.showSaveDialog(win, {
-    defaultPath: suggestFileName(win),
+    defaultPath: defaultName,
     filters: [{ name: 'PDF', extensions: ['pdf'] }]
   })
   if (result.canceled || !result.filePath) return false
@@ -408,8 +409,9 @@ ipcMain.handle('export-pdf', async (event) => {
 ipcMain.handle('export-html', async (event, htmlContent: string) => {
   const win = getWinFromEvent(event)
   if (!win) return false
+  const defaultName = (suggestFileName(win) || 'colamd-export') + '.html'
   const result = await dialog.showSaveDialog(win, {
-    defaultPath: suggestFileName(win),
+    defaultPath: defaultName,
     filters: [{ name: 'HTML', extensions: ['html'] }]
   })
   if (result.canceled || !result.filePath) return false

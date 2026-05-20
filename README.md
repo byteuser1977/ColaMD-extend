@@ -44,13 +44,13 @@ This repository extends **[marswaveai/ColaMD](https://github.com/marswaveai/cola
 
 ### Demo Document
 
-This project includes a comprehensive demo document [`demo.md`](demo.md) that covers:
+This project includes a comprehensive demo document [`demo.md`](docs/demo.md) that covers:
 
 - **Math Equations**: 7 inline equations + 6 block equations (including systems of equations, matrices, physics formulas)
 - **Mermaid Diagrams**: All 17 diagram types (flowchart, sequence, class, state, ER, Gantt, pie, journey, git graph, mindmap, timeline, quadrant, XY chart, C4 context, Sankey, block, complex clustered)
 - **Mixed Content**: Formulas and diagrams rendered together in the same document
 
-Open `demo.md` to fully test the plugin rendering, mode switching, source editing, and PNG export capabilities of the extended ColaMD.
+Open `docs/demo.md` to fully test the plugin rendering, mode switching, source editing, and PNG export capabilities of the extended ColaMD.
 
 ---
 
