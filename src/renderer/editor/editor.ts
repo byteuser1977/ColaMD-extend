@@ -143,23 +143,18 @@ export async function createEditor(
   root.addEventListener('copy', enhanceClipboard)
   root.addEventListener('cut', enhanceClipboard)
 
-  // IME composition tracking for mobile CJK input
-  if (/android|iphone|ipad/i.test(navigator.userAgent)) {
-    root.addEventListener('compositionstart', () => {
-      // Let the browser handle IME natively — no interruption
-    })
-
-    root.addEventListener('compositionend', () => {
-      // After composition, let ProseMirror sync its internal state
-      editorInstance?.action((ctx) => {
-        const view = ctx.get(editorViewCtx)
-        if (view) {
-          // Force a DOM update cycle so ProseMirror picks up the mutated text
-          view.dom.dispatchEvent(new Event('input', { bubbles: true }))
-        }
-      })
-    })
-  }
+  /*
+   * REMOVED: Custom IME composition handlers for mobile CJK input.
+   * ProseMirror handles IME composition natively via its DOM observer and input rules.
+   * These handlers dispatched synthetic input events that interfered with ProseMirror's
+   * internal state tracking, causing duplicated characters and broken undo history.
+   *
+   * Original code:
+   * if (/android|iphone|ipad/i.test(navigator.userAgent)) {
+   *     root.addEventListener('compositionstart', () => { ... })
+   *     root.addEventListener('compositionend', () => { ... })
+   * }
+   */
 
   root.addEventListener('click', (e) => {
     if (!(e.metaKey || e.ctrlKey)) return
@@ -185,6 +180,43 @@ export function getMarkdown(): string {
     markdown = serializer(view.state.doc)
   })
   return markdown
+}
+
+/**
+ * Get HTML by cloning the live rendered DOM.
+ * Unlike {@link getHTML} which uses DOMSerializer (creating fresh nodes with
+ * "Rendering..." placeholders), this captures the actual rendered SVGs
+ * from mermaid, KaTeX math, etc. Used for PDF/HTML export.
+ */
+export function getLiveHTML(): string {
+  const editorDom = document.querySelector('#editor .ProseMirror')
+  if (!editorDom) return ''
+  const clone = editorDom.cloneNode(true) as HTMLElement
+
+  // Inline computed background colors so export preserves exact editor appearance.
+  // CSS variables from the export template may not match the editor's cascade.
+  const styleTargets: Array<{ selector: string; prop: string }> = [
+    { selector: '.math-inline', prop: 'backgroundColor' },
+    { selector: '.math-block', prop: 'backgroundColor' },
+    { selector: '.mermaid-block', prop: 'backgroundColor' },
+  ]
+  for (const { selector, prop } of styleTargets) {
+    const originals = editorDom.querySelectorAll(selector)
+    const clones = clone.querySelectorAll(selector)
+    originals.forEach((orig, i) => {
+      const computed = getComputedStyle(orig)
+      const val = computed.getPropertyValue(prop === 'backgroundColor' ? 'background-color' : prop)
+      if (val && clones[i]) (clones[i] as HTMLElement).style.setProperty(prop, val)
+    })
+  }
+
+  // Remove source-mode textareas
+  clone.querySelectorAll('textarea.mermaid-source, .math-inline-raw, .math-block-raw')
+    .forEach(el => el.remove())
+  // Hide loading/error placeholders
+  clone.querySelectorAll('.mermaid-loading, .mermaid-error')
+    .forEach(el => (el as HTMLElement).style.display = 'none')
+  return clone.innerHTML
 }
 
 export function getHTML(): string {

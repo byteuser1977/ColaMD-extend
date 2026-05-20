@@ -258,12 +258,13 @@
     -webkit-user-select: text;
     user-select: text;
     touch-action: manipulation;
-    -webkit-user-modify: read-write-plaintext-only;
+    /* Explicitly set read-write for rich text IME (CJK composition).
+       Some Android WebView versions default to plaintext-only which
+       downgrades contenteditable and breaks IME composition. */
+    -webkit-user-modify: read-write;
   }
 
-  .ProseMirror-focused {
-    -webkit-user-modify: read-write-plaintext-only;
-  }
+  /* REMOVED: .ProseMirror-focused { -webkit-user-modify: read-write-plaintext-only } */
 
   .ProseMirror h1 { font-size: 1.5em !important; margin-top: 0.8em !important; }
   .ProseMirror h2 { font-size: 1.25em !important; margin-top: 0.7em !important; }

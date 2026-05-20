@@ -41,19 +41,30 @@ public class MainActivity extends BridgeActivity {
             settings.setJavaScriptEnabled(true);
             settings.setDomStorageEnabled(true);
             settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-            settings.setSupportZoom(true);
-            settings.setBuiltInZoomControls(true);
+
+            // ── Critical for Android IME (Chinese/Japanese/Korean input) ──
+            // TEXT_AUTOSIZING is deprecated and interferes with text measurement
+            // during IME composition, breaking CJK input on contenteditable.
+            settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
+
+            // Disable zoom controls — they interfere with touch event handling
+            // for contenteditable IME on some Android versions.
+            settings.setSupportZoom(false);
+            settings.setBuiltInZoomControls(false);
             settings.setDisplayZoomControls(false);
+
+            // Viewport setup for mobile editor layout
             settings.setUseWideViewPort(true);
             settings.setLoadWithOverviewMode(true);
-            settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
+
+            // Let the WebView handle its own IME focus for contenteditable.
+            // Explicitly requesting focus ensures the WebView is ready for input.
             webView.setFocusable(true);
             webView.setFocusableInTouchMode(true);
+            webView.requestFocus();
 
             // 注入 Java 桥接对象，供 JS 调用原生功能
             webView.addJavascriptInterface(new ColaMDNativeBridge(), "ColaMDNative");
-
-            setupIMEFocus(webView);
         }
 
         if (savedInstanceState == null) {
@@ -127,26 +138,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * 设置 WebView 的 IME 焦点处理。
-     */
-    private void setupIMEFocus(WebView webView) {
-        webView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (hasFocus) {
-                    android.view.inputmethod.InputMethodManager imm =
-                        (android.view.inputmethod.InputMethodManager)
-                        getSystemService(INPUT_METHOD_SERVICE);
-                    if (imm != null) {
-                        imm.showSoftInput(v, 0);
-                    }
-                }
-            }
-        });
-    }
-
-    /**
-     * JS-原生桥接类，暴露给 WebView 的原生能力。
+ * JS-原生桥接类，暴露给 WebView 的原生能力。
      * JS 通过 window.ColaMDNative.{method}() 调用。
      */
     public class ColaMDNativeBridge {

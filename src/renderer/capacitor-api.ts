@@ -1,17 +1,51 @@
-import type { Capacitor } from '@capacitor/core'
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem'
-import { Share } from '@capacitor/share'
-import { App as CapApp } from '@capacitor/app'
-import { FilePicker } from '@capawesome/capacitor-file-picker'
+const { Capacitor } = await import('@capacitor/core').catch(() => ({ Capacitor: { isNativePlatform: () => false } }))
 
-const { Capacitor } = await import('@capacitor/core')
+/**
+ * 懒加载 Capacitor 插件模块缓存。
+ * Electron 桌面环境不包含这些模块，仅在原生平台按需动态导入。
+ * 注意：必须使用 switch-case 中字符串字面量 import()，而不能用 import(name) 变量形式，
+ * 否则 Vite 无法在构建时静态分析，导致生产环境中插件模块加载失败。
+ */
+const _capModules: Record<string, any> = {}
+async function capModule(name: string): Promise<any> {
+  if (!(name in _capModules)) {
+    try {
+      switch (name) {
+        case '@capacitor/filesystem': _capModules[name] = await import('@capacitor/filesystem'); break
+        case '@capacitor/share': _capModules[name] = await import('@capacitor/share'); break
+        case '@capacitor/app': _capModules[name] = await import('@capacitor/app'); break
+        case '@capawesome/capacitor-file-picker': _capModules[name] = await import('@capawesome/capacitor-file-picker'); break
+        case '@capacitor/haptics': _capModules[name] = await import('@capacitor/haptics'); break
+        default: _capModules[name] = null
+      }
+    }
+    catch { _capModules[name] = null }
+  }
+  return _capModules[name]
+}
+
+/**
+ * 获取 @capacitor/filesystem 模块（含 Filesystem、Directory、Encoding）。
+ */
+async function capFS() { return capModule('@capacitor/filesystem') }
+
+/**
+ * 获取 @capacitor/share 模块。
+ */
+async function capShare() { return capModule('@capacitor/share') }
+
+/**
+ * 获取 @capawesome/capacitor-file-picker 模块。
+ */
+async function capPicker() { return capModule('@capawesome/capacitor-file-picker') }
 
 export interface CapacitorBridgeAPI {
   openFile: () => Promise<{ path: string; content: string } | null>
   openFilePath: (path: string) => Promise<{ path: string; content: string } | null>
+  setCurrentFile: (path: string) => void
   saveFile: (content: string) => Promise<boolean>
   saveFileAs: (content: string) => Promise<boolean>
-  exportPDF: () => Promise<boolean>
+  exportPDF: (htmlContent?: string) => Promise<boolean>
   exportHTML: (htmlContent: string) => Promise<boolean>
   newSlides: () => Promise<string | null>
   openAsSlides: (content: string) => Promise<boolean>
@@ -47,10 +81,6 @@ const eventListeners: Record<string, Array<(...args: any[]) => void>> = {}
 
 /**
  * 将 base64 编码字符串安全解码为 UTF-8 文本。
- * atob() 仅支持 Latin1，中文等多字节字符会乱码，
- * 因此先解码为 Uint8Array 再通过 TextDecoder 转为 UTF-8。
- * @param base64 base64 编码的字符串
- * @returns 解码后的 UTF-8 文本
  */
 function decodeBase64UTF8(base64: string): string {
   const binary = atob(base64)
@@ -62,30 +92,27 @@ function decodeBase64UTF8(base64: string): string {
 }
 
 /**
- * 将文本内容写入文件并通过系统分享对话框分享。
- * 使用 Filesystem.writeFile 写入后，获取 file:// URI，
- * 通过 Share 插件的 files 参数分享给其他应用。
- * @param fileName 文件名
- * @param content 文本内容
- * @returns 分享成功返回 true
+ * 写入文件并通过系统分享对话框分享。
  */
 async function writeAndShareFile(fileName: string, content: string): Promise<boolean> {
   try {
-    await Filesystem.writeFile({
+    const fs = await capFS()
+    await fs.Filesystem.writeFile({
       path: fileName,
       data: content,
-      directory: Directory.Documents,
-      encoding: Encoding.UTF8,
+      directory: fs.Directory.Documents,
+      encoding: fs.Encoding.UTF8,
       recursive: true,
     })
 
-    const fileUri = await Filesystem.getUri({
+    const fileUri = await fs.Filesystem.getUri({
       path: fileName,
-      directory: Directory.Documents,
+      directory: fs.Directory.Documents,
     })
 
+    const sh = await capShare()
     try {
-      await Share.share({
+      await sh.Share.share({
         title: fileName,
         text: 'ColaMD Export',
         files: [fileUri.uri],
@@ -99,45 +126,44 @@ async function writeAndShareFile(fileName: string, content: string): Promise<boo
   }
 }
 
-/**
- * 触发指定事件的所有监听器。
- * @param event 事件名称
- * @param args 传递给监听器的参数
- */
 function emit(event: string, ...args: any[]): void {
   const listeners = eventListeners[event] || []
   listeners.forEach((fn) => fn(...args))
 }
 
-/**
- * 检查当前是否运行在原生平台（Android/iOS）。
- * @returns 如果是原生平台返回 true
- */
 function isNativePlatform(): boolean {
   return Capacitor.isNativePlatform()
 }
 
-/**
- * 从文件路径中提取基本文件名。
- * @param path 文件路径
- * @returns 文件名
- */
 function getBaseName(path: string): string {
   const parts = path.split(/[/\\]/)
   return parts[parts.length - 1] || 'Untitled'
 }
 
 /**
+ * 从 markdown 内容中提取第一个标题作为文件名。
+ * 如果没有标题则使用默认名称。
+ */
+function generateFilename(content: string, ext: string): string {
+  const match = content.match(/^#\s+(.+)$/m)
+  if (match) {
+    const title = match[1].replace(/[\\/:*?"<>|]/g, '').trim().slice(0, 50)
+    if (title) return `${title}.${ext}`
+  }
+  const ts = Date.now()
+  return `untitled_${ts}.${ext}`
+}
+
+/**
  * 读取指定路径的文件内容。
- * @param filePath 文件路径
- * @returns 文件内容字符串
  */
 async function readFileContent(filePath: string): Promise<string> {
   try {
-    const result = await Filesystem.readFile({
+    const fs = await capFS()
+    const result = await fs.Filesystem.readFile({
       path: filePath,
-      directory: Directory.Documents,
-      encoding: Encoding.UTF8,
+      directory: fs.Directory.Documents,
+      encoding: fs.Encoding.UTF8,
     })
     return result.data as string
   } catch {
@@ -147,33 +173,45 @@ async function readFileContent(filePath: string): Promise<string> {
 
 /**
  * 将内容写入指定路径的文件。
- * @param filePath 文件路径
- * @param content 文件内容
- * @returns 写入成功返回 true
  */
 async function writeFileContent(filePath: string, content: string): Promise<boolean> {
   try {
-    await Filesystem.writeFile({
+    const fs = await capFS()
+    await fs.Filesystem.writeFile({
       path: filePath,
       data: content,
-      directory: Directory.Documents,
-      encoding: Encoding.UTF8,
+      directory: fs.Directory.Documents,
+      encoding: fs.Encoding.UTF8,
       recursive: true,
     })
     return true
-  } catch {
+  } catch (err) {
+    console.error('writeFileContent failed:', err)
     return false
   }
 }
 
 /**
+ * 触发原生平台触觉反馈。
+ * 使用已安装的 @capacitor/haptics 插件。
+ */
+async function triggerHaptic(style: 'light' | 'medium' | 'heavy' = 'light'): Promise<void> {
+  if (!isNativePlatform()) return
+  try {
+    const { Haptics } = await import('@capacitor/haptics')
+    if (style === 'heavy') await Haptics.impact({ style: 'HEAVY' as any })
+    else if (style === 'medium') await Haptics.impact({ style: 'MEDIUM' as any })
+    else await Haptics.impact({ style: 'LIGHT' as any })
+  } catch { /* haptics not available */ }
+}
+
+/**
  * 使用 FilePicker 插件选择并读取文件内容。
- * 适用于 Android/iOS 原生平台。
- * @returns 文件路径和内容，如果取消则返回 null
  */
 async function pickAndReadFile(): Promise<{ path: string; content: string } | null> {
   try {
-    const result = await FilePicker.pickFiles({
+    const picker = await capPicker()
+    const result = await picker.FilePicker.pickFiles({
       types: [
         'text/markdown',
         'text/plain',
@@ -191,9 +229,10 @@ async function pickAndReadFile(): Promise<{ path: string; content: string } | nu
     if (file.data) {
       content = decodeBase64UTF8(file.data)
     } else if (file.path) {
-      const readResult = await Filesystem.readFile({
+      const fs = await capFS()
+      const readResult = await fs.Filesystem.readFile({
         path: file.path,
-        encoding: Encoding.UTF8,
+        encoding: fs.Encoding.UTF8,
       })
       content = readResult.data as string
     }
@@ -208,11 +247,11 @@ async function pickAndReadFile(): Promise<{ path: string; content: string } | nu
 
 /**
  * 使用 FilePicker 插件选择 CSS 文件。
- * @returns 文件名和 CSS 内容
  */
 async function pickCSSFile(): Promise<{ name: string; css: string } | null> {
   try {
-    const result = await FilePicker.pickFiles({
+    const picker = await capPicker()
+    const result = await picker.FilePicker.pickFiles({
       types: ['text/css'],
       multiple: false,
       readData: true,
@@ -225,9 +264,10 @@ async function pickCSSFile(): Promise<{ name: string; css: string } | null> {
     if (file.data) {
       css = decodeBase64UTF8(file.data)
     } else if (file.path) {
-      const readResult = await Filesystem.readFile({
+      const fs = await capFS()
+      const readResult = await fs.Filesystem.readFile({
         path: file.path,
-        encoding: Encoding.UTF8,
+        encoding: fs.Encoding.UTF8,
       })
       css = readResult.data as string
     }
@@ -242,11 +282,6 @@ async function pickCSSFile(): Promise<{ name: string; css: string } | null> {
 export function createCapacitorAPI(): CapacitorBridgeAPI {
   const api: CapacitorBridgeAPI = {
 
-    /**
-     * 打开文件选择器并读取选中的文件。
-     * 在 Web 平台使用原生 input[type=file]，
-     * 在原生平台使用 FilePicker 插件。
-     */
     async openFile(): Promise<{ path: string; content: string } | null> {
       if (!isNativePlatform()) {
         const input = document.createElement('input')
@@ -264,14 +299,9 @@ export function createCapacitorAPI(): CapacitorBridgeAPI {
           input.click()
         })
       }
-
       return pickAndReadFile()
     },
 
-    /**
-     * 打开指定路径的文件。
-     * @param path 文件路径
-     */
     async openFilePath(path: string): Promise<{ path: string; content: string } | null> {
       const content = await readFileContent(path)
       if (!content && content !== '') return null
@@ -279,64 +309,139 @@ export function createCapacitorAPI(): CapacitorBridgeAPI {
       return { path, content }
     },
 
-    /**
-     * 保存内容到当前文件。
-     * @param content 文件内容
-     */
-    async saveFile(content: string): Promise<boolean> {
-      if (!currentFilePath) {
-        return api.saveFileAs(content)
-      }
-      return writeFileContent(currentFilePath, content)
+    setCurrentFile(path: string): void {
+      currentFilePath = path
     },
 
-    /**
-     * 另存为功能。
-     * @param content 文件内容
-     */
+    async saveFile(content: string): Promise<boolean> {
+      if (!currentFilePath) {
+        // First save: generate a filename and write directly.
+        // Don't call saveFileAs — its prompt() is unreliable on Android WebView.
+        const fileName = generateFilename(content, 'md')
+        const ok = await writeFileContent(fileName, content)
+        if (ok) {
+          currentFilePath = fileName
+          triggerHaptic('medium')
+        }
+        return ok
+      }
+      const ok = await writeFileContent(currentFilePath, content)
+      if (ok) triggerHaptic('light')
+      return ok
+    },
+
     async saveFileAs(content: string): Promise<boolean> {
-      const defaultName = currentFilePath ? getBaseName(currentFilePath) : 'untitled.md'
+      const baseName = currentFilePath
+        ? getBaseName(currentFilePath).replace(/\.md$/, '')
+        : 'untitled'
+      const fileName = `${baseName}_${Date.now()}.md`
 
       if (!isNativePlatform()) {
         const blob = new Blob([content], { type: 'text/markdown' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = defaultName
+        a.download = fileName
         a.click()
         URL.revokeObjectURL(url)
-        currentFilePath = defaultName
+        currentFilePath = fileName
         return true
       }
 
-      const timestamp = Date.now()
-      const fileName = `${defaultName.replace(/\.md$/, '')}_${timestamp}.md`
+      // Android: write file then open Share sheet so user can save to preferred location
       const ok = await writeFileContent(fileName, content)
-      if (ok) currentFilePath = fileName
-      return ok
+      if (!ok) {
+        triggerHaptic('heavy')
+        return false
+      }
+
+      currentFilePath = fileName
+      triggerHaptic('medium')
+
+      try {
+        const fs = await capFS()
+        const fileUri = await fs.Filesystem.getUri({
+          path: fileName,
+          directory: fs.Directory.Documents,
+        })
+        const sh = await capShare()
+        await sh.Share.share({
+          title: fileName,
+          text: 'ColaMD Document',
+          files: [fileUri.uri],
+          dialogTitle: 'Save As',
+        })
+      } catch { /* share cancelled — file already saved */ }
+      return true
     },
 
-    /**
-     * 导出 PDF。
-     * 使用 window.print() 触发 Android 原生打印对话框。
-     * @media print CSS 控制布局、分页和隐藏元素。
-     * 打印对话框自带"保存为 PDF"选项。
-     */
-    async exportPDF(): Promise<boolean> {
+    async exportPDF(htmlContent?: string): Promise<boolean> {
       if (!isNativePlatform()) {
         window.print()
         return true
       }
-      window.print()
-      return true
+
+      // Android: use native PrintManager via ColaMDNative bridge.
+      // This opens the system print dialog with "Save as PDF" option
+      // and produces proper paginated PDF output.
+      const bridge = (window as any).ColaMDNative
+      if (bridge && typeof bridge.printDocument === 'function') {
+        // Temporarily unconstrain the fixed-position mobile layout so
+        // the full document is captured, not just the visible viewport.
+        const orig: { el: HTMLElement; cssText: string }[] = []
+
+        function saveAndOverride(selector: string, overrides: Record<string, string>): void {
+          const el = document.querySelector(selector) as HTMLElement | null
+          if (!el) return
+          orig.push({ el, cssText: el.style.cssText })
+          for (const [prop, value] of Object.entries(overrides)) {
+            ;(el.style as any)[prop] = value
+          }
+        }
+
+        // Hide mobile UI chrome, unconstrain editor for full-document capture
+        saveAndOverride('#titlebar', { display: 'none' })
+        saveAndOverride('#mobile-menu', { display: 'none' })
+        saveAndOverride('#menu-btn', { display: 'none' })
+        saveAndOverride('.cola-toast', { display: 'none' })
+        saveAndOverride('html', { height: 'auto', overflow: 'visible' })
+        saveAndOverride('body', { height: 'auto', overflow: 'visible' })
+        saveAndOverride('#editor', {
+          position: 'static',
+          height: 'auto',
+          overflow: 'visible',
+          top: 'auto',
+          bottom: 'auto',
+        })
+        saveAndOverride('#editor .ProseMirror', { minHeight: 'auto' })
+
+        await new Promise(r => requestAnimationFrame(r))
+
+        const jobName = currentFilePath
+          ? getBaseName(currentFilePath).replace(/\.(md|markdown)$/, '')
+          : 'ColaMD Document'
+        bridge.printDocument(jobName)
+
+        // Restore layout after print adapter captures the content.
+        // The 3s delay gives the Android print framework time to snapshot.
+        setTimeout(() => {
+          for (const { el, cssText } of orig) {
+            el.style.cssText = cssText
+          }
+        }, 3000)
+
+        return true
+      }
+
+      // Fallback: if native bridge unavailable, share as HTML file
+      const content = htmlContent || ''
+      if (!content) return false
+      const defaultName = currentFilePath
+        ? getBaseName(currentFilePath).replace(/\.(md|markdown)$/, '-print.html')
+        : 'colamd-print.html'
+      return writeAndShareFile(defaultName, content)
     },
 
-    /**
-     * 导出 HTML 文件。
-     * Web 平台使用 Blob 下载；
-     * 原生平台写入文件后通过 Share 插件分享。
-     * @param htmlContent HTML 内容
-     */
     async exportHTML(htmlContent: string): Promise<boolean> {
       const defaultName = currentFilePath
         ? getBaseName(currentFilePath).replace(/\.(md|markdown)$/, '.html')
@@ -356,9 +461,6 @@ export function createCapacitorAPI(): CapacitorBridgeAPI {
       return writeAndShareFile(defaultName, htmlContent)
     },
 
-    /**
-     * 创建新的幻灯片模板。
-     */
     async newSlides(): Promise<string | null> {
       const template = `---
 kicker: ColaMD
@@ -379,10 +481,6 @@ Edit this file in ColaMD and see your changes in real time.
       return template
     },
 
-    /**
-     * 以幻灯片模式打开内容。
-     * @param _content Markdown 内容
-     */
     async openAsSlides(content: string): Promise<boolean> {
       if (!isNativePlatform()) {
         const newWindow = window.open('', '_blank')
@@ -394,10 +492,6 @@ Edit this file in ColaMD and see your changes in real time.
       return writeAndShareFile('colamd-slides-preview.html', content)
     },
 
-    /**
-     * 加载自定义主题 CSS 文件。
-     * 在原生平台使用 FilePicker 插件选择文件。
-     */
     async loadCustomTheme(): Promise<{ name: string; css: string } | null> {
       if (!isNativePlatform()) {
         const input = document.createElement('input')
@@ -414,20 +508,16 @@ Edit this file in ColaMD and see your changes in real time.
           input.click()
         })
       }
-
       return pickCSSFile()
     },
 
-    /**
-     * 加载指定文件名的主题 CSS。
-     * @param _fileName CSS 文件名
-     */
     async loadThemeCSS(_fileName: string): Promise<string | null> {
       try {
-        const result = await Filesystem.readFile({
+        const fs = await capFS()
+        const result = await fs.Filesystem.readFile({
           path: `.colamd/themes/${_fileName}`,
-          directory: Directory.Documents,
-          encoding: Encoding.UTF8,
+          directory: fs.Directory.Documents,
+          encoding: fs.Encoding.UTF8,
         })
         return result.data as string
       } catch {
@@ -435,18 +525,10 @@ Edit this file in ColaMD and see your changes in real time.
       }
     },
 
-    /**
-     * 获取 File 对象的路径。
-     * @param _file File 对象
-     */
     getPathForFile(_file: File): string {
       return _file.name || ''
     },
 
-    /**
-     * 在外部浏览器中打开 URL。
-     * @param url 要打开的 URL
-     */
     openExternal(url: string): void {
       if (isNativePlatform()) {
         window.open(url, '_system', 'location=yes')
@@ -455,11 +537,6 @@ Edit this file in ColaMD and see your changes in real time.
       }
     },
 
-    /**
-     * 注册文件变更监听器。
-     * 在原生平台上使用轮询检测文件变更。
-     * @param callback 文件变更时的回调函数
-     */
     onFileChanged(callback: (content: string) => void): void {
       eventListeners['file-changed'] = eventListeners['file-changed'] || []
       eventListeners['file-changed'].push(callback)
@@ -603,20 +680,22 @@ Edit this file in ColaMD and see your changes in real time.
 
       const base64Data = dataUrl.replace(/^data:[^;]+;base64,/, '')
       try {
-        await Filesystem.writeFile({
+        const fs = await capFS()
+        await fs.Filesystem.writeFile({
           path: defaultName,
           data: base64Data,
-          directory: Directory.Documents,
+          directory: fs.Directory.Documents,
           recursive: true,
         })
 
-        const fileUri = await Filesystem.getUri({
+        const fileUri = await fs.Filesystem.getUri({
           path: defaultName,
-          directory: Directory.Documents,
+          directory: fs.Directory.Documents,
         })
 
+        const sh = await capShare()
         try {
-          await Share.share({
+          await sh.Share.share({
             title: defaultName,
             files: [fileUri.uri],
             dialogTitle: 'Share Export',

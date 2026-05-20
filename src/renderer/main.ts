@@ -1,15 +1,39 @@
-import { createEditor, getMarkdown, getHTML, setMarkdown, togglePluginMode } from './editor/editor'
+import { createEditor, getMarkdown, getHTML, getLiveHTML, setMarkdown, togglePluginMode } from './editor/editor'
 import { applyTheme, loadSavedTheme } from './themes/theme-manager'
 import { getAllPlugins, togglePlugin, findPluginBySelector, findExportCapabilities } from './editor/plugins'
+import { awaitAllMermaidRenders } from './editor/plugins/mermaid-plugin'
 import { createCapacitorAPI } from './capacitor-api'
 import './themes/base.css'
 import './mobile.css'
 
 /**
+ * Show a brief toast notification. Used for save/export feedback.
+ */
+function showToast(message: string, duration = 2000): void {
+  const existing = document.querySelector('.cola-toast')
+  if (existing) existing.remove()
+
+  const toast = document.createElement('div')
+  toast.className = 'cola-toast'
+  toast.textContent = message
+  toast.style.cssText =
+    'position:fixed;top:56px;left:50%;transform:translateX(-50%);' +
+    'background:rgba(0,0,0,0.8);color:#fff;padding:10px 20px;' +
+    'border-radius:8px;font-size:14px;z-index:9999;pointer-events:none;'
+  document.body.appendChild(toast)
+
+  setTimeout(() => {
+    toast.style.opacity = '0'
+    toast.style.transition = 'opacity 0.3s'
+    setTimeout(() => toast.remove(), 300)
+  }, duration)
+}
+
+/**
  * 调用原生桥接层检查是否有通过文件管理器 Intent 待打开的文件。
  * 使用 pull 模式：JS 主动向 Java 查询，避免注入时序问题。
  */
-function checkAndOpenPendingFile(): void {
+function checkAndOpenPendingFile(api?: any): void {
   const bridge = (window as any).ColaMDNative
   if (!bridge || typeof bridge.checkPendingFile !== 'function') return
   try {
@@ -18,6 +42,9 @@ function checkAndOpenPendingFile(): void {
       const data = JSON.parse(result)
       if (data && data.content) {
         setContent(data.content)
+        if (data.name && api?.setCurrentFile) {
+          api.setCurrentFile(data.name)
+        }
       }
     }
   } catch (e) { /* ignore */ }
@@ -27,8 +54,8 @@ function checkAndOpenPendingFile(): void {
  * 轮询原生桥接层，获取待打开的文件。
  * Android onNewIntent 在 WebView 重载前触发，需要轮询等待。
  */
-function processPendingIntentFile(): void {
-  checkAndOpenPendingFile()
+function processPendingIntentFile(api?: any): void {
+  checkAndOpenPendingFile(api)
 }
 
 const pluginModules = import.meta.glob<{ default?: unknown }>('./editor/plugins/*-plugin.ts', { eager: true })
@@ -106,7 +133,7 @@ async function init(): Promise<void> {
   for (const p of getAllPlugins()) p.onInit?.()
 
   // Check for file opened via Android file manager (Intent)
-  checkAndOpenPendingFile()
+  checkAndOpenPendingFile(api)
 
   // Send plugin list to main process for menu
   api.registerPlugins(getAllPlugins().map((p) => ({ id: p.id, name: p.name, enabled: p.enabled })))
@@ -126,7 +153,7 @@ async function init(): Promise<void> {
   setupMobileMenu(api, savedTheme)
 
   // Continuously check for Intent files (APP already running, new file opened)
-  setInterval(processPendingIntentFile, 1000)
+  setInterval(() => processPendingIntentFile(api), 1000)
 
   // Slides button — open as slides
   slidesBtnEl().addEventListener('click', () => api.openAsSlides(getContent()))
@@ -139,26 +166,40 @@ async function init(): Promise<void> {
   api.onMenuSave(async () => {
     syncRawEdits()
     const ok = await api.saveFile(getContent())
-    if (ok) restoreRenderedMode(api)
+    if (ok) {
+      showToast('Saved')
+      restoreRenderedMode(api)
+    } else {
+      showToast('Save failed')
+    }
   })
   api.onMenuSaveAs(async () => {
     syncRawEdits()
     const ok = await api.saveFileAs(getContent())
-    if (ok) restoreRenderedMode(api)
+    if (ok) {
+      showToast('Saved')
+      restoreRenderedMode(api)
+    } else {
+      showToast('Save cancelled or failed')
+    }
   })
   api.onMenuExportPDF(async () => {
     syncRawEdits()
     restoreRenderedMode(api)
-    // 等待 mermaid/math 等异步渲染完成
-    await new Promise(r => setTimeout(r, 600))
-    await api.exportPDF()
-    // 打印后清理可能残留的 mermaid loading/error 图层
+    await awaitAllMermaidRenders()
+    await new Promise(r => setTimeout(r, 300))
+    await api.exportPDF(buildExportHTML())
     setTimeout(() => {
       document.querySelectorAll('.mermaid-loading, .mermaid-error')
         .forEach(el => (el as HTMLElement).style.display = 'none')
     }, 1000)
   })
-  api.onMenuExportHTML(() => {
+  api.onMenuExportHTML(async () => {
+    syncRawEdits()
+    restoreRenderedMode(api)
+    await awaitAllMermaidRenders()
+    await new Promise(r => setTimeout(r, 200))
+
     const s = getComputedStyle(document.body)
     const v = (name: string) => s.getPropertyValue(name).trim()
     const bgColor = v('--bg-color')
@@ -169,6 +210,7 @@ async function init(): Promise<void> {
     const codeBg = v('--code-bg')
     const codeBlockBg = v('--code-block-bg')
     const codeBlockText = v('--code-block-text') || textColor
+    const mermaidBg = v('--mermaid-background') || bgColor
     const blockquoteBorder = v('--blockquote-border')
     const blockquoteBg = v('--blockquote-bg') || 'transparent'
     const tableHeaderBg = v('--table-header-bg')
@@ -204,14 +246,14 @@ th{background:${tableHeaderBg};font-weight:600}
 hr{border:none;border-top:2px solid ${borderColor};margin:2em 0}
 img{max-width:100%}
 ::selection{background:${selectionBg}}
-.math-inline{display:inline;padding:2px 4px;border-radius:3px;background:${codeBg}}
-.math-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${codeBlockBg};text-align:center;overflow-x:auto}
-.mermaid-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${codeBlockBg};border:1px solid ${borderColor}}
+.math-inline{display:inline;padding:2px 4px;border-radius:3px;background:${mermaidBg}}
+.math-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${mermaidBg};text-align:center;overflow-x:auto}
+.mermaid-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${mermaidBg};border:1px solid ${borderColor}}
 .mermaid-preview{display:flex;justify-content:center;align-items:center}
 .mermaid-preview svg{max-width:100%;height:auto}
 .mermaid-preview svg .label text,.mermaid-preview svg .nodeLabel text,.mermaid-preview svg .state-title,.mermaid-preview svg .state-description,.mermaid-preview svg .pieTitleText,.mermaid-preview svg .titleText{transform:translateY(-2px)}.mermaid-preview svg .nodeLabel,.mermaid-preview svg .edgeLabel{display:inline-block;position:relative;top:-2px}
 </style>
-</head><body>${getHTML()}</body></html>`
+</head><body>${getLiveHTML()}</body></html>`
     api.exportHTML(html)
   })
 
@@ -445,25 +487,44 @@ function setupMobileMenu(api: any, currentTheme: string): void {
         }
         case 'save':
           syncRawEdits()
-          await api.saveFile(getContent())
-          restoreRenderedMode(api)
+          {
+            const ok = await api.saveFile(getContent())
+            if (ok) {
+              showToast('Saved')
+              restoreRenderedMode(api)
+            } else {
+              showToast('Save failed')
+            }
+          }
           break
         case 'save-as':
           syncRawEdits()
-          await api.saveFileAs(getContent())
-          restoreRenderedMode(api)
+          {
+            const ok = await api.saveFileAs(getContent())
+            if (ok) {
+              showToast('Saved')
+              restoreRenderedMode(api)
+            } else {
+              showToast('Save cancelled or failed')
+            }
+          }
           break
         case 'export-pdf':
           syncRawEdits()
           restoreRenderedMode(api)
-          await new Promise(r => setTimeout(r, 600))
-          await api.exportPDF()
+          await awaitAllMermaidRenders()
+          await new Promise(r => setTimeout(r, 300))
+          await api.exportPDF(buildExportHTML())
           setTimeout(() => {
             document.querySelectorAll('.mermaid-loading, .mermaid-error')
               .forEach(el => (el as HTMLElement).style.display = 'none')
           }, 1000)
           break
         case 'export-html':
+          syncRawEdits()
+          restoreRenderedMode(api)
+          await awaitAllMermaidRenders()
+          await new Promise(r => setTimeout(r, 200))
           api.exportHTML(buildExportHTML())
           break
         case 'export-slides':
@@ -513,6 +574,7 @@ function buildExportHTML(): string {
   const codeBg = v('--code-bg')
   const codeBlockBg = v('--code-block-bg')
   const codeBlockText = v('--code-block-text') || textColor
+  const mermaidBg = v('--mermaid-background') || bgColor
   const blockquoteBorder = v('--blockquote-border')
   const blockquoteBg = v('--blockquote-bg') || 'transparent'
   const tableHeaderBg = v('--table-header-bg')
@@ -550,11 +612,13 @@ img{max-width:100%}
 ::selection{background:${selectionBg}}
 .math-inline{display:inline;padding:2px 4px;border-radius:3px;background:${codeBg}}
 .math-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${codeBlockBg};text-align:center;overflow-x:auto}
-.mermaid-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${codeBlockBg};border:1px solid ${borderColor}}
+.mermaid-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${mermaidBg};border:1px solid ${borderColor}}
 .mermaid-preview{display:flex;justify-content:center;align-items:center}
 .mermaid-preview svg{max-width:100%;height:auto}
+@page{margin:15mm;size:A4}
+@media print{body{max-width:none;margin:0;padding:20px}#editor{position:static!important;overflow:visible!important}}
 </style>
-</head><body>${getHTML()}</body></html>`
+</head><body>${getLiveHTML()}</body></html>`
 }
 
 init().catch((e) => console.error('ColaMD init failed:', e))

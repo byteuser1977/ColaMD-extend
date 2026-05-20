@@ -13,6 +13,18 @@ import './mermaid-plugin-custom.css'
 
 ;(window as any).mermaid = mermaid
 
+// Track pending mermaid render promises for export synchronization
+const pendingRenders = new Set<Promise<void>>()
+
+/**
+ * Wait for all currently pending mermaid render() calls to settle.
+ * Called before PDF/HTML export to ensure all diagrams are rendered.
+ */
+export function awaitAllMermaidRenders(): Promise<void> {
+  const promises = Array.from(pendingRenders)
+  return Promise.allSettled(promises).then(() => {})
+}
+
 function getMermaidTheme(): string {
   const cls = document.body.className
   if (cls.includes('theme-dark')) return 'dark'
@@ -458,7 +470,7 @@ const mermaidBlockSchema = $nodeSchema('mermaid_block', () => ({
     container.innerHTML = '<div class="mermaid-preview"><div class="mermaid-loading">Rendering...</div></div>'
     const id = 'mermaid-' + (++renderCounter)
     try {
-      mermaidLib.render(id, text).then((result: { svg: string; bindFunctions?: (el: Element) => void }) => {
+      const renderPromise = mermaidLib.render(id, text).then((result: { svg: string; bindFunctions?: (el: Element) => void }) => {
         const preview = container.querySelector('.mermaid-preview')
         if (preview) {
           preview.innerHTML = result.svg
@@ -472,7 +484,8 @@ const mermaidBlockSchema = $nodeSchema('mermaid_block', () => ({
           const msg = e.message.replace(/&/g, '&amp;').replace(/</g, '&lt;')
           preview.innerHTML = '<div class="mermaid-error">Error: ' + msg + '</div>'
         }
-      })
+      }).finally(() => { pendingRenders.delete(renderPromise) })
+      pendingRenders.add(renderPromise)
     } catch (e: any) {
       container.innerHTML = '<div class="mermaid-preview"><div class="mermaid-error">' + String(e.message || e) + '</div></div>'
     }
@@ -532,7 +545,7 @@ function renderMermaidBlock(dom: HTMLElement, node: any, renderIdRef: { current:
   dom.innerHTML = '<div class="mermaid-preview"><div class="mermaid-loading">Rendering...</div></div>'
   const id = 'mermaid-' + (++renderCounter)
 
-  mermaidLib.render(id, text).then((result: { svg: string; bindFunctions?: (el: Element) => void }) => {
+  const renderPromise = mermaidLib.render(id, text).then((result: { svg: string; bindFunctions?: (el: Element) => void }) => {
     if (currentRenderId !== renderIdRef.current) return
     const preview = dom.querySelector('.mermaid-preview')
     if (preview) {
@@ -548,7 +561,8 @@ function renderMermaidBlock(dom: HTMLElement, node: any, renderIdRef: { current:
       const msg = e.message.replace(/&/g, '&amp;').replace(/</g, '&lt;')
       preview.innerHTML = '<div class="mermaid-error">Error: ' + msg + '</div>'
     }
-  })
+  }).finally(() => { pendingRenders.delete(renderPromise) })
+  pendingRenders.add(renderPromise)
 }
 
 const mermaidBlockView = $view(mermaidBlockSchema, (_ctx): NodeViewConstructor => {

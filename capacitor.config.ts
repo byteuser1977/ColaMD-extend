@@ -9,7 +9,7 @@ const config: CapacitorConfig = {
   },
   android: {
     allowMixedContent: true,
-    captureInput: true,
+    captureInput: false, // Must be false — true replaces WebView InputConnection with BaseInputConnection, breaking CJK IME
     useLegacyBridge: false,
     webContentsDebuggingEnabled: false,
   },
