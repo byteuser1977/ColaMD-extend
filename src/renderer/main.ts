@@ -1,6 +1,7 @@
-import { createEditor, getMarkdown, getHTML, setMarkdown, togglePluginMode } from './editor/editor'
+import { createEditor, getMarkdown, getHTML, getLiveHTML, setMarkdown, togglePluginMode } from './editor/editor'
 import { applyTheme, loadSavedTheme } from './themes/theme-manager'
 import { getAllPlugins, togglePlugin, findPluginBySelector, findExportCapabilities } from './editor/plugins'
+import { awaitAllMermaidRenders } from './editor/plugins/mermaid-plugin'
 import './themes/base.css'
 
 const pluginModules = import.meta.glob<{ default?: unknown }>('./editor/plugins/*-plugin.ts', { eager: true })
@@ -112,64 +113,16 @@ async function init(): Promise<void> {
   api.onMenuExportPDF(async () => {
     syncRawEdits()
     restoreRenderedMode()
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
+    await awaitAllMermaidRenders()
+    await new Promise(r => setTimeout(r, 200))
     await api.exportPDF()
   })
-  api.onMenuExportHTML(() => {
-    const s = getComputedStyle(document.body)
-    const v = (name: string) => s.getPropertyValue(name).trim()
-    const bgColor = v('--bg-color')
-    const textColor = v('--text-color')
-    const textMuted = v('--text-muted')
-    const borderColor = v('--border-color')
-    const linkColor = v('--link-color')
-    const codeBg = v('--code-bg')
-    const codeBlockBg = v('--code-block-bg')
-    const codeBlockText = v('--code-block-text') || textColor
-    const blockquoteBorder = v('--blockquote-border')
-    const blockquoteBg = v('--blockquote-bg') || 'transparent'
-    const tableHeaderBg = v('--table-header-bg')
-    const selectionBg = v('--selection-bg')
-
-    const editor = document.querySelector('#editor .ProseMirror')
-    const fontFamily = editor ? getComputedStyle(editor).fontFamily : '-apple-system,BlinkMacSystemFont,sans-serif'
-
-    const getElColor = (selector: string, fallback: string): string => {
-      const el = document.querySelector(`#editor .ProseMirror ${selector}`)
-      return el ? getComputedStyle(el).color : fallback
-    }
-    const strongColor = getElColor('strong', textColor)
-    const codeColor = getElColor('code', textColor)
-
-    const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>ColaMD Export</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.46/dist/katex.min.css">
-<style>
-body{max-width:780px;margin:40px auto;padding:20px;font-family:${fontFamily};line-height:1.75;background:${bgColor};color:${textColor}}
-h1{font-size:2em;font-weight:700;border-bottom:1px solid ${borderColor};padding-bottom:.3em}
-h2{font-size:1.5em;font-weight:600;border-bottom:1px solid ${borderColor};padding-bottom:.25em}
-h3{font-size:1.25em;font-weight:600}
-strong{color:${strongColor}}
-a{color:${linkColor};text-decoration:none}
-code{background:${codeBg};color:${codeColor};padding:2px 6px;border-radius:3px;font-size:.875em;font-family:'SF Mono','Fira Code',Menlo,monospace}
-pre{background:${codeBlockBg};color:${codeBlockText};padding:16px;border-radius:6px;overflow-x:auto;margin:1em 0}
-pre code{background:none;padding:0;color:inherit}
-blockquote{border-left:4px solid ${blockquoteBorder};background:${blockquoteBg};padding-left:16px;margin:1em 0;color:${textMuted}}
-table{border-collapse:collapse;width:100%;margin:1em 0}
-th,td{border:1px solid ${borderColor};padding:8px 12px}
-th{background:${tableHeaderBg};font-weight:600}
-hr{border:none;border-top:2px solid ${borderColor};margin:2em 0}
-img{max-width:100%}
-::selection{background:${selectionBg}}
-.math-inline{display:inline;padding:2px 4px;border-radius:3px;background:${codeBg}}
-.math-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${codeBlockBg};text-align:center;overflow-x:auto}
-.mermaid-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${codeBlockBg};border:1px solid ${borderColor}}
-.mermaid-preview{display:flex;justify-content:center;align-items:center}
-.mermaid-preview svg{max-width:100%;height:auto}
-.mermaid-preview svg .label text,.mermaid-preview svg .nodeLabel text,.mermaid-preview svg .state-title,.mermaid-preview svg .state-description,.mermaid-preview svg .pieTitleText,.mermaid-preview svg .titleText{transform:translateY(-2px)}.mermaid-preview svg .nodeLabel,.mermaid-preview svg .edgeLabel{display:inline-block;position:relative;top:-2px}
-</style>
-</head><body>${getHTML()}</body></html>`
-    api.exportHTML(html)
+  api.onMenuExportHTML(async () => {
+    syncRawEdits()
+    restoreRenderedMode()
+    await awaitAllMermaidRenders()
+    await new Promise(r => setTimeout(r, 200))
+    api.exportHTML(buildExportHTML())
   })
 
   api.onNewFile(() => { exitSourceMode(); setMarkdown('') })
@@ -298,6 +251,64 @@ img{max-width:100%}
     const result = await api.openFilePath(filePath)
     if (result) setContent(result.content)
   })
+}
+
+function buildExportHTML(): string {
+  const s = getComputedStyle(document.body)
+  const v = (name: string) => s.getPropertyValue(name).trim()
+  const bgColor = v('--bg-color')
+  const textColor = v('--text-color')
+  const textMuted = v('--text-muted')
+  const borderColor = v('--border-color')
+  const linkColor = v('--link-color')
+  const codeBg = v('--code-bg')
+  const codeBlockBg = v('--code-block-bg')
+  const codeBlockText = v('--code-block-text') || textColor
+  const mermaidBg = v('--mermaid-background') || bgColor
+  const blockquoteBorder = v('--blockquote-border')
+  const blockquoteBg = v('--blockquote-bg') || 'transparent'
+  const tableHeaderBg = v('--table-header-bg')
+  const selectionBg = v('--selection-bg')
+
+  const editor = document.querySelector('#editor .ProseMirror')
+  const fontFamily = editor ? getComputedStyle(editor).fontFamily : '-apple-system,BlinkMacSystemFont,sans-serif'
+
+  const getElColor = (selector: string, fallback: string): string => {
+    const el = document.querySelector(`#editor .ProseMirror ${selector}`)
+    return el ? getComputedStyle(el).color : fallback
+  }
+  const strongColor = getElColor('strong', textColor)
+  const codeColor = getElColor('code', textColor)
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>ColaMD Export</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.46/dist/katex.min.css">
+<style>
+body{max-width:780px;margin:40px auto;padding:20px;font-family:${fontFamily};line-height:1.75;background:${bgColor};color:${textColor}}
+h1{font-size:2em;font-weight:700;border-bottom:1px solid ${borderColor};padding-bottom:.3em}
+h2{font-size:1.5em;font-weight:600;border-bottom:1px solid ${borderColor};padding-bottom:.25em}
+h3{font-size:1.25em;font-weight:600}
+strong{color:${strongColor}}
+a{color:${linkColor};text-decoration:none}
+code{background:${codeBg};color:${codeColor};padding:2px 6px;border-radius:3px;font-size:.875em;font-family:'SF Mono','Fira Code',Menlo,monospace}
+pre{background:${codeBlockBg};color:${codeBlockText};padding:16px;border-radius:6px;overflow-x:auto;margin:1em 0}
+pre code{background:none;padding:0;color:inherit}
+blockquote{border-left:4px solid ${blockquoteBorder};background:${blockquoteBg};padding-left:16px;margin:1em 0;color:${textMuted}}
+table{border-collapse:collapse;width:100%;margin:1em 0}
+th,td{border:1px solid ${borderColor};padding:8px 12px}
+th{background:${tableHeaderBg};font-weight:600}
+hr{border:none;border-top:2px solid ${borderColor};margin:2em 0}
+img{max-width:100%}
+::selection{background:${selectionBg}}
+.math-inline{display:inline;padding:2px 4px;border-radius:3px;background:${codeBg}}
+.math-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${codeBlockBg};text-align:center;overflow-x:auto}
+.mermaid-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${mermaidBg};border:1px solid ${borderColor}}
+.mermaid-preview{display:flex;justify-content:center;align-items:center}
+.mermaid-preview svg{max-width:100%;height:auto}
+@page{margin:15mm;size:A4}
+@media print{body{max-width:none;margin:0;padding:20px}#editor{position:static!important;overflow:visible!important}}
+</style>
+</head><body>${getLiveHTML()}</body></html>`
 }
 
 init().catch((e) => console.error('ColaMD init failed:', e))

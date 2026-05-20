@@ -149,7 +149,7 @@ export async function createEditor(
     const href = link.getAttribute('href')
     if (href) {
       e.preventDefault()
-      window.electronAPI.openExternal(href)
+      window.electronAPI?.openExternal(href)
     }
   })
 
@@ -165,6 +165,33 @@ export function getMarkdown(): string {
     markdown = serializer(view.state.doc)
   })
   return markdown
+}
+
+export function getLiveHTML(): string {
+  const editorDom = document.querySelector('#editor .ProseMirror')
+  if (!editorDom) return ''
+  const clone = editorDom.cloneNode(true) as HTMLElement
+
+  const styleTargets: Array<{ selector: string; prop: string }> = [
+    { selector: '.math-inline', prop: 'backgroundColor' },
+    { selector: '.math-block', prop: 'backgroundColor' },
+    { selector: '.mermaid-block', prop: 'backgroundColor' },
+  ]
+  for (const { selector, prop } of styleTargets) {
+    const originals = editorDom.querySelectorAll(selector)
+    const clones = clone.querySelectorAll(selector)
+    originals.forEach((orig, i) => {
+      const computed = getComputedStyle(orig)
+      const val = computed.getPropertyValue(prop === 'backgroundColor' ? 'background-color' : prop)
+      if (val && clones[i]) (clones[i] as HTMLElement).style.setProperty(prop, val)
+    })
+  }
+
+  clone.querySelectorAll('textarea.mermaid-source, .math-inline-raw, .math-block-raw')
+    .forEach(el => el.remove())
+  clone.querySelectorAll('.mermaid-loading, .mermaid-error')
+    .forEach(el => (el as HTMLElement).style.display = 'none')
+  return clone.innerHTML
 }
 
 export function getHTML(): string {
