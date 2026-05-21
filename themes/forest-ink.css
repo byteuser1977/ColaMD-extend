@@ -7,40 +7,40 @@
 
 /* ── 1. 根变量 & 主题变量 ── */
 :root {
-    --side-bar-bg-color: #ede8df;
+    --side-bar-bg-color: #e4e8e4;
     --control-text-color: #555;
-    --active-file-bg-color: #e0dcd7;
+    --active-file-bg-color: #d6dfd6;
     --active-file-text-color: #1a2e1f;
     --active-file-border-color: #3d6b4a;
-    --bg-color: #f5f1e8;
+    --bg-color: #eef1ee;
     --text-color: #1a2e1f;
     --select-text-bg-color: rgba(61, 107, 74, 0.18);
     --select-text-font-color: #1a2e1f;
-    --rawblock-edit-panel-bd: #d4cfc4;
+    --rawblock-edit-panel-bd: #c8d0ca;
 }
 
 body.theme-custom {
-    --bg-color: #f5f1e8;
+    --bg-color: #eef1ee;
     --text-color: #1a2e1f;
     --heading-color: #1a2e1f;
-    --border-color: #d4cfc4;
-    --code-bg: #ede8df;
+    --border-color: #c8d0ca;
+    --code-bg: #e4e8e4;
     --code-color: #3d6b4a;
     --code-block-bg: #1a2e1f;
-    --code-block-text: #e8e4de;
-    --code-block-color: #e8e4de;
-    --blockquote-bg: #ece7da;
+    --code-block-text: #dde4dd;
+    --code-block-color: #dde4dd;
+    --blockquote-bg: #e3e7e3;
     --blockquote-border: #3d6b4a;
     --link-color: #3d6b4a;
     --accent-color: #3d6b4a;
     --accent-dark: #2d5538;
-    --accent-light: #d4cfc4;
-    --surface-color: #ece7da;
-    --surface-alt: #faf8f3;
+    --accent-light: #c8d0ca;
+    --surface-color: #e3e7e3;
+    --surface-alt: #f2f4f2;
     --text-muted: #555;
     --text-dim: #777;
     --selection-bg: rgba(61, 107, 74, 0.18);
-    --table-header-bg: #ede8df;
+    --table-header-bg: #e4e8e4;
     --table-stripe: rgba(61, 107, 74, 0.04);
     --scrollbar-thumb: #c4c0b8;
     --scrollbar-thumb-hover: #ada9a2;
@@ -48,32 +48,32 @@ body.theme-custom {
     --mermaid-font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
     --mermaid-font-size: 12px;
     --mermaid-dark-mode: false;
-    --mermaid-background: #f0ebe1;
-    --mermaid-primary-color: #ddd8c9;
+    --mermaid-background: #e5eae6;
+    --mermaid-primary-color: #d6dfd6;
     --mermaid-primary-border-color: #3d6b4a;
     --mermaid-primary-text-color: #1a2e1f;
-    --mermaid-secondary-color: #e8e0d2;
+    --mermaid-secondary-color: #dde4dd;
     --mermaid-secondary-border-color: #5a7a64;
     --mermaid-secondary-text-color: #1a2e1f;
-    --mermaid-tertiary-color: #f5f1e8;
+    --mermaid-tertiary-color: #eef1ee;
     --mermaid-tertiary-border-color: #6a8a74;
     --mermaid-tertiary-text-color: #555;
     --mermaid-line-color: #6a8a74;
     --mermaid-text-color: #1a2e1f;
-    --mermaid-main-bkg: #ddd8c9;
-    --mermaid-second-bkg: #f0ebe1;
+    --mermaid-main-bkg: #d6dfd6;
+    --mermaid-second-bkg: #e5eae6;
     --mermaid-main-contrast-color: #3d6b4a;
-    --mermaid-label-background: #f5f1e8;
+    --mermaid-label-background: #eef1ee;
     --mermaid-label-text-color: #1a2e1f;
     --mermaid-node-border: #3d6b4a;
-    --mermaid-node-bkg: #ddd8c9;
+    --mermaid-node-bkg: #d6dfd6;
     --mermaid-cluster-bkg: rgba(61, 107, 74, 0.10);
     --mermaid-cluster-border: #3d6b4a;
     --mermaid-default-link-color: #6a8a74;
-    --mermaid-edge-label-background: #f5f1e8;
+    --mermaid-edge-label-background: #eef1ee;
     --mermaid-arrowhead-color: #6a8a74;
     --mermaid-person-border: #1a2e1f;
-    --mermaid-person-bkg: #ddd8c9;
+    --mermaid-person-bkg: #d6dfd6;
 }
 
 pre { --select-text-bg-color: #243528; --select-text-font-color: #fff; }
@@ -81,7 +81,7 @@ pre { --select-text-bg-color: #243528; --select-text-font-color: #fff; }
 /* ── 2. 全局 ── */
 html { font-size: 16px; -webkit-font-smoothing: antialiased; }
 body.theme-custom, html, body {
-    background-color: #f5f1e8;
+    background-color: #eef1ee;
     color: #1a2e1f;
     font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, "Times New Roman", serif;
     line-height: 1.9;
@@ -144,13 +144,13 @@ blockquote, body.theme-custom blockquote {
     margin: 1.5em 0;
     padding: 15px 20px 15px 25px;
     border-left: 4px solid #3d6b4a;
-    background: #ece7da;
+    background: #e3e7e3;
     color: #444;
 }
 blockquote p, body.theme-custom blockquote p { margin: 0.5em 0; }
 
 /* ── 6. 分割线 ── */
-hr, body.theme-custom hr { border: none; border-top: 1px solid #d4cfc4; margin: 2.5em 0; height: 0; }
+hr, body.theme-custom hr { border: none; border-top: 1px solid #c8d0ca; margin: 2.5em 0; height: 0; }
 
 /* ── 7. 列表 ── */
 ul, ol, body.theme-custom ul, body.theme-custom ol { padding-left: 1.8em; margin: 0.8em 0; }
@@ -166,7 +166,7 @@ body.theme-custom code, body.theme-custom tt {
     font-size: 0.9em;
     padding: 2px 6px;
     margin: 0 2px;
-    background: #ede8df;
+    background: #e4e8e4;
     border-radius: 3px;
     color: #3d6b4a;
 }
@@ -258,7 +258,7 @@ table, body.theme-custom table {
     font-size: 0.95em;
 }
 table th, body.theme-custom table th {
-    background: #ede8df;
+    background: #e4e8e4;
     font-weight: 700;
     color: #1a2e1f;
     padding: 10px 14px;
@@ -267,7 +267,7 @@ table th, body.theme-custom table th {
 }
 table td, body.theme-custom table td {
     padding: 10px 14px;
-    border-bottom: 1px solid #d4cfc4;
+    border-bottom: 1px solid #c8d0ca;
 }
 table tr:hover td, body.theme-custom table tr:hover td {
     background: rgba(61, 107, 74, 0.04);
@@ -283,11 +283,11 @@ body.theme-custom figcaption { font-size: 0.9em; color: var(--text-muted); margi
 
 /* ColaMD */
 body.theme-custom .math-block {
-    background: #ece7da;
+    background: #e4e8e4;
     padding: 16px 0;
     margin: 1.5em 0;
     border-radius: 6px;
-    border: 1px solid #d4cfc4;
+    border: 1px solid #c8d0ca;
     text-align: center;
     overflow-x: auto;
 }
@@ -316,8 +316,8 @@ body.theme-custom .math-block .katex .minner { color: #1a2e1f !important; }
 .md-diagram-panel.md-mermaid,
 body.theme-custom .mermaid-block,
 body.theme-custom .mermaid-preview {
-    background: #f0ebe1;
-    border: 1px solid #c4bfb5;
+    background: #e5eae6;
+    border: 1px solid #b8c4bc;
     border-radius: 6px;
     padding: 20px;
     margin: 1.5em 0;
@@ -352,7 +352,7 @@ body.theme-custom .mermaid-preview svg .node ellipse,
 body.theme-custom .mermaid-preview svg .node polygon,
 body.theme-custom .mermaid-preview svg .node path {
     stroke: #3d6b4a;
-    fill: #ddd8c9 !important;
+    fill: #d6dfd6 !important;
 }
 body.theme-custom .mermaid-preview svg .edgePath .path { stroke: #6a8a74; }
 body.theme-custom .mermaid-preview svg .cluster rect,
@@ -364,7 +364,7 @@ body.theme-custom .mermaid-preview svg defs marker path { fill: #6a8a74; stroke:
 .md-diagram-panel.md-mermaid .node circle,
 .md-diagram-panel.md-mermaid .node ellipse,
 .md-diagram-panel.md-mermaid .node polygon {
-    fill: #ddd8c9 !important;
+    fill: #d6dfd6 !important;
     stroke: #3d6b4a !important;
     stroke-width: 1.5px !important;
 }
@@ -373,7 +373,7 @@ body.theme-custom .mermaid-preview svg defs marker path { fill: #6a8a74; stroke:
     stroke-width: 1.5px !important;
 }
 .md-diagram-panel.md-mermaid .edgeLabel {
-    background-color: #f0ebe1 !important;
+    background-color: #e5eae6 !important;
     color: #333 !important;
 }
 .md-diagram-panel.md-mermaid .cluster rect {
@@ -396,7 +396,7 @@ body.theme-custom .mermaid-preview svg .label text,
 body.theme-custom .mermaid-preview svg .nodeLabel text { fill: #1a2e1f !important; }
 body.theme-custom .mermaid-preview svg .nodeLabel span { color: #1a2e1f !important; }
 body.theme-custom .mermaid-preview svg .edgeLabel text { fill: #1a2e1f !important; }
-body.theme-custom .mermaid-preview svg .edgeLabel rect { fill: #f0ebe1 !important; }
+body.theme-custom .mermaid-preview svg .edgeLabel rect { fill: #e5eae6 !important; }
 body.theme-custom .mermaid-preview svg .edgeLabel span { color: #1a2e1f !important; }
 
 /* 文本偏移 */
@@ -468,7 +468,7 @@ body.theme-custom .mermaid-preview svg .optLine { stroke: #6a8a74 !important; }
 body.theme-custom .mermaid-preview svg .labelBox { stroke: #b5b0a8; }
 
 /* 时序图 (Typora) */
-.md-diagram-panel.md-mermaid .actor { fill: #ddd8c9 !important; stroke: #3d6b4a !important; }
+.md-diagram-panel.md-mermaid .actor { fill: #d6dfd6 !important; stroke: #3d6b4a !important; }
 .md-diagram-panel.md-mermaid text.actor { fill: #1a2e1f !important; }
 .md-diagram-panel.md-mermaid .messageLine0,
 .md-diagram-panel.md-mermaid .messageLine1 { stroke: #6a8a74 !important; }
@@ -571,8 +571,8 @@ body.theme-custom .frontmatter,
 body.theme-custom .yaml-front-matter {
     font-family: "IBM Plex Mono", "JetBrains Mono", "Fira Code", monospace;
     font-size: 0.85em;
-    background: #ece7da;
-    border: 1px solid #d4cfc4;
+    background: #e3e7e3;
+    border: 1px solid #c8d0ca;
     border-radius: 4px;
     padding: 14px 18px;
     margin-bottom: 2em;
