@@ -1,8 +1,6 @@
 import { createEditor, getMarkdown, getHTML, getLiveHTML, setMarkdown, togglePluginMode } from './editor/editor'
 import { applyTheme, loadSavedTheme, setCachedCustomTheme } from './editor/plugins/themes/theme-manager'
 import { getAllPlugins, togglePlugin, findPluginBySelector, findExportCapabilities } from './editor/plugins'
-import { awaitAllMermaidRenders } from './editor/plugins/mermaid-plugin'
-import './editor/plugins/math-plugin'
 import { createCapacitorAPI } from './capacitor-api'
 import './editor/plugins/themes/base.css'
 import './mobile.css'
@@ -59,8 +57,26 @@ function processPendingIntentFile(api?: any): void {
   checkAndOpenPendingFile(api)
 }
 
-const pluginModules = import.meta.glob<{ default?: unknown }>('./editor/plugins/*-plugin.ts', { eager: true })
-Object.keys(pluginModules)
+// Eagerly load all plugin modules for side-effect registration (registerPluginModule)
+const _pluginRegistry = import.meta.glob<{ default?: unknown }>('./editor/plugins/*-plugin.ts', { eager: true })
+Object.keys(_pluginRegistry)
+
+/** Call ensureRendered on all enabled plugins that support it. Used before export. */
+async function ensureAllPluginsRendered(): Promise<void> {
+  for (const p of getAllPlugins()) {
+    if (p.enabled && p.ensureRendered) await p.ensureRendered()
+  }
+}
+
+/** Re-render nodes of plugins that react to theme changes (e.g. mermaid). */
+function refreshThemeSensitivePlugins(): void {
+  for (const p of getAllPlugins()) {
+    if (p.enabled && p.nodeTypes && p.onThemeChange) {
+      togglePluginMode(p.nodeTypes, 'raw')
+      requestAnimationFrame(() => togglePluginMode(p.nodeTypes, 'rendered'))
+    }
+  }
+}
 
 function isSlidesContent(content: string): boolean {
   return /^---\s*\n[\s\S]*?(kicker|chip):/m.test(content)
@@ -218,7 +234,7 @@ async function init(): Promise<void> {
   api.onMenuExportPDF(async () => {
     syncRawEdits()
     restoreRenderedMode(api)
-    await awaitAllMermaidRenders()
+    await ensureAllPluginsRendered()
     await new Promise(r => setTimeout(r, 300))
     await api.exportPDF(buildExportHTML())
     setTimeout(() => {
@@ -229,7 +245,7 @@ async function init(): Promise<void> {
   api.onMenuExportHTML(async () => {
     syncRawEdits()
     restoreRenderedMode(api)
-    await awaitAllMermaidRenders()
+    await ensureAllPluginsRendered()
     await new Promise(r => setTimeout(r, 200))
 
     const s = getComputedStyle(document.body)
@@ -304,11 +320,7 @@ img{max-width:100%}
     pendingThemeChange = null
     applyTheme(theme)
     for (const p of getAllPlugins()) p.onThemeChange?.(theme)
-    const enabledMermaid = getAllPlugins().filter(p => p.enabled && p.id === 'mermaid')
-    for (const p of enabledMermaid) {
-      togglePluginMode(p.nodeTypes || [], 'raw')
-      requestAnimationFrame(() => togglePluginMode(p.nodeTypes || [], 'rendered'))
-    }
+    refreshThemeSensitivePlugins()
   }
 
   api.onSetTheme((theme) => {
@@ -472,11 +484,7 @@ function setupMobileMenu(api: any, currentTheme: string): void {
         const theme = (el as HTMLElement).dataset.theme!
         applyTheme(theme)
         for (const p of getAllPlugins()) p.onThemeChange?.(theme)
-        const enabledMermaid = getAllPlugins().filter(p => p.enabled && p.id === 'mermaid')
-        for (const p of enabledMermaid) {
-          togglePluginMode(p.nodeTypes || [], 'raw')
-          requestAnimationFrame(() => togglePluginMode(p.nodeTypes || [], 'rendered'))
-        }
+        refreshThemeSensitivePlugins()
         themeListEl.querySelectorAll('.menu-theme-item').forEach((e) => e.classList.remove('active'))
         el.classList.add('active')
         closeMenu()
@@ -554,7 +562,7 @@ function setupMobileMenu(api: any, currentTheme: string): void {
         case 'export-pdf':
           syncRawEdits()
           restoreRenderedMode(api)
-          await awaitAllMermaidRenders()
+          await ensureAllPluginsRendered()
           await new Promise(r => setTimeout(r, 300))
           await api.exportPDF(buildExportHTML())
           setTimeout(() => {
@@ -565,7 +573,7 @@ function setupMobileMenu(api: any, currentTheme: string): void {
         case 'export-html':
           syncRawEdits()
           restoreRenderedMode(api)
-          await awaitAllMermaidRenders()
+          await ensureAllPluginsRendered()
           await new Promise(r => setTimeout(r, 200))
           api.exportHTML(buildExportHTML())
           break

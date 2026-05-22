@@ -659,6 +659,7 @@ export const mermaidPlugin: RendererPlugin = {
       fontSize,
     })
   },
+  ensureRendered: awaitAllMermaidRenders,
 }
 
 registerPluginModule({
