@@ -2,6 +2,7 @@ import { createEditor, getMarkdown, getHTML, getLiveHTML, setMarkdown, togglePlu
 import { applyTheme, loadSavedTheme, setCachedCustomTheme } from './editor/plugins/themes/theme-manager'
 import { getAllPlugins, togglePlugin, findPluginBySelector, findExportCapabilities } from './editor/plugins'
 import { awaitAllMermaidRenders } from './editor/plugins/mermaid-plugin'
+import './editor/plugins/math-plugin'
 import { createCapacitorAPI } from './capacitor-api'
 import './editor/plugins/themes/base.css'
 import './mobile.css'
@@ -169,11 +170,11 @@ async function init(): Promise<void> {
   api.registerPlugins(getAllPlugins().map((p) => ({ id: p.id, name: p.name, enabled: p.enabled })))
 
   api.onMenuTogglePlugin((id) => {
-    togglePlugin(id)
     const p = getAllPlugins().find((x) => x.id === id)
     if (p) {
+      togglePlugin(id, !p.enabled)
       const mode = p.enabled ? 'rendered' : 'raw'
-      togglePluginMode(p.nodeTypes, mode)
+      togglePluginMode(p.nodeTypes || [], mode)
       api.syncPluginState(p.id, p.enabled)
     }
   })
@@ -305,8 +306,8 @@ img{max-width:100%}
     for (const p of getAllPlugins()) p.onThemeChange?.(theme)
     const enabledMermaid = getAllPlugins().filter(p => p.enabled && p.id === 'mermaid')
     for (const p of enabledMermaid) {
-      togglePluginMode(p.nodeTypes, 'raw')
-      requestAnimationFrame(() => togglePluginMode(p.nodeTypes, 'rendered'))
+      togglePluginMode(p.nodeTypes || [], 'raw')
+      requestAnimationFrame(() => togglePluginMode(p.nodeTypes || [], 'rendered'))
     }
   }
 
@@ -318,7 +319,7 @@ img{max-width:100%}
     }, 50)
   })
   api.onSetCustomCSS((css) => {
-    const theme = loadSavedTheme()
+    const theme = pendingThemeChange || loadSavedTheme()
     applyTheme(theme, css)
   })
 
@@ -473,8 +474,8 @@ function setupMobileMenu(api: any, currentTheme: string): void {
         for (const p of getAllPlugins()) p.onThemeChange?.(theme)
         const enabledMermaid = getAllPlugins().filter(p => p.enabled && p.id === 'mermaid')
         for (const p of enabledMermaid) {
-          togglePluginMode(p.nodeTypes, 'raw')
-          requestAnimationFrame(() => togglePluginMode(p.nodeTypes, 'rendered'))
+          togglePluginMode(p.nodeTypes || [], 'raw')
+          requestAnimationFrame(() => togglePluginMode(p.nodeTypes || [], 'rendered'))
         }
         themeListEl.querySelectorAll('.menu-theme-item').forEach((e) => e.classList.remove('active'))
         el.classList.add('active')
@@ -496,11 +497,11 @@ function setupMobileMenu(api: any, currentTheme: string): void {
     pluginListEl.querySelectorAll('.menu-plugin-item').forEach((el) => {
       el.addEventListener('click', () => {
         const id = (el as HTMLElement).dataset.pluginId!
-        togglePlugin(id)
         const p = getAllPlugins().find((x) => x.id === id)
         if (p) {
+          togglePlugin(id, !p.enabled)
           const mode = p.enabled ? 'rendered' : 'raw'
-          togglePluginMode(p.nodeTypes, mode)
+          togglePluginMode(p.nodeTypes || [], mode)
           api.syncPluginState(p.id, p.enabled)
           const toggle = el.querySelector('.menu-plugin-toggle')
           toggle?.classList.toggle('on', p.enabled)

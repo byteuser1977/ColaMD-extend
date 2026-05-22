@@ -1,11 +1,18 @@
 import type { MilkdownPlugin } from '@milkdown/ctx'
 import type { Plugin } from 'unified'
 
+export interface ExportCapability {
+  label: string
+  defaultName: string
+  filter: { name: string; extensions: string[] }
+  execute: (element: HTMLElement) => Promise<string | null>
+}
+
 export interface RendererPlugin {
   id: string
   name: string
   enabled: boolean
-  remarkPlugin?: Plugin<any[], any>
+  remarkPlugin?: { plugin: Plugin<any[], any>; options?: any }
   rehypePlugin?: Plugin<any[], any>
   onMount?: (...args: any[]) => any
   onBeforeMount?: (...args: any[]) => any
@@ -13,6 +20,7 @@ export interface RendererPlugin {
   onThemeChange?: (theme: string, customCSS?: string) => void
   css?: string
   nodeTypes?: string[]
+  exportCapabilities?: ExportCapability[]
   renderStatus?: (container: HTMLElement) => Promise<{ ok: number; fail: number; total: number }>
   ensureRendered?: () => Promise<void>
 }
@@ -45,10 +53,13 @@ export function findPluginBySelector(selector: string): RendererPlugin | undefin
   return plugins.find((p) => p.id === selector)
 }
 
-export function findExportCapabilities(): { id: string; name: string }[] {
-  return modules
-    .filter((m) => m.info.enabled && m.info.onMount)
-    .map((m) => ({ id: m.info.id, name: m.info.name }))
+export function findExportCapabilities(className: string): ExportCapability[] {
+  for (const m of modules) {
+    if (m.info.enabled && m.info.exportCapabilities && m.info.nodeTypes?.some(nt => className.includes(nt.replace(/_/g, '-')))) {
+      return m.info.exportCapabilities
+    }
+  }
+  return []
 }
 
 export function togglePlugin(id: string, enabled: boolean): void {

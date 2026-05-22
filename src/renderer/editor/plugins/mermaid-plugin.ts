@@ -537,7 +537,7 @@ function renderMermaidBlock(dom: HTMLElement, node: any, renderIdRef: { current:
   pendingRenders.add(renderPromise)
 }
 
-const mermaidBlockView = $view(mermaidBlockSchema.node, (_ctx): NodeViewConstructor => {
+const mermaidBlockView = $view(mermaidBlockSchema, (_ctx): NodeViewConstructor => {
   return (node, view, getPos) => {
     const container = document.createElement('div')
     container.className = 'mermaid-block'
@@ -663,7 +663,7 @@ export const mermaidPlugin: RendererPlugin = {
 
 registerPluginModule({
   info: mermaidPlugin,
-  milkdownPlugins: [mermaidBlockSchema.node, mermaidBlockInputRule, mermaidBlockView],
+  milkdownPlugins: [mermaidBlockSchema, mermaidBlockInputRule, mermaidBlockView],
 })
 
 export { mermaidBlockSchema, mermaidBlockInputRule, mermaidBlockView, remarkMermaid }
