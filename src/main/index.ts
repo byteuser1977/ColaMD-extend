@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu, shell } from 'electron'
 import { join, basename, dirname, extname } from 'path'
-import { readFile, writeFile, readdir, copyFile, mkdir } from 'fs/promises'
-import { watch, FSWatcher, existsSync, readdirSync, readFileSync, createServer } from 'fs'
+import { readFile, writeFile, readdir, copyFile, mkdir, stat } from 'fs/promises'
+import { existsSync, readdirSync, readFileSync, createServer } from 'fs'
 import { IncomingMessage, ServerResponse } from 'http'
 import { createServer as createHttpServer } from 'http'
 
@@ -26,7 +26,7 @@ async function scanCustomThemes(): Promise<string[]> {
 // Per-window state
 interface WindowState {
   filePath: string | null
-  watcher: FSWatcher | null
+  watcher: ReturnType<typeof setInterval> | null
   isInternalSave: boolean
   debounceTimer: ReturnType<typeof setTimeout> | null
   agentState: 'idle' | 'active' | 'cooldown'
@@ -110,7 +110,7 @@ function suggestFileName(win: BrowserWindow, content?: string): string | undefin
 
 function stopWatching(state: WindowState): void {
   if (state.watcher) {
-    state.watcher.close()
+    clearInterval(state.watcher)
     state.watcher = null
   }
   if (state.agentCooldownTimer) {
@@ -152,28 +152,36 @@ function watchFile(win: BrowserWindow, state: WindowState): void {
   if (!state.filePath) return
   stopWatching(state)
   const filePath = state.filePath
-  state.watcher = watch(filePath, (eventType) => {
-    if (eventType !== 'change' || state.isInternalSave) return
+  let lastMtime = 0
 
-    // Agent activity detection
-    const now = Date.now()
-    const gap = now - state.lastExternalChange
-    state.lastExternalChange = now
-    if (gap > 0 && gap < 2000) {
-      transitionAgentState(win, state, 'active')
-    } else if (state.agentState === 'active') {
-      transitionAgentState(win, state, 'active') // reset cooldown timer
-    }
+  stat(filePath).then(s => { lastMtime = s.mtimeMs }).catch(() => {})
 
-    if (state.debounceTimer) clearTimeout(state.debounceTimer)
-    state.debounceTimer = setTimeout(() => {
-      readFile(filePath, 'utf-8')
-        .then((data) => {
-          if (!win.isDestroyed()) win.webContents.send('file-changed', resolveImagePaths(data, filePath))
-        })
-        .catch(() => {})
-    }, 100)
-  })
+  state.watcher = setInterval(() => {
+    if (state.isInternalSave) return
+    stat(filePath).then(s => {
+      if (s.mtimeMs === lastMtime) return
+      lastMtime = s.mtimeMs
+
+      // Agent activity detection
+      const now = Date.now()
+      const gap = now - state.lastExternalChange
+      state.lastExternalChange = now
+      if (gap > 0 && gap < 2000) {
+        transitionAgentState(win, state, 'active')
+      } else if (state.agentState === 'active') {
+        transitionAgentState(win, state, 'active') // reset cooldown timer
+      }
+
+      if (state.debounceTimer) clearTimeout(state.debounceTimer)
+      state.debounceTimer = setTimeout(() => {
+        readFile(filePath, 'utf-8')
+          .then((data) => {
+            if (!win.isDestroyed()) win.webContents.send('file-changed', resolveImagePaths(data, filePath))
+          })
+          .catch(() => {})
+      }, 100)
+    }).catch(() => {})
+  }, 500)
 }
 
 // Rewrite relative image paths in markdown to absolute file:// URLs
@@ -654,6 +662,7 @@ ipcMain.handle('load-custom-theme', async (event) => {
     const destPath = join(themesDir, fileName)
     await copyFile(srcPath, destPath)
     const css = await readFile(destPath, 'utf-8')
+    invalidateThemeCache()
     buildMenu() // rebuild menu to include new theme
     return { name: fileName, css }
   } catch {
@@ -691,6 +700,28 @@ ipcMain.handle('sync-plugin-state', (_event, id: string, enabled: boolean) => {
 
 // Menu — targets the focused window
 
+let cachedThemeFiles: string[] = []
+let themeFilesValid = false
+
+function invalidateThemeCache(): void {
+  themeFilesValid = false
+}
+
+function scanThemeFiles(): void {
+  try {
+    const files = readdirSync(themesDir).filter((f: string) => f.endsWith('.css')).sort()
+    cachedThemeFiles = files
+  } catch {
+    cachedThemeFiles = []
+  }
+  themeFilesValid = true
+}
+
+function getCachedThemeFiles(): string[] {
+  if (!themeFilesValid) scanThemeFiles()
+  return cachedThemeFiles
+}
+
 function getFocusedWindow(): BrowserWindow | null {
   return BrowserWindow.getFocusedWindow()
 }
@@ -705,21 +736,19 @@ function buildMenu(): void {
 
   // Scan custom themes synchronously for menu building
   const customThemeItems: Electron.MenuItemConstructorOptions[] = []
-  try {
-    const files = readdirSync(themesDir).filter((f: string) => f.endsWith('.css')).sort()
-    for (const file of files) {
-      customThemeItems.push({
-        label: file.replace(/\.css$/, ''),
-        click: async () => {
-          try {
-            const css = await readFile(join(themesDir, file), 'utf-8')
-            sendToFocused('set-theme', `custom:${file}`)
-            sendToFocused('set-custom-css', css)
-          } catch { /* ignore */ }
-        }
-      })
-    }
-  } catch { /* themes dir may not exist yet */ }
+  const files = getCachedThemeFiles()
+  for (const file of files) {
+    customThemeItems.push({
+      label: file.replace(/\.css$/, ''),
+      click: async () => {
+        try {
+          const css = await readFile(join(themesDir, file), 'utf-8')
+          sendToFocused('set-theme', `custom:${file}`)
+          sendToFocused('set-custom-css', css)
+        } catch { /* ignore */ }
+      }
+    })
+  }
 
   const themeSubmenu: Electron.MenuItemConstructorOptions[] = [
     { label: 'Light', click: () => sendToFocused('set-theme', 'light') },
@@ -846,6 +875,7 @@ function buildMenu(): void {
 
 app.whenReady().then(() => {
   ensureThemesDir()
+  scanThemeFiles()
   buildMenu()
 
   // Check command line args for file paths

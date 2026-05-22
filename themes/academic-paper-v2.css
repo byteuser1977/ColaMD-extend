@@ -1,0 +1,474 @@
+/*
+ * ColaMD 主题：Academic Paper v2 (学术论文打印 - 模块化版本)
+ * 架构：foundation.css → mermaid/variables.css → mermaid/academic.css → 本文件
+ * 配色：纯白底 + 纯黑正文 + 归藏暖色系 Mermaid
+ * 格式：遵循中文学术论文排版规范（GB/T 7713）
+ * 兼容：ColaMD (body.theme-custom) / Typora
+ *
+ * === 模块化组合示例 ===
+ * 如需替换 Mermaid 配色，只需修改 @import 为其他方案：
+ *   @import "../components/mermaid/elegant.css";  // 典雅暖调
+ *   @import "../components/mermaid/newsprint.css"; // 报纸风格
+ *   @import "../components/mermaid/light.css";     // 现代蓝紫
+ */
+
+/* ================================================================
+   0. 依赖导入 (Layer Architecture)
+   ================================================================ */
+/* Layer 1: Foundation (全局变量 + Mermaid 变量默认值) */
+/* Layer 2: Mermaid 变量→选择器映射 */
+/* Layer 3: Mermaid Academic 配色方案 (归藏暖色系) */
+/* Layer 4: 本文件 (学术论文特定样式) */
+
+/* ================================================================
+   1. 学术论文主题变量 (覆盖 Foundation 默认值)
+   ================================================================ */
+:root {
+  --side-bar-bg-color: #f5f5f5;
+  --control-text-color: #333;
+  --active-file-bg-color: #e8e8e8;
+  --active-file-text-color: #000;
+  --active-file-border-color: #000;
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --select-text-bg-color: rgba(0, 0, 0, 0.12);
+  --select-text-font-color: #000;
+  --rawblock-edit-panel-bd: #ccc;
+}
+
+body.theme-custom {
+  /* -- 颜色覆盖：纯黑白 -- */
+  --color-bg: #ffffff;
+  --color-text: #000000;
+  --color-text-muted: #333333;
+  --color-border: #000000;
+  --color-link: #000000;
+  --color-accent: #000000;
+  --color-selection-bg: rgba(0, 0, 0, 0.12);
+
+  /* -- 代码 -- */
+  --code-bg: #f5f5f5;
+  --code-color: #000000;
+  --code-block-bg: #f5f5f5;
+  --code-block-text: #000000;
+
+  /* -- 引用 -- */
+  --blockquote-bg: #f9f9f9;
+  --blockquote-border: #000000;
+  --blockquote-color: #000000;
+
+  /* -- 表格 -- */
+  --table-header-bg: transparent;
+  --table-border: #000000;
+
+  /* -- 滚动条 -- */
+  --scrollbar-thumb: #bbb;
+  --scrollbar-thumb-hover: #999;
+
+  /* -- 排版 -- */
+  --font-family-base: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+  --font-family-heading: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", "Arial", sans-serif;
+  --font-family-code: "Courier New", "Consolas", "Source Code Pro", monospace;
+  --font-size-root: 12pt;
+  --line-height-base: 1.5;
+
+  /* -- Mermaid 配色：引用 academic 方案 (已在 mermaid/academic.css 中定义) -- */
+  /* 如需自定义，在此覆盖即可，例如：--mermaid-node-stroke: #your-color; */
+}
+
+pre { --select-text-bg-color: rgba(0, 0, 0, 0.12); --select-text-font-color: #000; }
+
+/* ================================================================
+   2. 全局排版 (学术论文页面设置)
+   ================================================================ */
+html { font-size: 12pt; -webkit-font-smoothing: antialiased; }
+
+body.theme-custom, html, body {
+  background-color: #ffffff;
+  color: #000000;
+  font-family: var(--font-family-base);
+  line-height: 1.5;
+  font-size: 12pt;
+}
+
+body.theme-custom { -webkit-font-smoothing: antialiased; }
+
+/* 页面宽度：A4 纸幅 */
+body.theme-custom #editor { max-width: 210mm; margin: 0 auto; padding: 25mm 25mm 25mm 30mm; }
+#write { max-width: 210mm; margin: 0 auto; padding: 0; }
+#write > ul:first-child, #write > ol:first-child { margin-top: 30px; }
+
+@media only screen and (min-width: 1400px) { #write { max-width: 210mm; } }
+@media only screen and (max-width: 768px) {
+  #write { padding: 15mm 12mm 15mm 12mm; }
+  body.theme-custom .mermaid-block,
+  body.theme-custom .mermaid-preview,
+  .md-diagram-panel.md-mermaid { padding: 12px; margin: 1em 0; }
+  body.theme-custom .mermaid-preview svg { max-width: 100% !important; height: auto !important; }
+  body.theme-custom .mermaid-preview svg text { font-size: 9pt !important; }
+  .md-diagram-panel.md-mermaid svg text { font-size: 9pt !important; }
+  body.theme-custom .mermaid-preview svg .titleText { font-size: 10.5pt !important; }
+  .md-diagram-panel.md-mermaid svg .titleText { font-size: 10.5pt !important; }
+}
+
+/* ================================================================
+   3. 标题体系 (GB/T 7713 学术论文规范)
+   ================================================================ */
+h1, h2, h3, h4, h5, h6,
+body.theme-custom h1, body.theme-custom h2, body.theme-custom h3,
+body.theme-custom h4, body.theme-custom h5, body.theme-custom h6 {
+  position: relative;
+  color: #000000;
+  font-weight: 700;
+  line-height: 1.35;
+  text-indent: 0;
+  font-family: var(--font-family-heading);
+}
+
+/* 一级标题：论文题目 - 黑体 三号 (16pt)，居中 */
+h1, body.theme-custom h1 { font-size: 16pt; text-align: center; margin-top: 24pt; margin-bottom: 18pt; cursor: text; }
+
+/* 二级标题：一级节 - 黑体 四号 (14pt)，左对齐 */
+h2, body.theme-custom h2 { font-size: 14pt; margin-top: 20pt; margin-bottom: 10pt; cursor: text; }
+
+/* 三级标题：二级节 - 黑体 小四号 (12pt) */
+h3, body.theme-custom h3 { font-size: 12pt; margin-top: 14pt; margin-bottom: 7pt; cursor: text; }
+
+/* 四级标题 */
+h4, body.theme-custom h4 { font-size: 12pt; margin-top: 14pt; margin-bottom: 6pt; cursor: text; }
+
+/* 五级标题 */
+h5, body.theme-custom h5 { font-size: 11pt; margin-top: 12pt; margin-bottom: 5pt; cursor: text; }
+
+/* 六级标题 */
+h6, body.theme-custom h6 { font-size: 12pt; color: #000000; margin-top: 10pt; margin-bottom: 4pt; cursor: text; }
+
+h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor,
+h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor { text-decoration: none; }
+
+/* ================================================================
+   4. 内联元素
+   ================================================================ */
+/* 正文：宋体 小四号 (12pt)，行距 1.5 倍，首行缩进 2 字符 */
+body.theme-custom p, body.theme-custom #write > p {
+  margin: 0 0 0 0;
+  line-height: 1.5;
+  text-align: justify;
+  text-indent: 2em;
+  font-size: 12pt;
+}
+
+strong, body.theme-custom strong { color: #000000; font-weight: 700; }
+em, body.theme-custom em { font-style: italic; color: #000000; }
+em strong, strong em, body.theme-custom em strong, body.theme-custom strong em { color: #000000; font-weight: 700; }
+
+a, body.theme-custom a { color: #000000; text-decoration: none; border-bottom: 1px solid #000; }
+a:hover, body.theme-custom a:hover { text-decoration: none; }
+
+u, body.theme-custom u { text-decoration: none; border-bottom: 1px solid #000; padding-bottom: 1px; }
+mark, body.theme-custom mark { background: #e0e0e0; color: #000000; padding: 1px 4px; border-radius: 0; }
+del, s { color: #666; }
+
+/* ================================================================
+   5. 引用块
+   ================================================================ */
+blockquote, body.theme-custom blockquote {
+  margin: 8pt 0;
+  padding: 10px 16px 10px 20px;
+  border-left: 3px solid #000000;
+  background: #f9f9f9;
+  color: #000000;
+  font-family: var(--font-family-base);
+  font-size: 10.5pt;
+}
+blockquote p, body.theme-custom blockquote p { margin: 3pt 0; text-indent: 0; }
+
+/* ================================================================
+   6. 分割线
+   ================================================================ */
+hr, body.theme-custom hr { border: none; border-top: 1px solid #000000; margin: 24pt 0; height: 0; }
+
+/* ================================================================
+   7. 列表体系 (GB/T 7713) - 学术论文复数规则
+   ================================================================ */
+
+/* -- 7.0 重置 -- */
+body.theme-custom ul, body.theme-custom ol, body.theme-custom li { margin: 0; padding: 0; }
+
+/* -- 7.1 容器 -- */
+body.theme-custom #editor .ProseMirror > ul,
+body.theme-custom #editor .ProseMirror > ol,
+body.theme-custom #write > ul:first-of-type,
+body.theme-custom #write > ol:first-of-type {
+  margin: 4pt 0 4pt 2em;
+  padding-left: 1.5em;
+  list-style: none;
+  counter-reset: ol-lv1 ul-lv1;
+}
+body.theme-custom ul ul, body.theme-custom ul ol,
+body.theme-custom ol ul, body.theme-custom ol ol {
+  margin: 0; padding-left: 1.5em; list-style: none;
+}
+
+/* -- 7.2 列表项 -- */
+body.theme-custom li {
+  line-height: 1.6;
+  font-family: var(--font-family-base);
+  font-size: 12pt;
+  font-weight: normal;
+  text-indent: 0;
+  list-style: none;
+  padding: 1pt 0;
+}
+body.theme-custom li::before { content: ""; display: inline; margin-right: 0.35em; }
+body.theme-custom #editor .ProseMirror li > p { display: inline; margin: 0; padding: 0; text-indent: 0; font-size: inherit; font-weight: inherit; }
+
+/* -- 7.3 有序列表编号体系 -- */
+body.theme-custom ol > li { counter-increment: ol-lv1; }
+body.theme-custom ol > li::before { content: counter(ol-lv1) "."; font-family: "SimSun", "Songti SC", Georgia, serif; }
+body.theme-custom ol > li > ol { counter-reset: ol-lv2; }
+body.theme-custom ol > li > ol > li { counter-increment: ol-lv2; }
+body.theme-custom ol > li > ol > li::before { content: "(" counter(ol-lv2) ")"; font-family: "SimSun", "Songti SC", Georgia, serif; }
+body.theme-custom ol > li > ol > li > ol { counter-reset: ol-lv3; }
+body.theme-custom ol > li > ol > li > ol > li { counter-increment: ol-lv3; }
+body.theme-custom ol > li > ol > li > ol > li::before { content: counter(ol-lv3, cjk-ideographic) ""; font-family: "SimSun", "Songti SC", Georgia, serif; }
+body.theme-custom ol ol ol ol > li::before { content: counter(list-item, lower-roman) "."; font-family: "SimSun", "Songti SC", Georgia, serif; }
+
+/* -- 7.4 无序列表符号体系 -- */
+body.theme-custom ul > li { counter-increment: ul-lv1; }
+body.theme-custom ul > li::before { content: "\25A0\00A0"; }
+body.theme-custom ul > li > ul { counter-reset: ul-lv2; }
+body.theme-custom ul > li > ul > li { counter-increment: ul-lv2; }
+body.theme-custom ul > li > ul > li::before { content: "\25CF\00A0"; }
+body.theme-custom ul > li > ul > li > ul { counter-reset: ul-lv3; }
+body.theme-custom ul > li > ul > li > ul > li { counter-increment: ul-lv3; }
+body.theme-custom ul > li > ul > li > ul > li::before { content: "\25CB\00A0"; }
+body.theme-custom ul ul ul ul > li::before { content: "\25C6\00A0"; }
+
+/* -- 7.5 混合嵌套 -- */
+body.theme-custom ul > li > ol { counter-reset: ol-mix2; }
+body.theme-custom ul > li > ol > li { counter-increment: ol-mix2; }
+body.theme-custom ul > li > ol > li::before { content: "(" counter(ol-mix2) ")"; font-family: "SimSun", "Songti SC", Georgia, serif; }
+body.theme-custom ul > li > ol > li > ol { counter-reset: ol-mix3; }
+body.theme-custom ul > li > ol > li > ol > li { counter-increment: ol-mix3; }
+body.theme-custom ul > li > ol > li > ol > li::before { content: counter(ol-mix3, lower-roman) "."; font-family: "SimSun", "Songti SC", Georgia, serif; }
+body.theme-custom ol > li > ul { counter-reset: ul-mix2; }
+body.theme-custom ol > li > ul > li { counter-increment: ul-mix2; }
+body.theme-custom ol > li > ul > li::before { content: "\25CF\00A0"; }
+body.theme-custom ol > li > ul > li > ul { counter-reset: ul-mix3; }
+body.theme-custom ol > li > ul > li > ul > li { counter-increment: ul-mix3; }
+body.theme-custom ol > li > ul > li > ul > li::before { content: "\25CB\00A0"; }
+
+.md-task-list-item > input { margin-left: -1.3em; margin-top: 0.3em; }
+
+/* ================================================================
+   8. 内联代码 + 9. 代码块
+   ================================================================ */
+code, tt, body.theme-custom code, body.theme-custom tt {
+  font-family: "Courier New", "Consolas", "Source Code Pro", monospace;
+  font-size: 0.88em; padding: 1px 4px; margin: 0 2px;
+  background: #f0f0f0; border-radius: 0; color: #000000; border: 1px solid #000000;
+}
+
+pre.md-fences {
+  font-family: "Courier New", "Consolas", "Source Code Pro", monospace;
+  font-size: 10.5pt; line-height: 1.5;
+  background: #f5f5f5; color: #000000;
+  padding: 14px 18px; border-radius: 0; margin: 12pt 0; overflow-x: auto; border: 1px solid #000000;
+}
+pre.md-fences code { background: transparent; color: inherit; padding: 0; margin: 0; border-radius: 0; border: none; }
+
+body.theme-custom #editor .ProseMirror pre {
+  font-family: "Courier New", "Consolas", "Source Code Pro", monospace;
+  font-size: 10.5pt; line-height: 1.5;
+  background: #f5f5f5 !important; color: #000000 !important;
+  padding: 14px 18px; border-radius: 0; margin: 12pt 0; overflow-x: auto; border: 1px solid #000000;
+}
+body.theme-custom #editor .ProseMirror pre code { background: transparent !important; color: #000000 !important; padding: 0; margin: 0; border-radius: 0; border: none; }
+
+/* ================================================================
+   10. 代码语法高亮 (黑白打印友好)
+   ================================================================ */
+.cm-s-inner { font-family: "Courier New", "Consolas", "Source Code Pro", monospace; font-size: 10.5pt; line-height: 1.5; }
+
+body.theme-custom .token.comment, body.theme-custom .token.prolog,
+body.theme-custom .token.doctype, body.theme-custom .token.cdata,
+.cm-s-inner .cm-comment, .cm-s-inner .cm-quote, .cm-s-inner .cm-hr { color: #666; font-style: italic; }
+body.theme-custom .token.punctuation, .cm-s-inner .cm-meta { color: #333; }
+body.theme-custom .token.keyword, body.theme-custom .token.important,
+.cm-s-inner .cm-keyword { color: #000; font-weight: 700; }
+body.theme-custom .token.boolean, body.theme-custom .token.builtin,
+body.theme-custom .token.tag, body.theme-custom .token.selector,
+body.theme-custom .token.constant, body.theme-custom .token.deleted,
+.cm-s-inner .cm-atom, .cm-s-inner .cm-builtin, .cm-s-inner .cm-tag, .cm-s-inner .cm-error { color: #000; font-weight: 600; }
+body.theme-custom .token.string, body.theme-custom .token.attr-value,
+body.theme-custom .token.symbol, body.theme-custom .token.inserted,
+.cm-s-inner .cm-string { color: #333; }
+body.theme-custom .token.number, .cm-s-inner .cm-number { color: #000; }
+body.theme-custom .token.function, body.theme-custom .token.class-name,
+body.theme-custom .token.variable, body.theme-custom .token.attr-name,
+body.theme-custom .token.property, body.theme-custom .token.entity,
+.cm-s-inner .cm-def, .cm-s-inner .cm-variable-2, .cm-s-inner .cm-attribute,
+.cm-s-inner .cm-property, .cm-s-inner .cm-header { color: #000; }
+.cm-s-inner .cm-header { font-weight: 700; }
+body.theme-custom .token.url, .cm-s-inner .cm-link { color: #000; text-decoration: underline; }
+body.theme-custom .token.operator, .cm-s-inner .cm-operator { color: #333; }
+body.theme-custom .token.regex { color: #333; }
+.cm-s-inner .cm-variable { color: #000; }
+
+/* ================================================================
+   11. 表格 (三线表规范 - GB/T 7713)
+   ================================================================ */
+table, body.theme-custom table {
+  width: 100%; border-collapse: collapse; margin: 14pt auto; font-size: 10.5pt; line-height: 1.5;
+}
+
+table th, body.theme-custom table th {
+  background: transparent; font-weight: 700; color: #000000;
+  padding: 6pt 8pt; text-align: center; text-indent: 0; vertical-align: middle;
+  font-family: var(--font-family-heading);
+}
+
+table td, body.theme-custom table td {
+  padding: 6pt 8pt; text-align: left; text-indent: 0; vertical-align: top;
+  font-family: var(--font-family-base);
+}
+
+table p, body.theme-custom table p,
+table td p, body.theme-custom table td p {
+  margin: 0; padding: 0; text-indent: 0; text-align: left; line-height: 1.4; font-size: inherit;
+}
+
+table ul, table ol, body.theme-custom table ul, body.theme-custom table ol { margin: 2pt 0; padding-left: 1.5em; }
+table li, body.theme-custom table li { margin: 1pt 0; padding-left: 0; font-size: inherit; }
+table li::before, body.theme-custom table li::before { display: inline; margin-right: 0.35em; }
+table tr:hover td, body.theme-custom table tr:hover td { background: transparent; }
+
+/* 三线表：顶线 + 表头底线 + 底线 */
+body.theme-custom table {
+  border-top: 1.5pt solid #000000;
+  border-bottom: 1.5pt solid #000000;
+  border-left: none; border-right: none;
+}
+body.theme-custom table th { border: none; border-bottom: 0.75pt solid #000000; background: transparent; }
+body.theme-custom table td { border: none; }
+
+/* ================================================================
+   12. 图片
+   ================================================================ */
+img, body.theme-custom img { max-width: 100%; }
+p > img:only-child, body.theme-custom p > img:only-child { display: block; margin: 12pt auto; }
+body.theme-custom figure { margin: 12pt 0; text-align: center; }
+body.theme-custom figcaption {
+  font-family: var(--font-family-base); font-size: 10.5pt; color: #000000; margin-top: 6pt; text-align: center;
+}
+
+/* ================================================================
+   13. 数学公式 (纯黑白)
+   ================================================================ */
+body.theme-custom .math-block {
+  background: #ffffff; padding: 12px 0; margin: 12pt 0; border-radius: 0; border: none; text-align: center; overflow-x: auto;
+}
+body.theme-custom .math-block .katex, body.theme-custom .math-block .katex *,
+body.theme-custom .math-block .MathJax, body.theme-custom .math-block .MathJax *,
+body.theme-custom .math-block .katex .mord, body.theme-custom .math-block .katex .mbin,
+body.theme-custom .math-block .katex .mrel, body.theme-custom .math-block .katex .mop,
+body.theme-custom .math-block .katex .mopen, body.theme-custom .math-block .katex .mclose,
+body.theme-custom .math-block .katex .mpunct, body.theme-custom .math-block .katex .minner,
+body.theme-custom .math-block .katex .mord + .mord, body.theme-custom .math-block .katex .mbin + .mbin,
+body.theme-custom .math-block .katex .mrel + .mrel { color: #000000 !important; }
+body.theme-custom .math-inline, body.theme-custom .math-inline .katex,
+body.theme-custom .math-inline .katex * { color: #000000 !important; }
+
+/* Typora */
+.md-inline-math script, .md-inline-math .MathJax { color: #000000 !important; }
+
+/* ================================================================
+   14. Mermaid 图表
+   ── 配色由 mermaid/academic.css 通过 CSS 变量提供
+   ── 此处仅定义容器样式和 academic 特有的规则
+   ================================================================ */
+.md-diagram-panel { margin: 1.5em 0; }
+
+/* 重写容器 (Academic 需要无圆角 + 特定边框色) */
+.md-diagram-panel.md-mermaid,
+body.theme-custom .mermaid-block,
+body.theme-custom .mermaid-preview {
+  background: #F4EDE0;
+  border: 1px solid #DBD0B8;
+  border-radius: 0;
+  padding: 20px;
+  margin: 1.5em 0;
+}
+
+/* 源码编辑器 */
+body.theme-custom .mermaid-source {
+  width: 100%; min-height: 100px; border: 1px solid #4A4A4A; border-radius: 0;
+  padding: 12px; font-size: 10.5pt;
+  font-family: "Courier New", "Consolas", monospace;
+  color: #000000; background: #f5f5f5; outline: none;
+  resize: vertical; line-height: 1.5; white-space: pre-wrap;
+}
+body.theme-custom .mermaid-source:focus { border-color: #4A4A4A; }
+
+/* ================================================================
+   15. 脚注 + 摘要 + 关键词 + 参考文献
+   ================================================================ */
+body.theme-custom .footnotes {
+  font-family: var(--font-family-base); font-size: 9pt; color: #000000;
+  margin-top: 24pt; border-top: 1px solid #000000; padding-top: 12pt;
+}
+
+body.theme-custom p:has(strong):first-of-type,
+body.theme-custom #write > p:first-child strong {
+  font-family: var(--font-family-heading); font-size: 10.5pt; font-weight: 700;
+}
+
+body.theme-custom .references,
+body.theme-custom [class*="reference"] {
+  font-family: var(--font-family-base); font-size: 9pt; line-height: 1.5;
+}
+body.theme-custom .references li,
+body.theme-custom [class*="reference"] li {
+  text-indent: -2em; padding-left: 2em; margin-bottom: 4pt;
+}
+
+/* ================================================================
+   16. 打印优化 (GB/T 7713 页面设置)
+   ================================================================ */
+@media print {
+  @page { size: A4; margin: 25mm 25mm 25mm 30mm; }
+  html, body {
+    background: #ffffff !important; color: #000000 !important;
+    font-size: 12pt !important; line-height: 1.5 !important;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  #titlebar, #slides-btn, #agent-dot { display: none !important; }
+  #editor { height: auto !important; overflow: visible !important; padding: 0 !important; }
+  #write { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+  a { color: #000000 !important; text-decoration: none !important; }
+  blockquote { background: transparent !important; border-left: 3px solid #000 !important; }
+  pre, code { background: #f5f5f5 !important; color: #000000 !important; border: 1px solid #ccc !important; }
+  table { border-collapse: collapse !important; }
+  table th, table td { border: 1px solid #000 !important; }
+  body.theme-custom .mermaid-block, body.theme-custom .mermaid-preview,
+  .md-diagram-panel.md-mermaid { background: #fafafa !important; border: 1px solid #ddd !important; }
+  .mermaid-preview svg * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  h1 { page-break-before: avoid; }
+  h2, h3, h4, h5, h6 { page-break-after: avoid; }
+  table, figure, img { page-break-inside: avoid; }
+  p { orphans: 3; widows: 3; }
+}
+
+/* ================================================================
+   17. 滚动条 + 18. 源码编辑模式
+   ================================================================ */
+body.theme-custom ::-webkit-scrollbar { width: 8px; height: 8px; }
+body.theme-custom ::-webkit-scrollbar-track { background: #f5f5f5; }
+body.theme-custom ::-webkit-scrollbar-thumb { background: #bbb; border-radius: 0; }
+body.theme-custom ::-webkit-scrollbar-thumb:hover { background: #999; }
+
+body.theme-custom #source-editor {
+  font-family: "Courier New", "Consolas", "Source Code Pro", monospace;
+  font-size: 12pt; line-height: 1.5; background: #ffffff; color: #000000;
+}

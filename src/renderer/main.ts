@@ -152,8 +152,10 @@ async function init(): Promise<void> {
   // ─── Mobile menu setup ───
   setupMobileMenu(api, savedTheme)
 
-  // Continuously check for Intent files (APP already running, new file opened)
-  setInterval(() => processPendingIntentFile(api), 1000)
+  // Continuously check for Intent files (Android only, APP already running)
+  if (!window.electronAPI) {
+    setInterval(() => processPendingIntentFile(api), 3000)
+  }
 
   // Slides button — open as slides
   slidesBtnEl().addEventListener('click', () => api.openAsSlides(getContent()))
@@ -266,17 +268,26 @@ img{max-width:100%}
       setMarkdown(content)
     }
   })
-  api.onSetTheme((theme) => {
+  let pendingThemeChange: string | null = null
+  let themeChangeTimer: ReturnType<typeof setTimeout> | null = null
+
+  function applyThemeChange(theme: string): void {
+    pendingThemeChange = null
     applyTheme(theme)
-    // Notify all plugins of theme change
     for (const p of getAllPlugins()) p.onThemeChange?.(theme)
-    // Force re-render all enabled plugin nodes so they pick up the new theme
-    for (const p of getAllPlugins()) {
-      if (p.enabled) {
-        togglePluginMode(p.nodeTypes, 'raw')
-        requestAnimationFrame(() => togglePluginMode(p.nodeTypes, 'rendered'))
-      }
+    const enabledMermaid = getAllPlugins().filter(p => p.enabled && p.id === 'mermaid')
+    for (const p of enabledMermaid) {
+      togglePluginMode(p.nodeTypes, 'raw')
+      requestAnimationFrame(() => togglePluginMode(p.nodeTypes, 'rendered'))
     }
+  }
+
+  api.onSetTheme((theme) => {
+    if (themeChangeTimer) clearTimeout(themeChangeTimer)
+    pendingThemeChange = theme
+    themeChangeTimer = setTimeout(() => {
+      if (pendingThemeChange) applyThemeChange(pendingThemeChange)
+    }, 50)
   })
   api.onSetCustomCSS((css) => {
     const theme = loadSavedTheme()
@@ -429,11 +440,10 @@ function setupMobileMenu(api: any, currentTheme: string): void {
         const theme = (el as HTMLElement).dataset.theme!
         applyTheme(theme)
         for (const p of getAllPlugins()) p.onThemeChange?.(theme)
-        for (const p of getAllPlugins()) {
-          if (p.enabled) {
-            togglePluginMode(p.nodeTypes, 'raw')
-            requestAnimationFrame(() => togglePluginMode(p.nodeTypes, 'rendered'))
-          }
+        const enabledMermaid = getAllPlugins().filter(p => p.enabled && p.id === 'mermaid')
+        for (const p of enabledMermaid) {
+          togglePluginMode(p.nodeTypes, 'raw')
+          requestAnimationFrame(() => togglePluginMode(p.nodeTypes, 'rendered'))
         }
         themeListEl.querySelectorAll('.menu-theme-item').forEach((e) => e.classList.remove('active'))
         el.classList.add('active')

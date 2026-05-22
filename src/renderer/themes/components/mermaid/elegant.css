@@ -1,0 +1,24 @@
+/*
+ * ColaMD 主题系统：Mermaid Elegant 配色方案 (典雅暖调)
+ * 依赖：foundation.css → mermaid/variables.css
+ */
+body.theme-elegant {
+  --mermaid-font-family: "LXGW WenKai", "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+  --mermaid-font-size: 14px;
+  --mermaid-node-stroke: #c44b2b;
+  --mermaid-node-fill: #eae6e1;
+  --mermaid-node-text: #2c2c2c;
+  --mermaid-edge-stroke: #999;
+  --mermaid-cluster-stroke: #c44b2b;
+  --mermaid-cluster-fill: rgba(196, 75, 43, 0.04);
+  --mermaid-cluster-dasharray: 4,4;
+  --mermaid-label-text: #2c2c2c;
+  --mermaid-edge-label-bg: #f7f5f2;
+  --mermaid-edge-label-text: #555;
+  --mermaid-title-text: #2c2c2c;
+  --mermaid-axis-text: #777;
+  --mermaid-highlight: #c44b2b;
+  --mermaid-background: #f7f5f2;
+  --mermaid-border-color: #d8d3ce;
+  --mermaid-label-offset-y: -3px;
+}

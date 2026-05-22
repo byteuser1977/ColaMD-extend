@@ -37,19 +37,23 @@ function getMermaidTheme(): string {
   return 'default'
 }
 
-function readCustomVar(name: string, fallback: string): string {
-  const style = getComputedStyle(document.body)
+function getCustomMermaidCSS(): CSSStyleDeclaration {
+  return getComputedStyle(document.body)
+}
+
+function readCustomVar(style: CSSStyleDeclaration, name: string, fallback: string): string {
   return style.getPropertyValue(name).trim() || fallback
 }
 
 function getCustomMermaidFontSize(): number {
-  const raw = readCustomVar('--mermaid-font-size', '')
+  const raw = getCustomMermaidCSS().getPropertyValue('--mermaid-font-size').trim()
   const n = parseInt(raw, 10)
   return Number.isFinite(n) && n > 0 ? n : 12
 }
 
 function getCustomMermaidThemeVariables(): Record<string, string> {
-  const v = (name: string, fallback: string) => readCustomVar(name, fallback)
+  const style = getCustomMermaidCSS()
+  const v = (name: string, fallback: string) => readCustomVar(style, name, fallback)
   const baseFont = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'
   const font = v('--mermaid-font-family', baseFont)
   const darkMode = v('--mermaid-dark-mode', 'false')
@@ -99,7 +103,8 @@ function getCustomMermaidThemeVariables(): Record<string, string> {
 }
 
 function getCustomMermaidC4Config(): Record<string, string> {
-  const v = (name: string, fallback: string) => readCustomVar(name, fallback)
+  const style = getCustomMermaidCSS()
+  const v = (name: string, fallback: string) => readCustomVar(style, name, fallback)
   const baseFont = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'
   const font = v('--mermaid-font-family', baseFont)
   return {
@@ -444,9 +449,8 @@ const mermaidBlockSchema = $nodeSchema('mermaid_block', () => ({
   toDOM: (node) => {
     const container = document.createElement('div')
     container.className = 'mermaid-block'
-    container.dataset.mermaid = node.attrs.text as string
-
     const text = (node.attrs.text as string || '').trim()
+    container.dataset.mermaid = text
 
     if (node.attrs.mode === 'raw') {
       const el = document.createElement('pre')
@@ -456,40 +460,7 @@ const mermaidBlockSchema = $nodeSchema('mermaid_block', () => ({
       return { dom: el }
     }
 
-    if (!text) {
-      container.innerHTML = '<div class="mermaid-preview"><div class="mermaid-loading">Empty diagram</div></div>'
-      return { dom: container }
-    }
-
-    const mermaidLib = (window as any).mermaid
-    if (!mermaidLib || typeof mermaidLib.render !== 'function') {
-      container.innerHTML = '<div class="mermaid-preview"><div class="mermaid-error">Mermaid not loaded</div></div>'
-      return { dom: container }
-    }
-
     container.innerHTML = '<div class="mermaid-preview"><div class="mermaid-loading">Rendering...</div></div>'
-    const id = 'mermaid-' + (++renderCounter)
-    try {
-      const renderPromise = mermaidLib.render(id, text).then((result: { svg: string; bindFunctions?: (el: Element) => void }) => {
-        const preview = container.querySelector('.mermaid-preview')
-        if (preview) {
-          preview.innerHTML = result.svg
-          const svg = preview.querySelector('svg') as SVGSVGElement | null
-          if (svg) adjustNodeHeights(svg)
-          if (result.bindFunctions) result.bindFunctions(container)
-        }
-      }).catch((e: Error) => {
-        const preview = container.querySelector('.mermaid-preview')
-        if (preview) {
-          const msg = e.message.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-          preview.innerHTML = '<div class="mermaid-error">Error: ' + msg + '</div>'
-        }
-      }).finally(() => { pendingRenders.delete(renderPromise) })
-      pendingRenders.add(renderPromise)
-    } catch (e: any) {
-      container.innerHTML = '<div class="mermaid-preview"><div class="mermaid-error">' + String(e.message || e) + '</div></div>'
-    }
-
     return { dom: container }
   },
   parseMarkdown: {
