@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu, shell } from 'electron'
 import { join, basename, dirname, extname } from 'path'
 import { readFile, writeFile, readdir, copyFile, mkdir, stat } from 'fs/promises'
-import { existsSync, readdirSync, readFileSync, createServer } from 'fs'
+import { existsSync, readFileSync, createServer } from 'fs'
 import { IncomingMessage, ServerResponse } from 'http'
 import { createServer as createHttpServer } from 'http'
 
@@ -11,15 +11,6 @@ const themesDir = join(app.getPath('home'), '.colamd', 'themes')
 function ensureThemesDir(): void {
   if (!existsSync(themesDir)) {
     mkdir(themesDir, { recursive: true }).catch(() => {})
-  }
-}
-
-async function scanCustomThemes(): Promise<string[]> {
-  try {
-    const files = await readdir(themesDir)
-    return files.filter(f => f.endsWith('.css')).sort()
-  } catch {
-    return []
   }
 }
 
@@ -401,11 +392,14 @@ ipcMain.handle('export-pdf', async (event) => {
     const cssKey = await win.webContents.insertCSS(
       'html, body { height: auto !important; overflow: visible !important; } #titlebar { display: none !important; } #editor { height: auto !important; overflow: visible !important; } #editor .ProseMirror { min-height: auto !important; } .mermaid-error { display: none !important; } .mermaid-loading { display: none !important; } svg .error-icon, svg .error-text { display: none !important; } .math-inline-raw, .math-block-raw, textarea.mermaid-source { display: none !important; }'
     )
-    const pdfData = await win.webContents.printToPDF({
-      marginType: 0,
-      printBackground: true,
-      pageSize: 'A4'
-    })
+    const pdfData = await Promise.race([
+      win.webContents.printToPDF({
+        marginType: 0,
+        printBackground: true,
+        pageSize: 'A4'
+      }),
+      new Promise<Buffer>((_, reject) => setTimeout(() => reject(new Error('PDF timeout')), 30000))
+    ])
     await win.webContents.removeInsertedCSS(cssKey)
     await writeFile(result.filePath, pdfData)
     return true
@@ -663,7 +657,7 @@ ipcMain.handle('load-custom-theme', async (event) => {
     await copyFile(srcPath, destPath)
     const css = await readFile(destPath, 'utf-8')
     invalidateThemeCache()
-    buildMenu() // rebuild menu to include new theme
+    await buildMenu() // rebuild menu to include new theme
     return { name: fileName, css }
   } catch {
     return null
@@ -688,14 +682,14 @@ ipcMain.handle('register-plugins', (_event, plugins: Array<{ id: string; name: s
     checked: p.enabled,
     click: () => sendToFocused('menu-toggle-plugin', p.id)
   }))
-  buildMenu()
+  void buildMenu()
   return true
 })
 
 ipcMain.handle('sync-plugin-state', (_event, id: string, enabled: boolean) => {
   const item = pluginMenuItems.find((p: any) => p.id === id)
   if (item) item.checked = enabled
-  buildMenu()
+  void buildMenu()
 })
 
 // Menu — targets the focused window
@@ -707,18 +701,18 @@ function invalidateThemeCache(): void {
   themeFilesValid = false
 }
 
-function scanThemeFiles(): void {
+async function scanThemeFiles(): Promise<void> {
   try {
-    const files = readdirSync(themesDir).filter((f: string) => f.endsWith('.css')).sort()
-    cachedThemeFiles = files
+    const files = await readdir(themesDir)
+    cachedThemeFiles = files.filter(f => f.endsWith('.css')).sort()
   } catch {
     cachedThemeFiles = []
   }
   themeFilesValid = true
 }
 
-function getCachedThemeFiles(): string[] {
-  if (!themeFilesValid) scanThemeFiles()
+async function getCachedThemeFiles(): Promise<string[]> {
+  if (!themeFilesValid) await scanThemeFiles()
   return cachedThemeFiles
 }
 
@@ -731,12 +725,11 @@ function sendToFocused(channel: string, ...args: unknown[]): void {
   if (win) win.webContents.send(channel, ...args)
 }
 
-function buildMenu(): void {
+async function buildMenu(): Promise<void> {
   const isMac = process.platform === 'darwin'
 
-  // Scan custom themes synchronously for menu building
   const customThemeItems: Electron.MenuItemConstructorOptions[] = []
-  const files = getCachedThemeFiles()
+  const files = await getCachedThemeFiles()
   for (const file of files) {
     customThemeItems.push({
       label: file.replace(/\.css$/, ''),
@@ -873,10 +866,10 @@ function buildMenu(): void {
 
 // App lifecycle
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   ensureThemesDir()
-  scanThemeFiles()
-  buildMenu()
+  await scanThemeFiles()
+  await buildMenu()
 
   // Check command line args for file paths
   const args = process.argv.slice(app.isPackaged ? 1 : 2)
