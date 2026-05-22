@@ -1,6 +1,8 @@
 import { createEditor, getMarkdown, getHTML, getLiveHTML, setMarkdown, togglePluginMode } from './editor/editor'
 import { applyTheme, loadSavedTheme, setCachedCustomTheme } from './editor/plugins/themes/theme-manager'
 import { getAllPlugins, togglePlugin, findPluginBySelector, findExportCapabilities } from './editor/plugins'
+import './editor/plugins/math-plugin'
+import './editor/plugins/mermaid-plugin'
 import { createCapacitorAPI } from './capacitor-api'
 import './editor/plugins/themes/base.css'
 import './mobile.css'

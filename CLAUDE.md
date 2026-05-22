@@ -92,14 +92,17 @@ src/
 
 **1. 插件注册**
 
-插件通过 `registerPluginModule()` 自注册（副作用导入），`main.ts` 不逐一手动导入：
+插件通过 `registerPluginModule()` 自注册（副作用导入）：
 
 ```typescript
-// ✅ 正确：glob 统一加载，插件自行注册
+// ✅ 正确：副作用导入，仅触发 registerPluginModule
+import './editor/plugins/math-plugin'
+import './editor/plugins/mermaid-plugin'
+
+// ✅ 兜底：glob 加载可能遗漏的插件
 const _pluginRegistry = import.meta.glob('./editor/plugins/*-plugin.ts', { eager: true })
 
-// ❌ 禁止：main.ts 中逐一手动 import 插件
-import './editor/plugins/math-plugin'
+// ❌ 禁止：导入插件专用函数/类型
 import { awaitAllMermaidRenders } from './editor/plugins/mermaid-plugin'
 ```
 
