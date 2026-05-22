@@ -28,13 +28,13 @@
 
   #menu-btn {
     -webkit-app-region: no-drag;
+    display: flex;
     width: 36px;
     height: 36px;
     border: none;
     background: transparent;
     color: var(--text-color);
     border-radius: 8px;
-    display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
@@ -64,6 +64,7 @@
   }
 
   #mobile-menu {
+    display: block;
     position: fixed;
     top: 0;
     left: 0;

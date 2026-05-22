@@ -1,9 +1,9 @@
 import { createEditor, getMarkdown, getHTML, getLiveHTML, setMarkdown, togglePluginMode } from './editor/editor'
-import { applyTheme, loadSavedTheme } from './themes/theme-manager'
+import { applyTheme, loadSavedTheme, setCachedCustomTheme } from './editor/plugins/themes/theme-manager'
 import { getAllPlugins, togglePlugin, findPluginBySelector, findExportCapabilities } from './editor/plugins'
 import { awaitAllMermaidRenders } from './editor/plugins/mermaid-plugin'
 import { createCapacitorAPI } from './capacitor-api'
-import './themes/base.css'
+import './editor/plugins/themes/base.css'
 import './mobile.css'
 
 /**
@@ -119,12 +119,18 @@ function restoreRenderedMode(api: any): void {
 async function init(): Promise<void> {
   const api = window.electronAPI || await createCapacitorAPI()
   const savedTheme = loadSavedTheme()
-  applyTheme(savedTheme)
 
   if (savedTheme.startsWith('custom:')) {
     const fileName = savedTheme.slice(7)
     const css = await api.loadThemeCSS(fileName)
-    if (css) applyTheme(savedTheme, css)
+    if (css) {
+      setCachedCustomTheme(fileName, css)
+      applyTheme(savedTheme)
+    } else {
+      applyTheme('elegant')
+    }
+  } else {
+    applyTheme(savedTheme)
   }
 
   await createEditor('editor')
@@ -312,7 +318,10 @@ img{max-width:100%}
 
   api.onMenuImportTheme(async () => {
     const result = await api.loadCustomTheme()
-    if (result) applyTheme(`custom:${result.name}`, result.css)
+    if (result) {
+      setCachedCustomTheme(result.name, result.css)
+      applyTheme(`custom:${result.name}`)
+    }
   })
 
   const agentDot = document.getElementById('agent-dot')
@@ -550,7 +559,10 @@ function setupMobileMenu(api: any, currentTheme: string): void {
           break
         case 'import-theme': {
           const result = await api.loadCustomTheme()
-          if (result) applyTheme(`custom:${result.name}`, result.css)
+          if (result) {
+            setCachedCustomTheme(result.name, result.css)
+            applyTheme(`custom:${result.name}`)
+          }
           break
         }
         case 'about':

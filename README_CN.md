@@ -670,6 +670,8 @@ ColaMD 内置 **4 个主题**，所有显示插件均会跟随主题自动适配
 | [elegant.css](themes/elegant.css) | 典雅暖调，朱砂红强调色、霞鹜文楷衬线体 |
 | [guizang.css](themes/guizang.css) | 归藏古风，赭石强调色、松烟墨代码块 |
 | [forest-ink.css](themes/forest-ink.css) | 🌲 森林墨，宣纸暖白底 + 松烟墨绿文字 + 森林绿强调色 |
+| [academic-paper.css](themes/academic-paper.css) | 📄 学术论文，适配学术打印，Mermaid 暖色系配色 |
+| [pixso-design.css](themes/pixso-design.css) | 🎨 Pixso 设计，现代设计系统风格 |
 
 自定义主题支持：将 CSS 文件放入 `~/.colamd/themes/` 目录，通过 **Theme > Import Theme** 导入。导入的主题会持久化保存，重启后仍然可用。
 

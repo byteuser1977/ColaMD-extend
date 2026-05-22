@@ -10,6 +10,7 @@ import './mermaid-plugin-dark.css'
 import './mermaid-plugin-elegant.css'
 import './mermaid-plugin-newsprint.css'
 import './mermaid-plugin-custom.css'
+import './themes/components/mermaid/variables.css'
 
 ;(window as any).mermaid = mermaid
 
@@ -61,7 +62,7 @@ function getCustomMermaidThemeVariables(): Record<string, string> {
     darkMode,
     background: v('--mermaid-background', v('--bg-color', '#ffffff')),
     primaryColor: v('--mermaid-primary-color', v('--code-block-bg', '#f6f8fa')),
-    primaryBorderColor: v('--mermaid-primary-border-color', v('--border-color', '#d0d7de')),
+    primaryBorderColor: v('--mermaid-node-stroke', v('--border-color', '#d0d7de')),
     primaryTextColor: v('--mermaid-primary-text-color', v('--text-color', '#24292f')),
     secondaryColor: v('--mermaid-secondary-color', v('--code-bg', '#f6f8fa')),
     secondaryBorderColor: v('--mermaid-secondary-border-color', v('--border-color', '#d0d7de')),
@@ -69,21 +70,21 @@ function getCustomMermaidThemeVariables(): Record<string, string> {
     tertiaryColor: v('--mermaid-tertiary-color', v('--bg-color', '#ffffff')),
     tertiaryBorderColor: v('--mermaid-tertiary-border-color', v('--border-color', '#d0d7de')),
     tertiaryTextColor: v('--mermaid-tertiary-text-color', v('--text-color', '#24292f')),
-    lineColor: v('--mermaid-line-color', v('--border-color', '#d0d7de')),
-    textColor: v('--mermaid-text-color', v('--text-color', '#24292f')),
+    lineColor: v('--mermaid-edge-stroke', v('--border-color', '#d0d7de')),
+    textColor: v('--mermaid-label-text', v('--text-color', '#24292f')),
     mainBkg: v('--mermaid-main-bkg', v('--code-block-bg', '#f6f8fa')),
     secondBkg: v('--mermaid-second-bkg', v('--code-bg', '#f6f8fa')),
     mainContrastColor: v('--mermaid-primary-text-color', v('--text-color', '#24292f')),
     labelBackground: v('--mermaid-label-background', v('--code-block-bg', '#f6f8fa')),
     labelTextColor: v('--mermaid-label-text-color', v('--text-color', '#24292f')),
-    nodeBorder: v('--mermaid-node-border', v('--border-color', '#d0d7de')),
+    nodeBorder: v('--mermaid-node-stroke', v('--border-color', '#d0d7de')),
     nodeBkg: v('--mermaid-node-bkg', v('--code-block-bg', '#f6f8fa')),
     clusterBkg: v('--mermaid-cluster-bkg', v('--code-bg', '#f6f8fa')),
-    clusterBorder: v('--mermaid-cluster-border', v('--border-color', '#d0d7de')),
-    defaultLinkColor: v('--mermaid-line-color', v('--border-color', '#d0d7de')),
+    clusterBorder: v('--mermaid-cluster-stroke', v('--border-color', '#d0d7de')),
+    defaultLinkColor: v('--mermaid-edge-stroke', v('--border-color', '#d0d7de')),
     edgeLabelBackground: v('--mermaid-edge-label-background', v('--code-block-bg', '#f6f8fa')),
-    arrowheadColor: v('--mermaid-arrowhead-color', v('--mermaid-line-color', v('--border-color', '#d0d7de'))),
-    personBorder: v('--mermaid-person-border', v('--border-color', '#d0d7de')),
+    arrowheadColor: v('--mermaid-edge-stroke', v('--border-color', '#d0d7de')),
+    personBorder: v('--mermaid-person-stroke', v('--border-color', '#d0d7de')),
     personBkg: v('--mermaid-person-bkg', v('--code-block-bg', '#f6f8fa')),
     fontFamily: font,
     cScale0: v('--mermaid-cscale0', '#2d5f8a'),
@@ -115,45 +116,45 @@ function getCustomMermaidC4Config(): Record<string, string> {
     boundaryFontFamily: font,
     messageFontFamily: font,
     person_bg_color: v('--mermaid-c4-person-bg', '#2d5f8a'),
-    person_border_color: v('--mermaid-c4-person-border', '#4a7aaa'),
+    person_border_color: v('--mermaid-c4-person-stroke', '#4a7aaa'),
     external_person_bg_color: v('--mermaid-c4-ext-person-bg', '#4a5568'),
-    external_person_border_color: v('--mermaid-c4-ext-person-border', '#6b7a8a'),
+    external_person_border_color: v('--mermaid-c4-ext-person-stroke', '#6b7a8a'),
     system_bg_color: v('--mermaid-c4-system-bg', '#3d7a5a'),
-    system_border_color: v('--mermaid-c4-system-border', '#5a9a7a'),
+    system_border_color: v('--mermaid-c4-system-stroke', '#5a9a7a'),
     system_db_bg_color: v('--mermaid-c4-system-bg', '#3d7a5a'),
-    system_db_border_color: v('--mermaid-c4-system-border', '#5a9a7a'),
+    system_db_border_color: v('--mermaid-c4-system-stroke', '#5a9a7a'),
     system_queue_bg_color: v('--mermaid-c4-system-bg', '#3d7a5a'),
-    system_queue_border_color: v('--mermaid-c4-system-border', '#5a9a7a'),
+    system_queue_border_color: v('--mermaid-c4-system-stroke', '#5a9a7a'),
     external_system_bg_color: v('--mermaid-c4-ext-system-bg', '#6b4a7a'),
-    external_system_border_color: v('--mermaid-c4-ext-system-border', '#8a6a9a'),
+    external_system_border_color: v('--mermaid-c4-ext-system-stroke', '#8a6a9a'),
     external_system_db_bg_color: v('--mermaid-c4-ext-system-bg', '#6b4a7a'),
-    external_system_db_border_color: v('--mermaid-c4-ext-system-border', '#8a6a9a'),
+    external_system_db_border_color: v('--mermaid-c4-ext-system-stroke', '#8a6a9a'),
     external_system_queue_bg_color: v('--mermaid-c4-ext-system-bg', '#6b4a7a'),
-    external_system_queue_border_color: v('--mermaid-c4-ext-system-border', '#8a6a9a'),
+    external_system_queue_border_color: v('--mermaid-c4-ext-system-stroke', '#8a6a9a'),
     container_bg_color: v('--mermaid-c4-container-bg', '#8a6b3c'),
-    container_border_color: v('--mermaid-c4-container-border', '#aa8a5c'),
+    container_border_color: v('--mermaid-c4-container-stroke', '#aa8a5c'),
     container_db_bg_color: v('--mermaid-c4-container-bg', '#8a6b3c'),
-    container_db_border_color: v('--mermaid-c4-container-border', '#aa8a5c'),
+    container_db_border_color: v('--mermaid-c4-container-stroke', '#aa8a5c'),
     container_queue_bg_color: v('--mermaid-c4-container-bg', '#8a6b3c'),
-    container_queue_border_color: v('--mermaid-c4-container-border', '#aa8a5c'),
+    container_queue_border_color: v('--mermaid-c4-container-stroke', '#aa8a5c'),
     external_container_bg_color: v('--mermaid-c4-ext-container-bg', '#5a5a6a'),
-    external_container_border_color: v('--mermaid-c4-ext-container-border', '#7a7a8a'),
+    external_container_border_color: v('--mermaid-c4-ext-container-stroke', '#7a7a8a'),
     external_container_db_bg_color: v('--mermaid-c4-ext-container-bg', '#5a5a6a'),
-    external_container_db_border_color: v('--mermaid-c4-ext-container-border', '#7a7a8a'),
+    external_container_db_border_color: v('--mermaid-c4-ext-container-stroke', '#7a7a8a'),
     external_container_queue_bg_color: v('--mermaid-c4-ext-container-bg', '#5a5a6a'),
-    external_container_queue_border_color: v('--mermaid-c4-ext-container-border', '#7a7a8a'),
+    external_container_queue_border_color: v('--mermaid-c4-ext-container-stroke', '#7a7a8a'),
     component_bg_color: v('--mermaid-c4-component-bg', '#3c7a6b'),
-    component_border_color: v('--mermaid-c4-component-border', '#5c9a8b'),
+    component_border_color: v('--mermaid-c4-component-stroke', '#5c9a8b'),
     component_db_bg_color: v('--mermaid-c4-component-bg', '#3c7a6b'),
-    component_db_border_color: v('--mermaid-c4-component-border', '#5c9a8b'),
+    component_db_border_color: v('--mermaid-c4-component-stroke', '#5c9a8b'),
     component_queue_bg_color: v('--mermaid-c4-component-bg', '#3c7a6b'),
-    component_queue_border_color: v('--mermaid-c4-component-border', '#5c9a8b'),
+    component_queue_border_color: v('--mermaid-c4-component-stroke', '#5c9a8b'),
     external_component_bg_color: v('--mermaid-c4-ext-component-bg', '#6a6a6a'),
-    external_component_border_color: v('--mermaid-c4-ext-component-border', '#8a8a8a'),
+    external_component_border_color: v('--mermaid-c4-ext-component-stroke', '#8a8a8a'),
     external_component_db_bg_color: v('--mermaid-c4-ext-component-bg', '#6a6a6a'),
-    external_component_db_border_color: v('--mermaid-c4-ext-component-border', '#8a8a8a'),
+    external_component_db_border_color: v('--mermaid-c4-ext-component-stroke', '#8a8a8a'),
     external_component_queue_bg_color: v('--mermaid-c4-ext-component-bg', '#6a6a6a'),
-    external_component_queue_border_color: v('--mermaid-c4-ext-component-border', '#8a8a8a'),
+    external_component_queue_border_color: v('--mermaid-c4-ext-component-stroke', '#8a8a8a'),
   }
 }
 
@@ -536,7 +537,7 @@ function renderMermaidBlock(dom: HTMLElement, node: any, renderIdRef: { current:
   pendingRenders.add(renderPromise)
 }
 
-const mermaidBlockView = $view(mermaidBlockSchema, (_ctx): NodeViewConstructor => {
+const mermaidBlockView = $view(mermaidBlockSchema.node, (_ctx): NodeViewConstructor => {
   return (node, view, getPos) => {
     const container = document.createElement('div')
     container.className = 'mermaid-block'
@@ -634,7 +635,7 @@ export const mermaidPlugin: RendererPlugin = {
     const fontSize = isCustom ? getCustomMermaidFontSize() : 14
     mermaid.initialize({
       startOnLoad: false,
-      theme: getMermaidTheme(),
+      theme: getMermaidTheme() as any,
       themeVariables: getMermaidThemeVariables(),
       c4: getMermaidC4Config(),
       securityLevel: 'loose',
@@ -649,7 +650,7 @@ export const mermaidPlugin: RendererPlugin = {
     const fontSize = isCustom ? getCustomMermaidFontSize() : 16
     mermaid.initialize({
       startOnLoad: false,
-      theme: getMermaidTheme(),
+      theme: getMermaidTheme() as any,
       themeVariables: getMermaidThemeVariables(),
       c4: getMermaidC4Config(),
       securityLevel: 'loose',
@@ -662,7 +663,7 @@ export const mermaidPlugin: RendererPlugin = {
 
 registerPluginModule({
   info: mermaidPlugin,
-  milkdownPlugins: [mermaidBlockSchema, mermaidBlockInputRule, mermaidBlockView],
+  milkdownPlugins: [mermaidBlockSchema.node, mermaidBlockInputRule, mermaidBlockView],
 })
 
 export { mermaidBlockSchema, mermaidBlockInputRule, mermaidBlockView, remarkMermaid }

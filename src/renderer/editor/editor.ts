@@ -89,7 +89,7 @@ export async function createEditor(
       ctx.set(remarkPluginsCtx, [
         ...pluginModules.map((m) => m.info.remarkPlugin),
         { plugin: remarkBreaks, options: undefined },
-      ])
+      ] as any)
       if (onChange) {
         ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => {
           onChange(markdown)
@@ -127,7 +127,7 @@ export async function createEditor(
     ctx.set(nodeViewCtx, fixed)
 
     const oldView = ctx.get(editorViewCtx)
-    const rootEl = ctx.get(rootCtx)
+    const rootEl = ctx.get(rootCtx) as HTMLElement
     const nodeViews = Object.fromEntries(fixed)
 
     const newView = new EditorView(rootEl, {

@@ -237,8 +237,9 @@ async function pickAndReadFile(): Promise<{ path: string; content: string } | nu
       content = readResult.data as string
     }
 
-    currentFilePath = file.path || file.name
-    return { path: currentFilePath, content }
+    const filePath = file.path || file.name
+    currentFilePath = filePath
+    return { path: filePath, content }
   } catch (error) {
     console.warn('File picker cancelled or failed:', error)
     return null

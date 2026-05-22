@@ -608,6 +608,8 @@ Downloadable external themes (located in [`themes/`](themes/) directory):
 | [elegant.css](themes/elegant.css) | Warm serif with terracotta accents, LXGW WenKai font |
 | [guizang.css](themes/guizang.css) | Ancient Guizang style, ochre accents, ink-black code blocks |
 | [forest-ink.css](themes/forest-ink.css) | 🌲 Forest Ink, warm paper base + forest green ink text + forest green accent |
+| [academic-paper.css](themes/academic-paper.css) | 📄 Academic Paper, optimized for academic printing with Mermaid warm color palette |
+| [pixso-design.css](themes/pixso-design.css) | 🎨 Pixso Design, modern design system style |
 
 Custom theme support: Place CSS files in `~/.colamd/themes/` directory, then import via **Theme > Import Theme**. Imported themes persist across sessions.
 

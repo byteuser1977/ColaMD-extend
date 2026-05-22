@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu, shell } from 'electron'
 import { join, basename, dirname, extname } from 'path'
 import { readFile, writeFile, readdir, copyFile, mkdir, stat } from 'fs/promises'
-import { existsSync, readFileSync, createServer } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { IncomingMessage, ServerResponse } from 'http'
 import { createServer as createHttpServer } from 'http'
 
@@ -394,7 +394,6 @@ ipcMain.handle('export-pdf', async (event) => {
     )
     const pdfData = await Promise.race([
       win.webContents.printToPDF({
-        marginType: 0,
         printBackground: true,
         pageSize: 'A4'
       }),

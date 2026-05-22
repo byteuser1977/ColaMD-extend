@@ -79,7 +79,7 @@ function renderMathInline(dom: HTMLElement, text: string, mode: string): void {
   }
 }
 
-const mathInlineView = $view(mathInlineSchema, (_ctx): NodeViewConstructor => {
+const mathInlineView = $view(mathInlineSchema.node, (_ctx): NodeViewConstructor => {
   return (node, view, getPos) => {
     const span = document.createElement('span')
     span.className = 'math-inline'
@@ -185,7 +185,7 @@ function renderMathBlock(dom: HTMLElement, text: string, mode: string): void {
   }
 }
 
-const mathBlockView = $view(mathBlockSchema, (_ctx): NodeViewConstructor => {
+const mathBlockView = $view(mathBlockSchema.node, (_ctx): NodeViewConstructor => {
   return (node, view, getPos) => {
     const div = document.createElement('div')
     div.className = 'math-block'
@@ -291,7 +291,7 @@ export const mathPlugin: RendererPlugin = {
 
 registerPluginModule({
   info: mathPlugin,
-  milkdownPlugins: [mathInlineSchema, mathBlockSchema, mathInlineView, mathBlockView],
+  milkdownPlugins: [mathInlineSchema.node, mathBlockSchema.node, mathInlineView, mathBlockView],
 })
 
 export { mathInlineSchema, mathBlockSchema, mathInlineView, mathBlockView }
