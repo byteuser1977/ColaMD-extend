@@ -47,50 +47,70 @@ body.theme-custom {
     --scrollbar-thumb: #bbb;
     --scrollbar-thumb-hover: #999;
     --hr-color: #000000;
-    --mermaid-font-family: "SimSun", "Songti SC", "Source Han Serif SC", Georgia, serif;
-    --mermaid-font-size: 10.5pt;
+    /* Mermaid 全局字体：黑体 小五号，独立于正文 */
+    --mermaid-font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    --mermaid-font-size: 9pt;
     --mermaid-dark-mode: false;
+    /* 背景与边框 */
     --mermaid-background: #ffffff;
-    --mermaid-primary-color: #E6DECF;
-    --mermaid-primary-border-color: #333333;
-    --mermaid-primary-text-color: #3E2A14;
-    --mermaid-secondary-color: #DCD1BC;
-    --mermaid-secondary-border-color: #333333;
-    --mermaid-secondary-text-color: #3E2A14;
-    --mermaid-tertiary-color: #F2EAD5;
-    --mermaid-tertiary-border-color: #DBD0B8;
-    --mermaid-tertiary-text-color: #3E2A14;
-    --mermaid-edge-stroke: #333333;
-    --mermaid-label-text: #3E2A14;
-    --mermaid-node-stroke: #333333;
-    --mermaid-cluster-stroke: #333333;
-    --mermaid-person-stroke: #333333;
-    --mermaid-node-fill: #E6DECF;
-    --mermaid-cluster-fill: #DCD1BC;
-    --mermaid-edge-label-text: #3E2A14;
-    --mermaid-edge-label-bg: #ffffff;
-    --mermaid-axis-text: #8B6B45;
-    --mermaid-title-text: #3E2A14;
-    --mermaid-highlight: #333333;
-    --mermaid-node-text: #3E2A14;
-    --mermaid-node-stroke-width: 1px;
-    --mermaid-edge-stroke-width: 1px;
     --mermaid-border-color: #cccccc;
     --mermaid-border-radius: 0;
     --mermaid-padding: 20px;
-    --mermaid-label-offset-y: -3px;
-    --mermaid-cscale0: #B08050;
-    --mermaid-cscale1: #548B7A;
-    --mermaid-cscale2: #C4983A;
-    --mermaid-cscale3: #7D6048;
-    --mermaid-cscale4: #4A7A6B;
-    --mermaid-cscale5: #987838;
-    --mermaid-cscale6: #607090;
-    --mermaid-cscale7: #886D56;
-    --mermaid-cscale8: #688C58;
-    --mermaid-cscale9: #A07A58;
-    --mermaid-cscale10: #5D7A8C;
-    --mermaid-cscale11: #905868;
+    /* 节点色块：莫兰迪浅灰 */
+    --mermaid-primary-color: #E3E3E3;
+    --mermaid-primary-border-color: #333333;
+    --mermaid-primary-text-color: #1a1a1a;
+    --mermaid-secondary-color: #D8D8D8;
+    --mermaid-secondary-border-color: #4a4a4a;
+    --mermaid-secondary-text-color: #1a1a1a;
+    --mermaid-tertiary-color: #EBEBEB;
+    --mermaid-tertiary-border-color: #555555;
+    --mermaid-tertiary-text-color: #1a1a1a;
+    --mermaid-node-fill: #E3E3E3;
+    --mermaid-node-bkg: #E8E8E8;
+    --mermaid-node-stroke: #333333;
+    --mermaid-node-stroke-width: 1px;
+    --mermaid-node-text: #1a1a1a;
+    /* 聚类 */
+    --mermaid-cluster-fill: #F0F0F0;
+    --mermaid-cluster-bkg: #F0F0F0;
+    --mermaid-cluster-stroke: #4a4a4a;
+    --mermaid-cluster-dasharray: none;
+    /* 边线/连线：深灰黑色便于打印 */
+    --mermaid-edge-stroke: #333333;
+    --mermaid-edge-stroke-width: 1px;
+    /* 标签 */
+    --mermaid-label-text: #1a1a1a;
+    --mermaid-label-text-color: #1a1a1a;
+    --mermaid-label-background: #ffffff;
+    --mermaid-label-offset-y: 0px;
+    /* 边标签 */
+    --mermaid-edge-label-text: #1a1a1a;
+    --mermaid-edge-label-bg: #ffffff;
+    --mermaid-edge-label-background: #ffffff;
+    /* 主色/对比色 */
+    --mermaid-main-bkg: #E3E3E3;
+    --mermaid-second-bkg: #D8D8D8;
+    --mermaid-main-contrast-color: #1a1a1a;
+    --mermaid-title-text: #1a1a1a;
+    --mermaid-axis-text: #555555;
+    --mermaid-highlight: #333333;
+    /* 人物/角色 */
+    --mermaid-person-stroke: #333333;
+    --mermaid-person-bkg: #E0E0E0;
+    /* 莫兰迪灰色阶色板（Graph/Chart 多系列区分） */
+    --mermaid-cscale0: #A8A8A8;
+    --mermaid-cscale1: #8C8E90;
+    --mermaid-cscale2: #B0B0B0;
+    --mermaid-cscale3: #787878;
+    --mermaid-cscale4: #9E9E9E;
+    --mermaid-cscale5: #949698;
+    --mermaid-cscale6: #6E6E6E;
+    --mermaid-cscale7: #A0A0A0;
+    --mermaid-cscale8: #848688;
+    --mermaid-cscale9: #AAAAAA;
+    --mermaid-cscale10: #7A7A7C;
+    --mermaid-cscale11: #929294;
 }
 
 pre { --select-text-bg-color: rgba(0, 0, 0, 0.12); --select-text-font-color: #000; }
@@ -658,6 +678,7 @@ body.theme-custom .mermaid-block {
     border-radius: var(--mermaid-border-radius);
     padding: var(--mermaid-padding);
     margin: 1.5em 0;
+    overflow-x: auto;
 }
 body.theme-custom .mermaid-preview { background: transparent; border: none; padding: 0; margin: 0; }
 .md-diagram-panel.md-mermaid {
@@ -666,11 +687,37 @@ body.theme-custom .mermaid-preview { background: transparent; border: none; padd
     border-radius: var(--mermaid-border-radius);
     padding: var(--mermaid-padding);
     margin: 1.5em 0;
+    overflow-x: auto;
 }
 .md-diagram-panel.md-mermaid svg,
 body.theme-custom .mermaid-preview svg { max-width: 100%; height: auto; }
 
-/* 重置首行缩进（防止继承 body p 的 text-indent: 2em） */
+/* ── 14.1 全局字体：黑体 小五号 9pt，独立于正文字体 ── */
+body.theme-custom .mermaid-preview svg text,
+body.theme-custom .mermaid-preview svg tspan {
+    font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
+    font-size: 9pt !important;
+    fill: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg foreignObject span,
+body.theme-custom .mermaid-preview svg foreignObject p,
+body.theme-custom .mermaid-preview svg foreignObject div {
+    font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
+    font-size: 9pt !important;
+    color: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .nodeLabel span,
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+    font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
+    font-size: 9pt !important;
+}
+body.theme-custom .mermaid-preview svg .titleText,
+body.theme-custom .mermaid-preview svg .pieTitleText {
+    font-size: 10pt !important;
+    fill: #1a1a1a !important;
+}
+
+/* 重置首行缩进 */
 body.theme-custom .mermaid-preview svg text,
 body.theme-custom .mermaid-preview svg p,
 body.theme-custom .mermaid-preview svg span,
@@ -684,11 +731,384 @@ body.theme-custom .mermaid-preview svg .edgeLabel {
     margin: 0 !important;
 }
 
-/* Mermaid 源码编辑器 */
+/* ── 14.2 通用节点色块：浅灰填色 + 深灰边框 ── */
+body.theme-custom .mermaid-preview svg .node rect,
+body.theme-custom .mermaid-preview svg .node circle,
+body.theme-custom .mermaid-preview svg .node ellipse,
+body.theme-custom .mermaid-preview svg .node polygon,
+body.theme-custom .mermaid-preview svg .node path {
+    fill: #E8E8E8 !important;
+    stroke: #333333 !important;
+    stroke-width: 1px !important;
+}
+body.theme-custom .mermaid-preview svg .node.default rect,
+body.theme-custom .mermaid-preview svg .node rect[fill] {
+    fill: #E8E8E8 !important;
+    stroke: #333333 !important;
+}
+
+/* ── 14.3 连线/边线：黑色便于打印 ── */
+body.theme-custom .mermaid-preview svg .edgePath .path {
+    stroke: #333333 !important;
+    stroke-width: 1px !important;
+}
+body.theme-custom .mermaid-preview svg defs marker path {
+    fill: #333333 !important;
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .relation {
+    stroke: #333333 !important;
+}
+
+/* ── 14.4 聚类/子图：浅灰底 + 深灰边 ── */
+body.theme-custom .mermaid-preview svg .cluster rect,
+body.theme-custom .mermaid-preview svg .cluster path {
+    fill: #F0F0F0 !important;
+    stroke: #4a4a4a !important;
+    stroke-width: 1px !important;
+}
+body.theme-custom .mermaid-preview svg .node.alt rect {
+    fill: #F0F0F0 !important;
+    stroke: #4a4a4a !important;
+}
+
+/* ── 14.5 标签文字：近黑色，重置偏移为0 ── */
+body.theme-custom .mermaid-preview svg .label text,
+body.theme-custom .mermaid-preview svg .nodeLabel text {
+    fill: #1a1a1a !important;
+    color: #1a1a1a !important;
+    transform: translateY(0) !important;
+}
+body.theme-custom .mermaid-preview svg .nodeLabel span {
+    fill: #1a1a1a !important;
+    color: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .nodeLabel,
+body.theme-custom .mermaid-preview svg .edgeLabel {
+    display: block !important;
+    position: relative !important;
+    top: 0 !important;
+}
+body.theme-custom .mermaid-preview svg .edgeLabel text {
+    fill: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .edgeLabel rect {
+    fill: #ffffff !important;
+    stroke: none !important;
+}
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+    color: #1a1a1a !important;
+}
+
+/* ── 14.6 流程图/Block 图 ── */
+body.theme-custom .mermaid-preview svg .block rect,
+body.theme-custom .mermaid-preview svg .block path {
+    stroke: #333333 !important;
+    fill: #E8E8E8 !important;
+}
+body.theme-custom .mermaid-preview svg .block text,
+body.theme-custom .mermaid-preview svg .block .nodeLabel text,
+body.theme-custom .mermaid-preview svg .block .nodeLabel span {
+    fill: #1a1a1a !important;
+    color: #1a1a1a !important;
+}
+
+/* ── 14.7 时序图 (Sequence) ── */
+body.theme-custom .mermaid-preview svg .actor rect,
+body.theme-custom .mermaid-preview svg .actor path {
+    fill: #E0E0E0 !important;
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg text.actor {
+    fill: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .actor-line {
+    stroke: #999999 !important;
+}
+body.theme-custom .mermaid-preview svg .messageLine0,
+body.theme-custom .mermaid-preview svg .messageLine1 {
+    stroke: #333333 !important;
+    stroke-width: 1px !important;
+}
+body.theme-custom .mermaid-preview svg .messageText {
+    fill: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .loopText,
+body.theme-custom .mermaid-preview svg .altText,
+body.theme-custom .mermaid-preview svg .optText,
+body.theme-custom .mermaid-preview svg .loopText tspan,
+body.theme-custom .mermaid-preview svg .altText tspan,
+body.theme-custom .mermaid-preview svg .optText tspan {
+    fill: #555555 !important;
+}
+body.theme-custom .mermaid-preview svg .loopLine,
+body.theme-custom .mermaid-preview svg .altLine,
+body.theme-custom .mermaid-preview svg .optLine {
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .labelBox {
+    stroke: #333333 !important;
+    fill: #ffffff !important;
+}
+body.theme-custom .mermaid-preview svg .labelText {
+    fill: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .note {
+    fill: #F5F5F5 !important;
+    stroke: #999999 !important;
+}
+
+/* ── 14.8 类图 (Class Diagram) ── */
+body.theme-custom .mermaid-preview svg .classGroup rect,
+body.theme-custom .mermaid-preview svg .classBox rect,
+body.theme-custom .mermaid-preview svg .classBox path {
+    stroke: #333333 !important;
+    fill: #E8E8E8 !important;
+}
+body.theme-custom .mermaid-preview svg .classTitle text,
+body.theme-custom .mermaid-preview svg .classTitle span {
+    fill: #1a1a1a !important;
+    color: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .classText text,
+body.theme-custom .mermaid-preview svg .classText span {
+    fill: #1a1a1a !important;
+    color: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .divider {
+    stroke: #333333 !important;
+}
+
+/* ── 14.9 状态图 (State Diagram) ── */
+body.theme-custom .mermaid-preview svg .statediagram-state rect,
+body.theme-custom .mermaid-preview svg .statediagram-state circle {
+    fill: #E8E8E8 !important;
+    stroke: #333333 !important;
+    stroke-width: 1px !important;
+}
+body.theme-custom .mermaid-preview svg .statediagram-cluster rect {
+    fill: #F0F0F0 !important;
+    stroke: #4a4a4a !important;
+}
+body.theme-custom .mermaid-preview svg .statediagram-state .nodeLabel text,
+body.theme-custom .mermaid-preview svg .statediagram-state .nodeLabel span,
+body.theme-custom .mermaid-preview svg .statediagram-cluster .outer-title text {
+    fill: #1a1a1a !important;
+    color: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .transition {
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .edgeLabel .label text {
+    fill: #1a1a1a !important;
+}
+
+/* ── 14.10 甘特图 (Gantt) ── */
+body.theme-custom .mermaid-preview svg .task {
+    fill: #E0E0E0 !important;
+    stroke: #333333 !important;
+    stroke-width: 1px !important;
+}
+body.theme-custom .mermaid-preview svg .taskText,
+body.theme-custom .mermaid-preview svg .taskTextOutsideRight,
+body.theme-custom .mermaid-preview svg .taskTextOutsideLeft {
+    fill: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .section rect {
+    fill: #EEEEEE !important;
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .sectionText,
+body.theme-custom .mermaid-preview svg .sectionTitle {
+    fill: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .today {
+    stroke: #333333 !important;
+    stroke-width: 2px !important;
+}
+body.theme-custom .mermaid-preview svg .grid .tick line,
+body.theme-custom .mermaid-preview svg .grid .domain {
+    stroke: #999999 !important;
+}
+body.theme-custom .mermaid-preview svg .tick text {
+    fill: #555555 !important;
+}
+
+/* ── 14.11 饼图 (Pie) ── */
+body.theme-custom .mermaid-preview svg .pieCircle,
+body.theme-custom .mermaid-preview svg .slice {
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .legend text {
+    fill: #1a1a1a !important;
+}
+
+/* ── 14.12 ER 图 (Entity Relationship) ── */
+body.theme-custom .mermaid-preview svg .er .entityBox rect,
+body.theme-custom .mermaid-preview svg .er .entityBox path {
+    fill: #E8E8E8 !important;
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .er text,
+body.theme-custom .mermaid-preview svg .er .relationshipLabel {
+    fill: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .er .relationshipLine {
+    stroke: #333333 !important;
+}
+
+/* ── 14.13 Git 图 ── */
+body.theme-custom .mermaid-preview svg .git .commit rect,
+body.theme-custom .mermaid-preview svg .git .commit circle {
+    fill: #f77474 !important;
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .git text,
+body.theme-custom .mermaid-preview svg .git .branchLabel text {
+    fill: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .git .tag rect,
+body.theme-custom .mermaid-preview svg .git .tag circle {
+    fill: #D8D8D8 !important;
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .git .branch rect {
+    fill: #ECECEC !important;
+    stroke: #999999 !important;
+}
+body.theme-custom .mermaid-preview svg .git .commit-line,
+body.theme-custom .mermaid-preview svg .git .branch-line {
+    stroke: #333333 !important;
+}
+
+/* ── 14.14 用户旅程图 (User Journey) ── */
+body.theme-custom .mermaid-preview svg .journey .task rect {
+    fill: #E8E8E8 !important;
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .journey text {
+    fill: #1a1a1a !important;
+}
+
+/* ── 14.15 时间线 (Timeline) ── */
+body.theme-custom .mermaid-preview svg .timeline rect {
+    fill: #E8E8E8 !important;
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .timeline text {
+    fill: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .timeline .period rect {
+    fill: #F0F0F0 !important;
+    stroke: #4a4a4a !important;
+}
+
+/* ── 14.16 思维导图 (Mindmap) ── */
+body.theme-custom .mermaid-preview svg .mindmap-node rect,
+body.theme-custom .mermaid-preview svg .mindmap-node circle,
+body.theme-custom .mermaid-preview svg .mindmap-node ellipse,
+body.theme-custom .mermaid-preview svg .mindmap-node polygon,
+body.theme-custom .mermaid-preview svg .mindmap-node path {
+    fill: #E8E8E8 !important;
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .mindmap-node text,
+body.theme-custom .mermaid-preview svg .mindmap-node .nodeLabel text,
+body.theme-custom .mermaid-preview svg .mindmap-node .nodeLabel span {
+    fill: #1a1a1a !important;
+    color: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .mindmap-edge {
+    stroke: #333333 !important;
+}
+
+/* ── 14.17 C4 架构图 ── */
+body.theme-custom .mermaid-preview svg .c4 .person rect,
+body.theme-custom .mermaid-preview svg .c4 .person path,
+body.theme-custom .mermaid-preview svg .c4 .system rect,
+body.theme-custom .mermaid-preview svg .c4 .system path,
+body.theme-custom .mermaid-preview svg .c4 .container rect,
+body.theme-custom .mermaid-preview svg .c4 .container path,
+body.theme-custom .mermaid-preview svg .c4 .boundary rect,
+body.theme-custom .mermaid-preview svg .c4 .boundary path {
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .c4 text,
+body.theme-custom .mermaid-preview svg .c4 span {
+    fill: #1a1a1a !important;
+    color: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .person rect,
+body.theme-custom .mermaid-preview svg .person path {
+    fill: #E0E0E0 !important;
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .person-man text {
+    fill: #ffffff !important;
+}
+body.theme-custom .mermaid-preview svg .person-man span {
+    color: #ffffff !important;
+}
+
+/* ── 14.18 XY Chart / 柱状图 ── */
+body.theme-custom .mermaid-preview svg .xychart .axis text {
+    fill: #555555 !important;
+}
+body.theme-custom .mermaid-preview svg .xychart .axis line,
+body.theme-custom .mermaid-preview svg .xychart .axis path {
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .xychart .plot rect,
+body.theme-custom .mermaid-preview svg .xychart .plot line {
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .xychart .titleText {
+    fill: #1a1a1a !important;
+}
+
+/* ── 14.19 四象限图 (Quadrant Chart) ── */
+body.theme-custom .mermaid-preview svg .quadrant rect {
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .quadrant text,
+body.theme-custom .mermaid-preview svg .quadrant .titleText {
+    fill: #1a1a1a !important;
+}
+body.theme-custom .mermaid-preview svg .quadrant .axis text {
+    fill: #555555 !important;
+}
+body.theme-custom .mermaid-preview svg .quadrant .axis line,
+body.theme-custom .mermaid-preview svg .quadrant .axis path {
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .quadrant .point {
+    fill: #333333 !important;
+    stroke: #333333 !important;
+}
+
+/* ── 14.20 Sankey 图 ── */
+body.theme-custom .mermaid-preview svg .sankey .link {
+    stroke: #333333 !important;
+}
+body.theme-custom .mermaid-preview svg .sankey text {
+    fill: #1a1a1a !important;
+}
+
+/* ── 14.21 图表标题统一 ── */
+body.theme-custom .mermaid-preview svg .pieTitleText,
+body.theme-custom .mermaid-preview svg .xychart .titleText,
+body.theme-custom .mermaid-preview svg .quadrant .titleText {
+    font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
+    font-size: 10pt !important;
+    font-weight: 700 !important;
+    fill: #1a1a1a !important;
+}
+
+/* ── 14.22 Mermaid 源码编辑器 ── */
 body.theme-custom .mermaid-source {
     width: 100%;
     min-height: 100px;
-    border: 1px solid #4A4A4A;
+    border: 1px solid #333333;
     border-radius: 0;
     padding: 12px;
     font-size: 10.5pt;
@@ -701,7 +1121,7 @@ body.theme-custom .mermaid-source {
     white-space: pre-wrap;
 }
 body.theme-custom .mermaid-source:focus {
-    border-color: #4A4A4A;
+    border-color: #1a1a1a;
 }
 
 /* ── 15. 脚注（小五号 9pt） ── */
@@ -796,7 +1216,7 @@ body.theme-custom [class*="reference"] li {
 
     body.theme-custom .mermaid-block,
     body.theme-custom .mermaid-preview,
-    .md-diagram-panel.md-mermaid { background: #fafafa !important; border: 1px solid #ddd !important; }
+    .md-diagram-panel.md-mermaid { background: #ffffff !important; border: 1px solid #999999 !important; }
 
     /* 打印时保留 Mermaid 浅色系配色（彩色/灰度均清晰） */
     .mermaid-preview svg * {
@@ -821,11 +1241,8 @@ body.theme-custom [class*="reference"] li {
     p { orphans: 3; widows: 3; }
 }
 
-/* ── 17. 滚动条 ── */
-body.theme-custom ::-webkit-scrollbar { width: 8px; height: 8px; }
-body.theme-custom ::-webkit-scrollbar-track { background: #f5f5f5; }
-body.theme-custom ::-webkit-scrollbar-thumb { background: #bbb; border-radius: 0; }
-body.theme-custom ::-webkit-scrollbar-thumb:hover { background: #999; }
+/* ── 17. 滚动条（默认浏览器样式，置于屏幕最右侧）── */
+body.theme-custom { scrollbar-width: auto; scrollbar-color: auto; }
 
 /* ── 18. 源码编辑模式 ── */
 body.theme-custom #source-editor {

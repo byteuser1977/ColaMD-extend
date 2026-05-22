@@ -1,12 +1,12 @@
 /*
  * ColaMD 主题：Pixso Design (设计美学)
  * 配色：纯净白底 + 渐变蓝紫点缀
- * 风格：现代简约、大量留白、精致排�?
+ * 风格：现代简约、大量留白、精致布局
  * 兼容：ColaMD (body.theme-custom) / Typora
  * 导入：Theme > Import Theme
  */
 
-/* ── 1. 根变�?& 主题变量 ── */
+/* ── 1. 根变量 & 主题变量 ── */
 :root {
     --side-bar-bg-color: #f7f8fa;
     --control-text-color: #5a6270;
@@ -618,8 +618,7 @@ body.theme-custom .math-block .katex .minner {
 .md-diagram-panel { margin: 1.8em 0; }
 
 .md-diagram-panel.md-mermaid,
-body.theme-custom .mermaid-block,
-body.theme-custom .mermaid-preview {
+body.theme-custom .mermaid-block {
     background: linear-gradient(135deg, #f8f9fb 0%, #eef2ff 30%, #fdf4ff 60%, #fce7f3 100%);
     border: none;
     border-radius: 16px;
@@ -629,6 +628,13 @@ body.theme-custom .mermaid-preview {
         0 8px 32px rgba(99, 102, 241, 0.12),
         0 2px 8px rgba(139, 92, 246, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+body.theme-custom .mermaid-preview {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
 }
 
 .md-diagram-panel.md-mermaid svg,
