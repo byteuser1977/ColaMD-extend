@@ -675,7 +675,4 @@ img{max-width:100%}
 </style>
 </head><body>${getLiveHTML()}</body></html>`
 }
-
-// 临时调试：打开 DevTools（确认问题后请删除此行）
-if (window.electronAPI) (window as any).electronAPI?.openDevTools?.()
 init().catch((e) => console.error('ColaMD init failed:', e))

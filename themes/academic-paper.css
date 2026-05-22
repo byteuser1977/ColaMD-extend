@@ -214,13 +214,13 @@ h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor { text-decoration: none;
 /* ── 4. 内联元素 ── */
 /* 正文：宋体 小四号 (12pt)，行距 1.5 倍，首行缩进 2 字符 */
 body.theme-custom p, body.theme-custom #write > p {
-    margin: 0 0 0 0;
+    margin: 0;
     line-height: 1.5;
     text-align: justify;
     text-indent: 2em;
     font-size: 12pt;
 }
-body.theme-custom p + p, body.theme-custom #write > p + #write > p { margin-top: 0; }
+body.theme-custom p + p { margin-top: 0; }
 
 strong, body.theme-custom strong { color: #000000; font-weight: 700; }
 em, body.theme-custom em { font-style: italic; color: #000000; }
@@ -611,11 +611,6 @@ body.theme-custom table td {
     border-bottom: none;
 }
 
-/* 首列表头可加左侧竖线（可选） */
-body.theme-custom table th:first-child {
-    /* border-left: 0.75pt solid #000; */
-}
-
 /* ── 12. 图片（图题：宋体 五号 10.5pt，居中，位于图下方） ── */
 img, body.theme-custom img { max-width: 100%; }
 p > img:only-child, body.theme-custom p > img:only-child { display: block; margin: 12pt auto; }
@@ -641,30 +636,12 @@ body.theme-custom .math-block {
     overflow-x: auto;
 }
 body.theme-custom .math-block .katex,
-body.theme-custom .math-block .MathJax,
 body.theme-custom .math-block .katex *,
+body.theme-custom .math-block .MathJax,
 body.theme-custom .math-block .MathJax *,
-body.theme-custom .math-block .katex .mord,
-body.theme-custom .math-block .katex .mbin,
-body.theme-custom .math-block .katex .mrel,
-body.theme-custom .math-block .katex .mop,
-body.theme-custom .math-block .katex .mopen,
-body.theme-custom .math-block .katex .mclose,
-body.theme-custom .math-block .katex .mpunct,
-body.theme-custom .math-block .katex .minner,
-body.theme-custom .math-block .katex .mord + .mord,
-body.theme-custom .math-block .katex .mbin + .mbin,
-body.theme-custom .math-block .katex .mrel + .mrel {
-    color: #000000 !important;
-}
-
 body.theme-custom .math-inline,
 body.theme-custom .math-inline .katex,
-body.theme-custom .math-inline .katex * {
-    color: #000000 !important;
-}
-
-/* Typora */
+body.theme-custom .math-inline .katex *,
 .md-inline-math script,
 .md-inline-math .MathJax {
     color: #000000 !important;
@@ -694,43 +671,26 @@ body.theme-custom .mermaid-preview { background: transparent; border: none; padd
 .md-diagram-panel.md-mermaid svg,
 body.theme-custom .mermaid-preview svg { max-width: 100%; height: auto; }
 
-/* ── 14.1 全局字体：黑体 小五号 9pt，独立于正文字体 ── */
+/* ── 14.1 全局字体：黑体 五号 10pt，独立于正文字体 ── */
 body.theme-custom .mermaid-preview svg text,
 body.theme-custom .mermaid-preview svg tspan {
     font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
-    font-size: 9pt !important;
+    font-size: 10pt !important;
     fill: var(--mermaid-node-text) !important;
 }
 body.theme-custom .mermaid-preview svg foreignObject span,
 body.theme-custom .mermaid-preview svg foreignObject p,
-body.theme-custom .mermaid-preview svg foreignObject div {
-    font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
-    font-size: 9pt !important;
-    color: var(--mermaid-node-text) !important;
-}
+body.theme-custom .mermaid-preview svg foreignObject div,
 body.theme-custom .mermaid-preview svg .nodeLabel span,
 body.theme-custom .mermaid-preview svg .edgeLabel span {
     font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
-    font-size: 9pt !important;
+    font-size: 10pt !important;
+    color: var(--mermaid-node-text) !important;
 }
 body.theme-custom .mermaid-preview svg .titleText,
 body.theme-custom .mermaid-preview svg .pieTitleText {
     font-size: 10pt !important;
     fill: var(--mermaid-title-text) !important;
-}
-
-/* 重置首行缩进 */
-body.theme-custom .mermaid-preview svg text,
-body.theme-custom .mermaid-preview svg p,
-body.theme-custom .mermaid-preview svg span,
-body.theme-custom .mermaid-preview svg foreignObject,
-body.theme-custom .mermaid-preview svg foreignObject p,
-body.theme-custom .mermaid-preview svg foreignObject span,
-body.theme-custom .mermaid-preview svg .nodeLabel,
-body.theme-custom .mermaid-preview svg .edgeLabel {
-    text-indent: 0 !important;
-    text-align: left !important;
-    margin: 0 !important;
 }
 
 /* ── 14.2 通用节点色块：浅灰填色 + 深灰边框 ── */
@@ -774,32 +734,19 @@ body.theme-custom .mermaid-preview svg .node.alt rect {
     stroke: var(--mermaid-cluster-stroke) !important;
 }
 
-/* ── 14.5 标签文字，重置偏移为0 ── */
+/* ── 14.5 标签文字（仅颜色，无偏移——参照 guizang 模式） ── */
+body.theme-custom .mermaid-preview svg .edgeLabel text,
 body.theme-custom .mermaid-preview svg .label text,
 body.theme-custom .mermaid-preview svg .nodeLabel text {
     fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .nodeLabel span,
+body.theme-custom .mermaid-preview svg .edgeLabel span {
     color: var(--mermaid-node-text) !important;
-    transform: translateY(0) !important;
-}
-body.theme-custom .mermaid-preview svg .nodeLabel span {
-    fill: var(--mermaid-node-text) !important;
-    color: var(--mermaid-node-text) !important;
-}
-body.theme-custom .mermaid-preview svg .nodeLabel,
-body.theme-custom .mermaid-preview svg .edgeLabel {
-    display: block !important;
-    position: relative !important;
-    top: 0 !important;
-}
-body.theme-custom .mermaid-preview svg .edgeLabel text {
-    fill: var(--mermaid-node-text) !important;
 }
 body.theme-custom .mermaid-preview svg .edgeLabel rect {
     fill: var(--mermaid-label-background) !important;
     stroke: none !important;
-}
-body.theme-custom .mermaid-preview svg .edgeLabel span {
-    color: var(--mermaid-node-text) !important;
 }
 
 /* ── 14.6 流程图/Block 图 ── */
@@ -1144,9 +1091,7 @@ body.theme-custom #write > p:first-child strong {
     font-weight: 700;
 }
 
-/* ── 15.2 关键词（黑体 五号，"关键词："加粗，关键词间用分号分隔） ── */
-
-/* ── 15.3 参考文献（标题用三级标题格式，条目宋体 小五号，悬挂缩进） ── */
+/* ── 15.2 关键词 / 15.3 参考文献（条目宋体 小五号，悬挂缩进） ── */
 body.theme-custom .references,
 body.theme-custom [class*="reference"] {
     font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, serif;
@@ -1165,6 +1110,13 @@ body.theme-custom [class*="reference"] li {
     @page {
         size: A4;
         margin: 25mm 25mm 25mm 30mm;
+
+        @bottom-center {
+            content: counter(page);
+            font-family: "SimSun", "Songti SC", serif;
+            font-size: 9pt;
+            color: #000000;
+        }
     }
 
     html, body {
@@ -1244,7 +1196,7 @@ body.theme-custom [class*="reference"] li {
 }
 
 /* ── 17. 滚动条（默认浏览器样式，置于屏幕最右侧）── */
-body.theme-custom { scrollbar-width: auto; scrollbar-color: auto; }
+body.theme-custom { scrollbar-width: auto; scrollbar-color: #4a4a4a; }
 
 /* ── 18. 源码编辑模式 ── */
 body.theme-custom #source-editor {
