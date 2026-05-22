@@ -110,7 +110,7 @@ function restoreRenderedMode(api: any): void {
   for (const p of getAllPlugins()) {
     if (!p.enabled) {
       p.enabled = true
-      togglePluginMode(p.nodeTypes, 'rendered')
+      togglePluginMode(p.nodeTypes || [], 'rendered')
       api.syncPluginState(p.id, true)
     }
   }
@@ -118,33 +118,56 @@ function restoreRenderedMode(api: any): void {
 
 async function init(): Promise<void> {
   const api = window.electronAPI || await createCapacitorAPI()
-  const savedTheme = loadSavedTheme()
 
-  if (savedTheme.startsWith('custom:')) {
-    const fileName = savedTheme.slice(7)
-    const css = await api.loadThemeCSS(fileName)
-    if (css) {
-      setCachedCustomTheme(fileName, css)
-      applyTheme(savedTheme)
+  let editorReady = false
+  let pendingFileContent: string | null = null
+
+  // Register file-open listener AS EARLY AS POSSIBLE
+  api.onFileOpened((data) => {
+    if (editorReady) {
+      setContent(data.content)
     } else {
-      applyTheme('elegant')
+      pendingFileContent = data.content
     }
-  } else {
-    applyTheme(savedTheme)
+  })
+
+  let savedTheme = loadSavedTheme()
+
+  try {
+    if (savedTheme.startsWith('custom:')) {
+      const fileName = savedTheme.slice(7)
+      const css = await api.loadThemeCSS(fileName)
+      if (css) {
+        setCachedCustomTheme(fileName, css)
+        applyTheme(savedTheme)
+      } else {
+        applyTheme('elegant')
+      }
+    } else {
+      applyTheme(savedTheme)
+    }
+  } catch (e) {
+    console.error('Theme initialization failed, falling back to elegant:', e)
+    applyTheme('elegant')
   }
 
-  await createEditor('editor')
+  try {
+    await createEditor('editor')
+  } catch (e) {
+    console.error('Editor initialization failed:', e)
+  }
+  editorReady = true
 
-  // Run plugin init hooks (mermaid initialize, etc.)
+  if (pendingFileContent !== null) {
+    setContent(pendingFileContent)
+    pendingFileContent = null
+  }
+
   for (const p of getAllPlugins()) p.onInit?.()
-
-  // Check for file opened via Android file manager (Intent)
   checkAndOpenPendingFile(api)
 
-  // Send plugin list to main process for menu
   api.registerPlugins(getAllPlugins().map((p) => ({ id: p.id, name: p.name, enabled: p.enabled })))
 
-  // Handle plugin toggle from menu
   api.onMenuTogglePlugin((id) => {
     togglePlugin(id)
     const p = getAllPlugins().find((x) => x.id === id)
@@ -266,7 +289,6 @@ img{max-width:100%}
   })
 
   api.onNewFile(() => { exitSourceMode(); setMarkdown('') })
-  api.onFileOpened((data) => setContent(data.content))
   api.onFileChanged((content) => {
     if (sourceModeActive) {
       sourceEl().value = content
@@ -643,4 +665,6 @@ img{max-width:100%}
 </head><body>${getLiveHTML()}</body></html>`
 }
 
+// 临时调试：打开 DevTools（确认问题后请删除此行）
+if (window.electronAPI) (window as any).electronAPI?.openDevTools?.()
 init().catch((e) => console.error('ColaMD init failed:', e))

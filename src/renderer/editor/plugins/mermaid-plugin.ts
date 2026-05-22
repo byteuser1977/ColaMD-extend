@@ -10,7 +10,7 @@ import './mermaid-plugin-dark.css'
 import './mermaid-plugin-elegant.css'
 import './mermaid-plugin-newsprint.css'
 import './mermaid-plugin-custom.css'
-import './themes/components/mermaid/variables.css'
+// import './themes/components/mermaid/variables.css'
 
 ;(window as any).mermaid = mermaid
 

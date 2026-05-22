@@ -671,6 +671,11 @@ ipcMain.handle('load-theme-css', async (_event, fileName: string) => {
   }
 })
 
+ipcMain.on('open-devtools', (_event) => {
+  const win = BrowserWindow.getFocusedWindow()
+  if (win) win.webContents.openDevTools()
+})
+
 // Plugin menu — receives plugin list from renderer, builds dynamic submenu
 
 ipcMain.handle('register-plugins', (_event, plugins: Array<{ id: string; name: string; enabled: boolean }>) => {

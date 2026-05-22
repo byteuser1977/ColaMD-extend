@@ -109,7 +109,38 @@ export async function createEditor(
     }
   }
 
-  editorInstance = await builder.create()
+  try {
+    editorInstance = await builder.create()
+  } catch (e: any) {
+    if (e?.message?.includes('math_inline') || e?.message?.includes('math_block')) {
+      console.warn('[editor] Milkdown context error, retrying without math plugins:', e.message)
+      const filteredModules = pluginModules.filter((m) => m.info.id !== 'math')
+      builder = Editor.make()
+        .config((ctx) => {
+          ctx.set(rootCtx, root)
+          ctx.set(defaultValueCtx, defaultContent)
+          ctx.set(remarkPluginsCtx, [
+            ...filteredModules.map((m) => m.info.remarkPlugin),
+            { plugin: remarkBreaks, options: undefined },
+          ] as any)
+          if (onChange) ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => { onChange(markdown) })
+        })
+        .use(commonmark)
+        .use(gfm)
+        .use(history)
+        .use(listener)
+        .use(clipboard)
+        .use(htmlView)
+      for (const mod of filteredModules) {
+        for (const p of mod.milkdownPlugins) {
+          builder = builder.use(p)
+        }
+      }
+      editorInstance = await builder.create()
+    } else {
+      throw e
+    }
+  }
 
   editorInstance.action((ctx) => {
     const nvs = ctx.get(nodeViewCtx)

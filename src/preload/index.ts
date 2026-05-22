@@ -34,6 +34,7 @@ export interface ElectronAPI {
   onMenuTogglePlugin: (callback: (id: string) => void) => void
   onMenuImportTheme: (callback: () => void) => void
   exportFile: (dataUrl: string, defaultName: string) => Promise<boolean>
+  openDevTools: () => void
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -107,4 +108,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   exportFile: (dataUrl: string, defaultName: string) =>
     ipcRenderer.invoke('save-export-file', dataUrl, defaultName),
+  openDevTools: () => ipcRenderer.send('open-devtools'),
 } satisfies ElectronAPI)

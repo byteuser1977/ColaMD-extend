@@ -194,7 +194,7 @@ const mathBlockView = $view(mathBlockSchema.node, (_ctx): NodeViewConstructor =>
     div.addEventListener('focusout', (e) => {
       const target = e.target as HTMLElement
       if (!target.classList.contains('math-block-raw')) return
-      const rawValue = (target as HTMLTextAreaElement).value
+      const rawValue = (e.target as HTMLTextAreaElement).value
       const newText = rawValue.replace(/^\$\$\s*\n?/, '').replace(/\n?\s*\$\$$/, '').trim()
       const pos = getPos()
       if (pos != null && node.attrs.text !== newText) {
