@@ -1,0 +1,498 @@
+/*
+ * ColaMD 主题模板：{你的主题名称}
+ * 版本：v3.0（模块化 + 变量驱动范式）
+ *
+ * ═══════════════════════════════════════════════════════════
+ *   使用说明（面向用户 & AI Agent）
+ * ═══════════════════════════════════════════════════════════
+ *
+ * 【快速上手】
+ *   1. 修改 SECTION 1 的种子色板 (5 个种子色)
+ *   2. 修改 SECTION 1 的字体选择 (3 组字体栈)
+ *   3. 保存，导入 ColaMD：Theme > Import Theme
+ *   → 其余变量自动推导，无需手动调整
+ *
+ * 【变量命名规则】
+ *   --seed-*    = 用户定义的原始设计令牌 (SECTION 1)
+ *   --color-*   = 自动推导的色阶变量 (SECTION 2)
+ *   --font-*    = 字体栈变量
+ *   --mermaid-* = Mermaid 图表变量 (被内置 variables.css 消费)
+ *
+ * 【架构原理】
+ *   本文件只定义变量 + 极小量微调选择器。
+ *   所有 Mermaid SVG 样式由 src/.../mermaid/variables.css 自动映射。
+ *   所有编辑器排版由 src/.../base.css 自动承继。
+ *   → 主题作者只需关注「变量值」，无需写重复的选择器。
+ *
+ * 【配色方法论】
+ *   浅色主题：seed-surface 最浅 → seed-panel 稍深 → seed-ink 最深
+ *   深色主题：反转以上关系
+ *   点缀色 (seed-accent)：占页面 5-10% 面积，用于链接/强调/边框
+ *
+ * ═══════════════════════════════════════════════════════════
+ *   SECTION 1 — 设计令牌 (Design Tokens)
+ *   用户只需修改此区域的数值
+ * ═══════════════════════════════════════════════════════════ */
+
+body.theme-custom {
+
+  /* ═══════════════════════════════════════════════════════════
+     1.1 种子色板 (Seed Palette)
+     修改这 5 个种子色即可改变整个主题的视觉基调
+     ═══════════════════════════════════════════════════════════ */
+
+  /* 点缀色：用于链接、强调、Mermaid 高亮、引用边框（占页面 ≤10%） */
+  --seed-accent:        #6366f1;   /* 主色 (Indigo)       */
+  --seed-accent-light:  #eef2ff;   /* 浅变体 (bg 用途)     */
+  --seed-accent-dark:   #4f46e5;   /* 深变体 (hover/text)  */
+
+  /* 表面色：页面底色层次（从浅到深，3 级） */
+  --seed-surface:       #ffffff;   /* L0 页面背景 (最浅)   */
+  --seed-panel:         #f8f9fb;   /* L1 卡片/代码区背景    */
+  --seed-panel-alt:     #f1f3f5;   /* L2 表头/引用块背景    */
+
+  /* 文字色：前景色层次（从深到浅，3 级） */
+  --seed-ink:           #1a1d26;   /* T0 正文/标题 (最深)   */
+  --seed-ink-muted:     #6b7280;   /* T1 次要文字           */
+  --seed-ink-dim:       #9ca3af;   /* T2 弱化/禁用文字      */
+
+  /* 边框色 */
+  --seed-border:        #e5e7eb;   /* 分割线/表格边框       */
+  --seed-border-strong: #d1d5db;   /* 强调边框              */
+
+  /* ═══════════════════════════════════════════════════════════
+     1.2 字体系统 (Typography)
+     ═══════════════════════════════════════════════════════════ */
+
+  /* 正文字体栈：优先西文 → 中文衬线 → 通用衬线 */
+  --font-body: "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+               "Noto Serif SC", "Source Han Serif SC", "Songti SC",
+               Georgia, "Times New Roman", serif;
+
+  /* 标题字体栈：无衬线优先，与正文形成对比 */
+  --font-heading: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont,
+                  "Noto Sans SC", "Source Han Sans SC", "PingFang SC",
+                  "Microsoft YaHei", sans-serif;
+
+  /* 等宽字体栈：代码/公式 */
+  --font-code: "JetBrains Mono", "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+
+  /* Mermaid 图表字体（与标题保持一致，字号独立控制） */
+  --font-mermaid: var(--font-heading);
+
+  /* ═══════════════════════════════════════════════════════════
+     1.3 字号 & 间距
+     ═══════════════════════════════════════════════════════════ */
+
+  /* 基准字号 (1rem = 该值) */
+  --font-size-root: 16px;
+
+  /* 标题倍率（相对于根字号） */
+  --font-scale-h1: 2.0;     /* 32px */
+  --font-scale-h2: 1.5;     /* 24px */
+  --font-scale-h3: 1.25;    /* 20px */
+  --font-scale-h4: 1.1;     /* 17.6px */
+  --font-scale-h5: 1.0;     /* 16px */
+  --font-scale-h6: 0.95;    /* 15.2px */
+
+  /* Mermaid 独立字号 */
+  --font-size-mermaid: 13px;
+
+  /* 行高 */
+  --line-height-body: 1.75;
+  --line-height-heading: 1.35;
+  --line-height-code: 1.6;
+
+  /* ═══════════════════════════════════════════════════════════
+     1.4 圆角 & 间距 (可选)
+     ═══════════════════════════════════════════════════════════ */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --content-width: 820px;
+
+  /* ═══════════════════════════════════════════════════════════
+     SECTION 2 — 语义映射 (Semantic Mapping)
+     将 SECTION 1 的令牌自动映射到 ColaMD 内置系统消费的变量
+     通常无需修改，除非需要特殊微调某个语义角色
+     ═══════════════════════════════════════════════════════════ */
+
+  /* ── 2.1 编辑区表面色 ── */
+  --bg-color:           var(--seed-surface);
+  --surface-color:      var(--seed-panel);
+  --surface-alt:        var(--seed-panel-alt);
+
+  /* ── 2.2 编辑区文字色 ── */
+  --text-color:         var(--seed-ink);
+  --heading-color:      var(--seed-ink);
+  --text-muted:         var(--seed-ink-muted);
+  --text-dim:           var(--seed-ink-dim);
+
+  /* ── 2.3 链接 & 强调 ── */
+  --link-color:         var(--seed-accent);
+  --accent-color:       var(--seed-accent);
+  --accent-dark:        var(--seed-accent-dark);
+  --accent-light:       var(--seed-accent-light);
+  --selection-bg:       rgba(99, 102, 241, 0.15);  /* 手动匹配 accent */
+
+  /* ── 2.4 边框 & 分割线 ── */
+  --border-color:       var(--seed-border);
+  --blockquote-border:  var(--seed-accent);
+  --hr-color:           var(--seed-border);
+
+  /* ── 2.5 内联代码 ── */
+  --code-bg:            var(--seed-panel);
+  --code-color:         var(--seed-accent-dark);
+
+  /* ── 2.6 代码块 ── */
+  --code-block-bg:      var(--seed-panel-alt);
+  --code-block-text:    var(--seed-ink);
+  --code-block-color:   var(--seed-ink);
+
+  /* ── 2.7 引用块 ── */
+  --blockquote-bg:      var(--seed-panel);
+
+  /* ── 2.8 表格 ── */
+  --table-header-bg:    var(--seed-panel);
+  --table-border:       var(--seed-border);
+
+  /* ── 2.9 滚动条 ── */
+  --scrollbar-thumb:    var(--seed-border-strong);
+  --scrollbar-thumb-hover: var(--seed-ink-muted);
+
+  /* ═══════════════════════════════════════════════════════════
+     SECTION 3 — Mermaid 图表变量 (20 核心变量)
+     由内置 src/.../mermaid/variables.css 自动消费
+     变量说明注释标注了每个变量的视觉作用
+     ═══════════════════════════════════════════════════════════ */
+
+  /* ── 3.1 容器 ── */
+  --mermaid-background:   var(--seed-panel);       /* 图表容器背景    */
+  --mermaid-border-color: var(--seed-border);      /* 图表容器边框    */
+  --mermaid-border-radius: var(--radius-md);       /* 图表容器圆角    */
+  --mermaid-padding:     20px;                     /* 图表容器内边距  */
+
+  /* ── 3.2 字体 ── */
+  --mermaid-font-family:  var(--font-mermaid);      /* 图表内字体      */
+  --mermaid-font-size:    var(--font-size-mermaid); /* 图表内字号      */
+
+  /* ── 3.3 节点 (所有图表类型的矩形/圆形/菱形等) ── */
+  --mermaid-node-fill:        var(--seed-panel);    /* 节点填充色      */
+  --mermaid-node-stroke:      var(--seed-accent);   /* 节点描边色      */
+  --mermaid-node-stroke-width: 1.5px;               /* 节点描边宽度    */
+  --mermaid-node-text:        var(--seed-ink);      /* 节点内文字色    */
+
+  /* ── 3.4 连线 (边/箭头) ── */
+  --mermaid-edge-stroke:       var(--seed-ink-muted); /* 连线颜色     */
+  --mermaid-edge-stroke-width: 1.5px;                  /* 连线宽度     */
+
+  /* ── 3.5 聚类 (Subgraph / 子图容器) ── */
+  --mermaid-cluster-fill:      rgba(99, 102, 241, 0.06); /* 聚类填充   */
+  --mermaid-cluster-stroke:    var(--seed-accent);        /* 聚类边框   */
+
+  /* ── 3.6 标签 (节点内文本 / 边标签文本) ── */
+  --mermaid-label-text:      var(--seed-ink);           /* 标签文字色    */
+  --mermaid-edge-label-text: var(--seed-ink-muted);     /* 边标签文字色  */
+  --mermaid-edge-label-bg:   var(--seed-surface);       /* 边标签背景色  */
+
+  /* ── 3.7 标题 & 坐标轴 (Pie/Gantt/XYChart 等) ── */
+  --mermaid-title-text:  var(--seed-ink);               /* 图表标题色    */
+  --mermaid-axis-text:   var(--seed-ink-muted);         /* 坐标轴文字色  */
+  --mermaid-highlight:   var(--seed-accent);            /* 高亮/标记色   */
+
+  /* ── 3.8 人物节点 (Sequence / C4 等) ── */
+  --mermaid-person-stroke: var(--seed-ink);             /* 人物描边色    */
+  --mermaid-person-fill:   var(--seed-panel);           /* 人物填充色    */
+
+  /* ── 3.9 标签 Y 偏移 (微调文字垂直对齐，通常 0 或 -3px) ── */
+  --mermaid-label-offset-y: 0px;
+
+  /* ═══════════════════════════════════════════════════════════
+     SECTION 4 — 排版微调 (Fine Tuning)
+     仅覆盖 base.css 未通过变量处理的样式
+     所有值继续引用变量，禁止硬编码
+     ═══════════════════════════════════════════════════════════ */
+
+
+  /* ── 4.1 中文字体适应：适当增大行高 ── */
+  --line-height-base: var(--line-height-body);
+
+  /* ── 4.2 深色代码块需要文字变亮 (可选，若代码块背景很深则启用) ── */
+  /* --code-block-text: #e4e7ed; */  /* 默认注释，按需取消 */
+}
+
+/* ═════════════════════════════════════════════════════════════
+   SECTION 5 — 选择器级微调 (Selector Fine-Tuning)
+   仅用于 base.css 不提供的个性化样式
+   所有值严格引用变量，禁止出现裸色值/裸字号
+   ═════════════════════════════════════════════════════════════ */
+
+/* ── 5.1 全局：字体 + 底色 + 字号 ── */
+html { font-size: var(--font-size-root); }
+body.theme-custom, html, body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-body);
+  line-height: var(--line-height-body);
+}
+
+/* ── 5.2 编辑区 ── */
+#write {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 30px 60px 100px;
+}
+
+/* ── 5.3 标题：字体 + 倍率 ── */
+body.theme-custom h1, body.theme-custom h2, body.theme-custom h3,
+body.theme-custom h4, body.theme-custom h5, body.theme-custom h6 {
+  font-family: var(--font-heading);
+  color: var(--heading-color);
+  font-weight: 700;
+  line-height: var(--line-height-heading);
+}
+
+body.theme-custom h1 { font-size: calc(var(--font-size-root) * var(--font-scale-h1)); }
+body.theme-custom h2 { font-size: calc(var(--font-size-root) * var(--font-scale-h2)); }
+body.theme-custom h3 { font-size: calc(var(--font-size-root) * var(--font-scale-h3)); }
+body.theme-custom h4 { font-size: calc(var(--font-size-root) * var(--font-scale-h4)); }
+body.theme-custom h5 { font-size: calc(var(--font-size-root) * var(--font-scale-h5)); }
+body.theme-custom h6 { font-size: calc(var(--font-size-root) * var(--font-scale-h6)); }
+
+/* ── 5.4 内联强调：使用点缀色 ── */
+body.theme-custom strong { color: var(--accent-color); }
+
+/* ── 5.5 内联代码 ── */
+body.theme-custom code {
+  font-family: var(--font-code);
+  background: var(--code-bg);
+  color: var(--code-color);
+}
+
+/* ── 5.6 代码块 ── */
+body.theme-custom pre {
+  background: var(--code-block-bg);
+  font-family: var(--font-code);
+  line-height: var(--line-height-code);
+}
+body.theme-custom pre code {
+  color: var(--code-block-text);
+  background: transparent;
+}
+
+/* ── 5.7 引用块 ── */
+body.theme-custom blockquote {
+  background: var(--blockquote-bg);
+  border-left: 4px solid var(--blockquote-border);
+}
+
+/* ── 5.8 表格表头 ── */
+body.theme-custom table th {
+  background: var(--table-header-bg);
+  font-weight: 700;
+  border-bottom: 2px solid var(--accent-color);
+}
+
+/* ── 5.9 分割线 ── */
+body.theme-custom hr {
+  border: none;
+  border-top: 1px solid var(--hr-color);
+}
+
+/* ── 5.10 图片居中 ── */
+body.theme-custom img { max-width: 100%; }
+
+/* ── 5.11 Mermaid 图表标题（跟随图表的 p） ── */
+/* 用于 **图X ...** 这类 Markdown 标题自动居中 */
+body.theme-custom .mermaid-block + p {
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: calc(var(--font-size-mermaid) + 2px);
+  color: var(--text-muted);
+}
+
+/* ── 5.12 响应式 ── */
+@media only screen and (max-width: 768px) {
+  #write { padding: 20px; }
+  body.theme-custom .mermaid-block { padding: 12px; }
+  body.theme-custom .mermaid-preview svg { max-width: 100% !important; height: auto !important; }
+}
+
+/* ═════════════════════════════════════════════════════════════
+   SECTION 6 — 打印 / 导出 (Print / Export)
+   原则：屏幕样式的完整镜像。每个屏幕属性都必须在 print 中显式声明。
+   禁止在 print 中引入新色值，禁止遗漏任何有色/有尺寸的元素。
+   ═════════════════════════════════════════════════════════════ */
+@media print {
+  @page { margin: 20mm; }
+
+  /* ── 6.0 变量重声明（Chromium 打印引擎会丢失 CSS 变量，需重新注入） ── */
+  body.theme-custom {
+    --seed-accent:       #6366f1;   /* ⬅ 与 SECTION 1.1 保持完全一致 */
+    --seed-accent-dark:  #4f46e5;
+    --seed-surface:      #ffffff;
+    --seed-ink:          #1a1d26;
+    --seed-ink-muted:    #6b7280;
+    --seed-panel:        #f8f9fb;
+    --seed-panel-alt:    #f1f3f5;
+    --seed-border:       #e5e7eb;
+    --font-size-root:    16px;
+    --line-height-body:  1.75;
+    --line-height-heading: 1.35;
+    --line-height-code:  1.6;
+    --font-scale-h1:     2.0;
+    --font-scale-h2:     1.5;
+    --font-scale-h3:     1.25;
+    --font-scale-h4:     1.1;
+    --font-scale-h5:     1.0;
+    --font-scale-h6:     0.95;
+    --content-width:     820px;
+    --font-size-mermaid: 13px;
+    --accent-color:      var(--seed-accent);
+    --accent-dark:       var(--seed-accent-dark);
+    --code-bg:           var(--seed-panel);
+    --code-color:        var(--seed-accent-dark);
+    --code-block-bg:     var(--seed-panel-alt);
+    --code-block-text:   var(--seed-ink);
+    --blockquote-bg:     var(--seed-panel);
+    --table-header-bg:   var(--seed-panel);
+    --border-color:      var(--seed-border);
+    --hr-color:          var(--seed-border);
+    --font-body: "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+                 "Noto Serif SC", "Source Han Serif SC", "Songti SC",
+                 Georgia, "Times New Roman", serif;
+    --font-heading: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont,
+                    "Noto Sans SC", "Source Han Sans SC", "PingFang SC",
+                    "Microsoft YaHei", sans-serif;
+    --font-code: "JetBrains Mono", "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+  }
+
+  /* ── 6.1 根元素：字号 + 字体 + 行高 + 底色 ── */
+  html {
+    font-size: var(--font-size-root) !important;
+  }
+  html, body, body.theme-custom {
+    background: var(--seed-surface) !important;
+    color: var(--seed-ink) !important;
+    font-family: var(--font-body) !important;
+    line-height: var(--line-height-body) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── 6.2 编辑区 ── */
+  #write {
+    max-width: var(--content-width) !important;
+    margin: 0 auto !important;
+    padding: 30px 60px 100px !important;
+  }
+
+  /* ── 6.3 标题：字号 + 字体 + 字重 + 行高 ── */
+  body.theme-custom h1, body.theme-custom h2, body.theme-custom h3,
+  body.theme-custom h4, body.theme-custom h5, body.theme-custom h6 {
+    font-family: var(--font-heading) !important;
+    color: var(--seed-ink) !important;
+    font-weight: 700 !important;
+    line-height: var(--line-height-heading) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body.theme-custom h1 { font-size: calc(var(--font-size-root) * var(--font-scale-h1)) !important; }
+  body.theme-custom h2 { font-size: calc(var(--font-size-root) * var(--font-scale-h2)) !important; }
+  body.theme-custom h3 { font-size: calc(var(--font-size-root) * var(--font-scale-h3)) !important; }
+  body.theme-custom h4 { font-size: calc(var(--font-size-root) * var(--font-scale-h4)) !important; }
+  body.theme-custom h5 { font-size: calc(var(--font-size-root) * var(--font-scale-h5)) !important; }
+  body.theme-custom h6 { font-size: calc(var(--font-size-root) * var(--font-scale-h6)) !important; }
+
+  /* ── 6.4 内联强调 ── */
+  body.theme-custom strong {
+    color: var(--accent-color) !important;
+    font-weight: 700 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── 6.5 内联代码：字体 + 背景 + 颜色 ── */
+  body.theme-custom code {
+    font-family: var(--font-code) !important;
+    background: var(--code-bg) !important;
+    color: var(--code-color) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── 6.6 代码块：背景 + 字体 + 行高 ── */
+  body.theme-custom pre {
+    background: var(--code-block-bg) !important;
+    font-family: var(--font-code) !important;
+    line-height: var(--line-height-code) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body.theme-custom pre code {
+    color: var(--code-block-text) !important;
+    background: transparent !important;
+  }
+
+  /* ── 6.7 引用块：背景 + 左侧竖线（色值与屏幕一致：accent） ── */
+  body.theme-custom blockquote {
+    background: var(--blockquote-bg) !important;
+    border-left: 4px solid var(--seed-accent) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── 6.8 表格：边框合并 + 表头 ── */
+  body.theme-custom table {
+    border-collapse: collapse !important;
+  }
+  body.theme-custom table th {
+    background: var(--table-header-bg) !important;
+    color: var(--seed-ink) !important;
+    font-weight: 700 !important;
+    border-bottom: 2px solid var(--accent-color) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body.theme-custom table td {
+    border-color: var(--seed-border) !important;
+  }
+
+  /* ── 6.9 链接 ── */
+  body.theme-custom a {
+    color: var(--seed-accent) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── 6.10 分割线 ── */
+  body.theme-custom hr {
+    border: none !important;
+    border-top: 1px solid var(--hr-color) !important;
+  }
+
+  /* ── 6.11 图片 ── */
+  body.theme-custom img {
+    max-width: 100% !important;
+  }
+
+  /* ── 6.12 Mermaid 图表容器 ── */
+  body.theme-custom .mermaid-block {
+    background: var(--seed-surface) !important;
+    border-color: var(--seed-border) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body.theme-custom .mermaid-preview svg * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── 6.13 图表标题 ── */
+  body.theme-custom .mermaid-block + p {
+    color: var(--seed-ink-muted) !important;
+    text-align: center !important;
+    font-family: var(--font-heading) !important;
+    font-size: calc(var(--font-size-mermaid) + 2px) !important;
+  }
+}

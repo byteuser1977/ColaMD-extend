@@ -1,0 +1,26 @@
+/*
+ * ColaMD 主题系统：Mermaid Newsprint 配色方案 (报纸打印风格)
+ * 依赖：foundation.css → mermaid/variables.css
+ */
+body.theme-newsprint {
+  --mermaid-font-family: "PT Serif", Georgia, "Times New Roman", "Songti SC", serif;
+  --mermaid-font-size: 13px;
+  --mermaid-node-stroke: #d4d0c8;
+  --mermaid-node-fill: #f5f2eb;
+  --mermaid-node-text: #1a1a1a;
+  --mermaid-edge-stroke: #999;
+  --mermaid-cluster-stroke: #999;
+  --mermaid-cluster-fill: rgba(0, 0, 0, 0.03);
+  --mermaid-cluster-dasharray: none;
+  --mermaid-label-text: #1a1a1a;
+  --mermaid-edge-label-bg: #f5f2eb;
+  --mermaid-edge-label-text: #666;
+  --mermaid-title-text: #1a1a1a;
+  --mermaid-axis-text: #999;
+  --mermaid-highlight: #2c5f8a;
+  --mermaid-background: #ffffff;
+  --mermaid-border-color: #d4d0c8;
+  --mermaid-border-radius: 0px;
+  --mermaid-node-stroke-width: 1px;
+  --mermaid-edge-stroke-width: 1px;
+}

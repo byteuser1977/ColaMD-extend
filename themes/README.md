@@ -8,6 +8,9 @@ Download any `.css` file and place it in `~/.colamd/themes/`, or use **Theme > I
 |-------|-------------|
 | [elegant.css](elegant.css) | Warm serif theme with terracotta accents and dark code blocks |
 | [guizang.css](guizang.css) | 古雅沉稳的归藏风格，赭石强调色、松烟墨代码块、宣纸底色 |
+| [forest-ink.css](forest-ink.css) | 森林墨主题，宣纸暖白底、松烟墨绿文字、森林绿强调色（灵感来自 wanhua-ppt Forest Ink 设计规范） |
+| [academic-paper.css](academic-paper.css) | 📄 **学术论文主题（增强版）** — 符合 GB/T 7713 中文学术论文排版规范，黑体（SimHei）标题 + 宋体（SimSun）正文及首行缩进，三线表格式（顶线 + 表头底线 + 底线），10.5pt 字号，打印优化的 Mermaid 图表（直角容器、灰度配色），脚注与参考文献样式，Typora 兼容选择器。完整示例见 [`docs/academic-demo.md`](../docs/academic-demo.md) |
+| [pixso-design.css](pixso-design.css) | 🎨 Pixso 设计主题，现代设计系统风格 |
 
 ## Creating Your Own Theme
 

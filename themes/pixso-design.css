@@ -1,0 +1,1261 @@
+/*
+ * ColaMD 主题：Pixso Design (设计美学)
+ * 配色：纯净白底 + 渐变蓝紫点缀
+ * 风格：现代简约、大量留白、精致布局
+ * 兼容：ColaMD (body.theme-custom) / Typora
+ * 导入：Theme > Import Theme
+ */
+
+/* ── 1. 根变量 & 主题变量 ── */
+:root {
+    --side-bar-bg-color: #f7f8fa;
+    --control-text-color: #5a6270;
+    --active-file-bg-color: #e8ecf2;
+    --active-file-text-color: #1e2330;
+    --active-file-border-color: #6366f1;
+    --bg-color: #ffffff;
+    --text-color: #2d3436;
+    --select-text-bg-color: rgba(99, 102, 241, 0.15);
+    --select-text-font-color: #1e2330;
+    --rawblock-edit-panel-bd: #e5e7eb;
+}
+
+body.theme-custom {
+    --bg-color: #f8f9fb;
+    --text-color: #2d3436;
+    --heading-color: #1a1d26;
+    --border-color: #e5e7eb;
+    --code-bg: #f4f5f7;
+    --code-color: #6366f1;
+    --code-block-bg: #1e2235;
+    --code-block-text: #e4e7ed;
+    --code-block-color: #e4e7ed;
+    --blockquote-bg: #f9fafb;
+    --blockquote-border: linear-gradient(180deg, #6366f1, #8b5cf6);
+    --link-color: #6366f1;
+    --accent-color: #6366f1;
+    --accent-dark: #4f46e5;
+    --accent-light: #eef2ff;
+    --surface-color: #f9fafb;
+    --surface-alt: #f8f9fb;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --selection-bg: rgba(99, 102, 241, 0.12);
+    --table-header-bg: #f9fafb;
+    --table-stripe: rgba(99, 102, 241, 0.03);
+    --scrollbar-thumb: #d1d5db;
+    --scrollbar-thumb-hover: #9ca3af;
+    --hr-color: #e5e7eb;
+    --mermaid-font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mermaid-font-size: 13px;
+    --mermaid-dark-mode: false;
+    --mermaid-background: linear-gradient(135deg, #f8f9fb 0%, #eef2ff 50%, #fdf4ff 100%);
+    --mermaid-primary-color: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    --mermaid-primary-border-color: #4f46e5;
+    --mermaid-primary-text-color: #ffffff;
+    --mermaid-secondary-color: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+    --mermaid-secondary-border-color: #db2777;
+    --mermaid-secondary-text-color: #ffffff;
+
+    --mermaid-tertiary-color: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+    --mermaid-tertiary-border-color: #0891b2;
+    --mermaid-tertiary-text-color: #ffffff;
+    --mermaid-line-color: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa);
+    --mermaid-text-color: #1e1b4b;
+    --mermaid-main-bkg: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    --mermaid-second-bkg: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    --mermaid-main-contrast-color: #4f46e5;
+    --mermaid-label-background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%);
+    --mermaid-label-text-color: #374151;
+    --mermaid-node-border: #4f46e5;
+    --mermaid-node-bkg: linear-gradient(145deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%);
+    --mermaid-cluster-bkg: rgba(99, 102, 241, 0.08);
+    --mermaid-cluster-border: linear-gradient(90deg, #6366f1, #8b5cf6);
+    --mermaid-default-link-color: #a78bfa;
+    --mermaid-edge-label-background: linear-gradient(135deg, #dbeafe 0%, #fce7f3 100%);
+    --mermaid-arrowhead-color: #6366f1;
+
+    /* 多彩调色板 */
+    --mermaid-accent-pink: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+    --mermaid-accent-cyan: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
+    --mermaid-accent-emerald: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    --mermaid-accent-amber: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    --mermaid-accent-rose: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%);
+
+    --mermaid-person-border: #4f46e5;
+    --mermaid-person-bkg: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+}
+
+pre { --select-text-bg-color: #2d2640; --select-text-font-color: #fff; }
+
+/* ── 2. 全局 ── */
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body.theme-custom,
+html,
+body {
+    background-color: #f8f9fb;
+    color: #2d3436;
+    font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.85;
+}
+
+body.theme-custom {
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: 0.01em;
+}
+
+#write {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 60px 120px;
+}
+
+#write > ul:first-child,
+#write > ol:first-child {
+    margin-top: 40px;
+}
+
+@media only screen and (min-width:1400px) {
+    #write { max-width: 900px; }
+}
+
+@media only screen and (max-width:768px) {
+    #write { padding: 30px 25px 80px; }
+}
+
+/* ── 3. 标题 ── */
+h1, h2, h3, h4, h5, h6,
+body.theme-custom h1, body.theme-custom h2, body.theme-custom h3,
+body.theme-custom h4, body.theme-custom h5, body.theme-custom h6 {
+    position: relative;
+    color: #1a1d26;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-top: 2.2em;
+    margin-bottom: 0.75em;
+    letter-spacing: -0.02em;
+}
+
+h1, body.theme-custom h1 {
+    font-size: 2em;
+    padding-bottom: 0.35em;
+    cursor: text;
+    background: linear-gradient(135deg, #1a1d26 0%, #4338ca 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: #1a1d26;
+}
+
+h2, body.theme-custom h2 {
+    font-size: 1.55em;
+    padding-bottom: 0.25em;
+    cursor: text;
+    border-bottom: none;
+    position: relative;
+    display: block;
+}
+
+h2::after,
+body.theme-custom h2::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0.15em;
+    width: 60%;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 2px;
+}
+
+h3, body.theme-custom h3 {
+    font-size: 1.28em;
+    cursor: text;
+    color: #283149;
+}
+
+h4, body.theme-custom h4 {
+    font-size: 1.12em;
+    cursor: text;
+    font-weight: 600;
+}
+
+h5, body.theme-custom h5 {
+    font-size: 1em;
+    cursor: text;
+    font-weight: 600;
+    color: #374151;
+}
+
+h6, body.theme-custom h6 {
+    font-size: 0.92em;
+    color: #6b7280;
+    cursor: text;
+    font-weight: 500;
+}
+
+h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor,
+h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor {
+    text-decoration: none;
+}
+
+/* ── 4. 内联元素 ── */
+p {
+    margin: 1em 0;
+    line-height: 1.85;
+    text-align: justify;
+}
+
+strong, body.theme-custom strong {
+    color: #4338ca;
+    font-weight: 700;
+}
+
+em, body.theme-custom em {
+    font-style: italic;
+    color: #4b5563;
+}
+
+em strong, strong em,
+body.theme-custom em strong, body.theme-custom strong em {
+    color: #4338ca;
+}
+
+a, body.theme-custom a {
+    color: #6366f1;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid transparent;
+    border-bottom-color: rgba(99, 102, 241, 0.35);
+}
+
+a:hover, body.theme-custom a:hover {
+    color: #4f46e5;
+    border-bottom-color: #4f46e5;
+    text-decoration: none;
+}
+
+u, body.theme-custom u {
+    text-decoration: none;
+    border-bottom: 2px solid #6366f1;
+    padding-bottom: 1px;
+    opacity: 0.85;
+}
+
+mark, body.theme-custom mark {
+    background: linear-gradient(120deg, rgba(99, 102, 241, 0.14) 0%, rgba(139, 92, 246, 0.14) 100%);
+    color: #2d3436;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+del, s {
+    color: #9ca3af;
+}
+
+/* ── 5. 引用�?── */
+blockquote, body.theme-custom blockquote {
+    margin: 1.8em 0;
+    padding: 20px 24px 20px 28px;
+    border-left: none;
+    position: relative;
+    background: linear-gradient(135deg, #f8f9ff 0%, #fdf4ff 100%);
+    color: #4b5563;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.06);
+}
+
+blockquote::before,
+body.theme-custom blockquote::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #6366f1, #8b5cf6);
+    border-radius: 10px 0 0 10px;
+}
+
+blockquote p, body.theme-custom blockquote p {
+    margin: 0.6em 0;
+    line-height: 1.75;
+}
+
+/* ── 6. 分割�?── */
+hr, body.theme-custom hr {
+    border: none;
+    height: 1px;
+    margin: 3em 0;
+    background: linear-gradient(90deg, transparent, #e5e7eb 50%, transparent);
+}
+
+/* ── 7. 列表 ── */
+ul, ol, body.theme-custom ul, body.theme-custom ol {
+    padding-left: 1.9em;
+    margin: 1em 0;
+}
+
+li, body.theme-custom li {
+    margin: 0.45em 0;
+    line-height: 1.78;
+}
+
+ul li {
+    list-style-type: disc;
+    list-style-position: outside;
+}
+
+ol li {
+    list-style-type: decimal;
+    list-style-position: outside;
+}
+
+.md-task-list-item > input {
+    margin-left: -1.3em;
+    margin-top: 0.32em;
+}
+
+/* ── 8. 内联代码 ── */
+code, tt,
+body.theme-custom code, body.theme-custom tt {
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.88em;
+    padding: 3px 7px;
+    margin: 0 2px;
+    background: #f4f5f7;
+    border-radius: 5px;
+    color: #6366f1;
+    border: 1px solid rgba(99, 102, 241, 0.08);
+}
+
+/* ── 9. 代码�?── */
+pre.md-fences {
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.88em;
+    line-height: 1.68;
+    background: linear-gradient(145deg, #1e2235 0%, #2a2040 100%);
+    color: #e4e7ed;
+    padding: 22px 26px;
+    border-radius: 10px;
+    margin: 1.8em 0;
+    overflow-x: auto;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255,255,255,0.05);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+pre.md-fences code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+}
+
+body.theme-custom #editor .ProseMirror pre {
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.88em;
+    line-height: 1.68;
+    background: linear-gradient(145deg, #1e2235 0%, #2a2040 100%) !important;
+    color: #e4e7ed !important;
+    padding: 22px 26px;
+    border-radius: 10px;
+    margin: 1.8em 0;
+    overflow-x: auto;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255,255,255,0.05);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+body.theme-custom #editor .ProseMirror pre code {
+    background: transparent !important;
+    color: inherit !important;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+}
+
+/* ── 10. 代码语法高亮 ── */
+.cm-s-inner {
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+    font-size: 0.9em;
+    line-height: 1.68;
+}
+
+/* 注释 / 引用 / 分隔�?*/
+body.theme-custom .token.comment, body.theme-custom .token.prolog,
+body.theme-custom .token.doctype, body.theme-custom .token.cdata,
+.cm-s-inner .cm-comment, .cm-s-inner .cm-quote, .cm-s-inner .cm-hr {
+    color: #7c83a6;
+    font-style: italic;
+}
+
+/* 标点 / 元数�?*/
+body.theme-custom .token.punctuation, .cm-s-inner .cm-meta {
+    color: #9ca3be;
+}
+
+/* 关键�?(粗体) */
+body.theme-custom .token.keyword, body.theme-custom .token.important,
+.cm-s-inner .cm-keyword {
+    color: #a78bfa;
+    font-weight: 700;
+}
+
+/* 布尔 / 内建 / 标签 / 选择�?/ 常量 / 删除 / 原子 / 错误 */
+body.theme-custom .token.boolean, body.theme-custom .token.builtin,
+body.theme-custom .token.tag, body.theme-custom .token.selector,
+body.theme-custom .token.constant, body.theme-custom .token.deleted,
+.cm-s-inner .cm-atom, .cm-s-inner .cm-builtin,
+.cm-s-inner .cm-tag, .cm-s-inner .cm-error {
+    color: #f472b6;
+}
+
+/* 字符�?/ 属性�?/ 符号 / 插入 */
+body.theme-custom .token.string, body.theme-custom .token.attr-value,
+body.theme-custom .token.symbol, body.theme-custom .token.inserted,
+.cm-s-inner .cm-string {
+    color: #34d399;
+}
+
+/* 数字 */
+body.theme-custom .token.number, .cm-s-inner .cm-number {
+    color: #fbbf24;
+}
+
+/* 函数 / 类名 / 变量 / 属性名 / 实体 / 定义 */
+body.theme-custom .token.function, body.theme-custom .token.class-name,
+body.theme-custom .token.variable, body.theme-custom .token.attr-name,
+body.theme-custom .token.property, body.theme-custom .token.entity,
+.cm-s-inner .cm-def, .cm-s-inner .cm-variable-2,
+.cm-s-inner .cm-attribute, .cm-s-inner .cm-property,
+.cm-s-inner .cm-header {
+    color: #60a5fa;
+}
+
+.cm-s-inner .cm-header {
+    font-weight: 700;
+}
+body.theme-custom .token.url, .cm-s-inner .cm-link {
+    color: #60a5fa;
+    text-decoration: underline;
+}
+
+/* 运算�?*/
+body.theme-custom .token.operator, .cm-s-inner .cm-operator {
+    color: #94a3b8;
+}
+
+/* 正则 / 代码文本�?*/
+body.theme-custom .token.regex { color: #fb923c; }
+.cm-s-inner .cm-variable { color: #e4e7ed; }
+
+/* ── 11. 表格 ── */
+table, body.theme-custom table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.8em 0;
+    font-size: 0.93em;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(79, 70, 229, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+    border: 2px solid #c7d2fe;
+}
+
+table th, body.theme-custom table th {
+    background: linear-gradient(180deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%);
+    font-weight: 700;
+    color: #ffffff;
+    padding: 14px 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
+    border-bottom: 3px solid #3730a3;
+    text-align: left;
+    font-size: 0.95em;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    position: relative;
+}
+
+table th:last-child,
+body.theme-custom table th:last-child {
+    border-right: none;
+}
+
+table th::before,
+body.theme-custom table th::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #fbbf24, #f59e0b);
+    opacity: 0.9;
+}
+
+table td, body.theme-custom table td {
+    padding: 13px 20px;
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    transition: all 0.25s ease;
+    color: #374151;
+}
+
+table td:last-child,
+body.theme-custom table td:last-child {
+    border-right: none;
+}
+
+table tr:last-child td,
+body.theme-custom table tr:last-child td {
+    border-bottom: none;
+}
+
+/* 斑马纹效果 */
+table tbody tr:nth-child(even) td,
+body.theme-custom table tbody tr:nth-child(even) td {
+    background-color: rgba(99, 102, 241, 0.03);
+}
+
+table tbody tr:nth-child(odd) td,
+body.theme-custom table tbody tr:nth-child(odd) td {
+    background-color: #ffffff;
+}
+
+/* 悬停效果 */
+table tbody tr:hover td,
+body.theme-custom table tbody tr:hover td {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.04));
+    color: #1e1b4b;
+    transform: scale(1.005);
+    box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.12);
+}
+
+/* ── 12. 图片 ── */
+img, body.theme-custom img {
+    max-width: 100%;
+    border-radius: 10px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+img:hover, body.theme-custom img:hover {
+    transform: scale(1.01);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12);
+}
+
+p > img:only-child, body.theme-custom p > img:only-child {
+    display: block;
+    margin: 2em auto;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+body.theme-custom figure {
+    margin: 2em 0;
+    text-align: center;
+}
+
+body.theme-custom figcaption {
+    font-size: 0.89em;
+    color: var(--text-muted);
+    margin-top: 0.8em;
+    font-style: italic;
+}
+
+/* ── 13. 数学公式 ── */
+
+/* ColaMD */
+body.theme-custom .math-block {
+    background: linear-gradient(135deg, #f8f9ff 0%, #fef4ff 100%);
+    padding: 20px 0;
+    margin: 1.8em 0;
+    border-radius: 10px;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    text-align: center;
+    overflow-x: auto;
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.05);
+}
+
+body.theme-custom .math-block .katex,
+body.theme-custom .math-block .katex-display,
+body.theme-custom .math-block .MathJax,
+body.theme-custom .math-block .katex *,
+body.theme-custom .math-block .MathJax *,
+body.theme-custom .math-block .katex .mord,
+body.theme-custom .math-block .katex .mbin,
+body.theme-custom .math-block .katex .mrel,
+body.theme-custom .math-block .katex .mopen,
+body.theme-custom .math-block .katex .mclose,
+body.theme-custom .math-block .katex .mpunct,
+body.theme-custom .math-block .katex .minner {
+    color: #2d3436 !important;
+}
+
+/* Typora */
+.md-math-block, .MathJax_Display {
+    margin: 1.8em 0 !important;
+    text-align: center;
+}
+
+.md-inline-math, .md-inline-math script, .md-math-inline, .MathJax {
+    color: #2d3436;
+}
+
+.MathJax svg, .MathJax_Display svg {
+    fill: currentColor;
+    stroke: currentColor;
+}
+
+/* ── 14. Mermaid ── */
+
+/* 容器 */
+.md-diagram-panel { margin: 1.8em 0; }
+
+.md-diagram-panel.md-mermaid,
+body.theme-custom .mermaid-block {
+    background: linear-gradient(135deg, #f8f9fb 0%, #eef2ff 30%, #fdf4ff 60%, #fce7f3 100%);
+    border: none;
+    border-radius: 16px;
+    padding: 28px;
+    margin: 1.8em 0;
+    box-shadow:
+        0 8px 32px rgba(99, 102, 241, 0.12),
+        0 2px 8px rgba(139, 92, 246, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+body.theme-custom .mermaid-preview {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.md-diagram-panel.md-mermaid svg,
+body.theme-custom .mermaid-preview svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* 全局字体 */
+.md-diagram-panel.md-mermaid svg text,
+body.theme-custom .mermaid-preview svg text {
+    fill: #1e1b4b;
+    font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel span,
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+    font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body.theme-custom .mermaid-preview svg foreignObject span {
+    color: #1e1b4b !important;
+    font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-size: 14px !important;
+}
+
+.md-diagram-panel.md-mermaid .node .label {
+    color: #1e1b4b !important;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+/* 通用节点 & 连线 (ColaMD) */
+body.theme-custom .mermaid-preview svg .node rect,
+body.theme-custom .mermaid-preview svg .node circle,
+body.theme-custom .mermaid-preview svg .node ellipse,
+body.theme-custom .mermaid-preview svg .node polygon,
+body.theme-custom .mermaid-preview svg .node path {
+    stroke: #4f46e5;
+    stroke-width: 2px;
+    fill: url(#nodeGradient) !important;
+    filter: drop-shadow(0 2px 4px rgba(99, 102, 241, 0.25));
+}
+
+body.theme-custom .mermaid-preview svg defs {
+    display: block;
+}
+
+body.theme-custom .mermaid-preview svg defs::after {
+    content: '';
+    display: none;
+}
+
+body.theme-custom .mermaid-preview svg .edgePath .path {
+    stroke: url(#lineGradient);
+    stroke-width: 2.5px;
+    fill: none;
+}
+
+body.theme-custom .mermaid-preview svg .cluster rect,
+body.theme-custom .mermaid-preview svg .cluster path {
+    stroke: #8b5cf6;
+    stroke-width: 2px;
+    fill: rgba(139, 92, 246, 0.06);
+    stroke-dasharray: 8, 4;
+}
+
+body.theme-custom .mermaid-preview svg defs marker path {
+    fill: #6366f1;
+    stroke: #6366f1;
+}
+
+/* 通用节点 & 连线 (Typora) */
+.md-diagram-panel.md-mermaid .node rect,
+.md-diagram-panel.md-mermaid .node circle,
+.md-diagram-panel.md-mermaid .node ellipse,
+.md-diagram-panel.md-mermaid .node polygon {
+    fill: #818cf8 !important;
+    stroke: #4f46e5 !important;
+    stroke-width: 2px !important;
+}
+
+.md-diagram-panel.md-mermaid .edgePath .path {
+    stroke: #6366f1 !important;
+    stroke-width: 2.5px !important;
+}
+
+.md-diagram-panel.md-mermaid .edgeLabel {
+    background: linear-gradient(135deg, #fef3c7 0%, #fce7f3 100%) !important;
+    color: #4c1d95 !important;
+}
+
+.md-diagram-panel.md-mermaid .cluster rect {
+    fill: rgba(139, 92, 246, 0.1) !important;
+    stroke: #8b5cf6 !important;
+    stroke-width: 2px !important;
+    stroke-dasharray: 8, 4;
+}
+
+/* 硬编码色值覆�?*/
+body.theme-custom .mermaid-preview svg rect[stroke="#444444"],
+body.theme-custom .mermaid-preview svg path[stroke="#444444"],
+body.theme-custom .mermaid-preview svg line[stroke="#444444"],
+body.theme-custom .mermaid-preview svg rect[stroke="#000000"],
+body.theme-custom .mermaid-preview svg path[stroke="#000000"],
+body.theme-custom .mermaid-preview svg line[stroke="#000000"] {
+    stroke: #4f46e5 !important;
+}
+
+/* 标签 & 文本 (ColaMD) */
+body.theme-custom .mermaid-preview svg .label text,
+body.theme-custom .mermaid-preview svg .nodeLabel text {
+    fill: #1e1b4b !important;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel span {
+    color: #1e1b4b !important;
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel text {
+    fill: #4c1d95 !important;
+    font-weight: 600;
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel rect {
+    fill: linear-gradient(135deg, #fef3c7 0%, #fce7f3 100%) !important;
+    stroke: #f59e0b !important;
+    stroke-width: 1.5px;
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+    color: #4c1d95 !important;
+}
+
+/* 文本偏移 */
+body.theme-custom .mermaid-preview svg .label text,
+body.theme-custom .mermaid-preview svg .nodeLabel text {
+    transform: translateY(-3px) !important;
+}
+
+body.theme-custom .mermaid-preview svg .titleText {
+    transform: translateY(-1px) !important;
+}
+
+body.theme-custom .mermaid-preview svg .xychart .axis text {
+    transform: translateY(0) !important;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel,
+body.theme-custom .mermaid-preview svg .edgeLabel {
+    display: inline-block !important;
+    position: relative !important;
+    top: -3px !important;
+}
+
+/* 状态图 */
+body.theme-custom .mermaid-preview svg .statediagram-state rect,
+body.theme-custom .mermaid-preview svg .statediagram-state circle {
+    stroke: #ec4899;
+    stroke-width: 2.5px;
+    fill: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%) !important;
+    filter: drop-shadow(0 3px 6px rgba(236, 72, 153, 0.3));
+}
+
+body.theme-custom .mermaid-preview svg .statediagram-state .nodeLabel text,
+body.theme-custom .mermaid-preview svg .statediagram-state .nodeLabel span,
+body.theme-custom .mermaid-preview svg .statediagram-cluster .outer-title text,
+body.theme-custom .mermaid-preview svg .edgeLabel .label text {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+body.theme-custom .mermaid-preview svg .statediagram-cluster rect {
+    stroke: #6366f1;
+}
+
+body.theme-custom .mermaid-preview svg .transition {
+    stroke: #c7d2fe;
+}
+
+/* 饼图 */
+body.theme-custom .mermaid-preview svg .pieCircle,
+body.theme-custom .mermaid-preview svg .slice {
+    stroke: #ffffff;
+    stroke-width: 2px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+body.theme-custom .mermaid-preview svg .pieTitleText,
+body.theme-custom .mermaid-preview svg .legend text {
+    fill: #1e1b4b !important;
+    font-weight: 600;
+}
+
+/* 四象限图 */
+body.theme-custom .mermaid-preview svg .quadrant rect {
+    stroke: #6366f1;
+    stroke-width: 2px;
+}
+
+body.theme-custom .mermaid-preview svg .quadrant text,
+body.theme-custom .mermaid-preview svg .quadrant .titleText {
+    fill: #1e1b4b !important;
+    font-weight: 700;
+}
+
+body.theme-custom .mermaid-preview svg .quadrant .axis text {
+    fill: #374151 !important;
+    font-weight: 500;
+}
+
+body.theme-custom .mermaid-preview svg .quadrant .axis line,
+body.theme-custom .mermaid-preview svg .quadrant .axis path {
+    stroke: #8b5cf6;
+    stroke-width: 2px;
+}
+
+body.theme-custom .mermaid-preview svg .quadrant .point {
+    fill: #ec4899;
+    stroke: #ffffff;
+    stroke-width: 2px;
+}
+
+/* XY Chart */
+body.theme-custom .mermaid-preview svg .xychart .axis text {
+    fill: #4b5563 !important;
+    font-weight: 500;
+}
+
+body.theme-custom .mermaid-preview svg .xychart .axis line,
+body.theme-custom .mermaid-preview svg .xychart .axis path {
+    stroke: #8b5cf6;
+    stroke-width: 2px;
+}
+
+body.theme-custom .mermaid-preview svg .xychart .plot rect {
+    stroke: #4f46e5;
+    stroke-width: 2px;
+    fill: linear-gradient(180deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%) !important;
+    filter: drop-shadow(0 2px 4px rgba(99, 102, 241, 0.25));
+}
+
+body.theme-custom .mermaid-preview svg .xychart .plot line {
+    stroke: #a78bfa;
+    stroke-width: 2.5px;
+}
+
+body.theme-custom .mermaid-preview svg .xychart .titleText {
+    fill: #1e1b4b !important;
+    font-weight: 700;
+}
+
+/* Sankey */
+body.theme-custom .mermaid-preview svg .sankey .link {
+    stroke: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+    stroke-opacity: 0.5;
+    fill: none;
+}
+
+body.theme-custom .mermaid-preview svg .sankey text {
+    fill: #1e1b4b !important;
+    font-weight: 600;
+}
+
+/* 时序图 (ColaMD) */
+body.theme-custom .mermaid-preview svg .actor rect,
+body.theme-custom .mermaid-preview svg .actor path {
+    stroke: #06b6d4;
+    stroke-width: 2.5px;
+    fill: linear-gradient(180deg, #22d3ee 0%, #06b6d4 100%) !important;
+}
+
+body.theme-custom .mermaid-preview svg text.actor {
+    fill: #ffffff !important;
+    font-weight: 700;
+}
+
+body.theme-custom .mermaid-preview svg .messageLine0,
+body.theme-custom .mermaid-preview svg .messageLine1 {
+    stroke: #8b5cf6 !important;
+    stroke-width: 2.5px;
+}
+
+body.theme-custom .mermaid-preview svg .messageText,
+body.theme-custom .mermaid-preview svg .labelText,
+body.theme-custom .mermaid-preview svg .loopText tspan,
+body.theme-custom .mermaid-preview svg .altText tspan,
+body.theme-custom .mermaid-preview svg .optText tspan {
+    fill: #1e1b4b !important;
+    font-weight: 600;
+}
+
+body.theme-custom .mermaid-preview svg .loopText,
+body.theme-custom .mermaid-preview svg .altText,
+body.theme-custom .mermaid-preview svg .optText {
+    fill: #9ca3af !important;
+}
+
+body.theme-custom .mermaid-preview svg .loopLine,
+body.theme-custom .mermaid-preview svg .altLine,
+body.theme-custom .mermaid-preview svg .optLine {
+    stroke: #6366f1 !important;
+}
+
+body.theme-custom .mermaid-preview svg .labelBox {
+    stroke: #f59e0b;
+    stroke-width: 2px;
+    fill: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+}
+
+/* 时序图 (Typora) */
+.md-diagram-panel.md-mermaid .actor {
+    fill: #22d3ee !important;
+    stroke: #06b6d4 !important;
+}
+
+.md-diagram-panel.md-mermaid text.actor {
+    fill: #ffffff !important;
+}
+
+.md-diagram-panel.md-mermaid .messageLine0,
+.md-diagram-panel.md-mermaid .messageLine1 {
+    stroke: #6366f1 !important;
+}
+
+.md-diagram-panel.md-mermaid .messageText {
+    fill: #6b7280 !important;
+}
+
+/* 类图 */
+body.theme-custom .mermaid-preview svg .classBox rect,
+body.theme-custom .mermaid-preview svg .classBox path {
+    stroke: #8b5cf6;
+    stroke-width: 2px;
+    fill: linear-gradient(180deg, #ddd6fe 0%, #c4b5fd 100%) !important;
+}
+
+body.theme-custom .mermaid-preview svg .classTitle text,
+body.theme-custom .mermaid-preview svg .classTitle span {
+    fill: #4c1d95 !important;
+    color: #4c1d95 !important;
+    font-weight: 700;
+}
+
+body.theme-custom .mermaid-preview svg .classText text,
+body.theme-custom .mermaid-preview svg .classText span {
+    fill: #5b21b6 !important;
+    color: #5b21b6 !important;
+    font-weight: 500;
+}
+
+body.theme-custom .mermaid-preview svg .divider {
+    stroke: #e5e7eb;
+}
+
+body.theme-custom .mermaid-preview svg .relation {
+    stroke: #6366f1;
+}
+
+/* 甘特图 (ColaMD) */
+body.theme-custom .mermaid-preview svg .task {
+    stroke: #10b981;
+    stroke-width: 2px;
+    fill: linear-gradient(90deg, #34d399 0%, #10b981 100%) !important;
+}
+
+body.theme-custom .mermaid-preview svg .taskText,
+body.theme-custom .mermaid-preview svg .taskTextOutsideRight,
+body.theme-custom .mermaid-preview svg .taskTextOutsideLeft,
+body.theme-custom .mermaid-preview svg .sectionText,
+body.theme-custom .mermaid-preview svg .sectionTitle {
+    fill: #ffffff !important;
+    font-weight: 700;
+}
+
+body.theme-custom .mermaid-preview svg .section rect {
+    stroke: #f59e0b;
+    stroke-width: 2px;
+}
+
+body.theme-custom .mermaid-preview svg .today {
+    stroke: #6366f1 !important;
+}
+
+body.theme-custom .mermaid-preview svg .grid .tick line {
+    stroke: #e5e7eb;
+}
+
+body.theme-custom .mermaid-preview svg .grid .domain {
+    stroke: #6366f1;
+}
+
+body.theme-custom .mermaid-preview svg .tick text {
+    fill: #9ca3af;
+}
+
+/* 甘特图 (Typora) */
+.md-diagram-panel.md-mermaid .section0,
+.md-diagram-panel.md-mermaid .section1,
+.md-diagram-panel.md-mermaid .section2,
+.md-diagram-panel.md-mermaid .section3 {
+    fill: linear-gradient(90deg, #818cf8 0%, #6366f1 50%, #a78bfa 100%) !important;
+    stroke: #4f46e5 !important;
+}
+
+.md-diagram-panel.md-mermaid .grid .tick line {
+    stroke: #e5e7eb !important;
+}
+
+.md-diagram-panel.md-mermaid .grid .domain {
+    stroke: #6366f1 !important;
+}
+
+.md-diagram-panel.md-mermaid .tick text {
+    fill: #9ca3af !important;
+}
+
+/* 流程�?/ ER �?*/
+.md-diagram-panel.md-mermaid .nodeDefault,
+.md-diagram-panel.md-mermaid .node clicked,
+.md-diagram-panel.md-mermaid .relation {
+    fill: linear-gradient(135deg, #c084fc 0%, #a855f7 100%) !important;
+    stroke: #9333ea !important;
+}
+
+.md-diagram-panel.md-mermaid .edgeLabel {
+    background: linear-gradient(135deg, #fef3c7 0%, #fce7f3 100%) !important;
+}
+
+/* ── 15. 滚动条样�?── */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #c7d2fe, #ddd6fe);
+    border-radius: 10px;
+    transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #a5b4fc, #c4b5fd);
+}
+
+/* ── 16. 选择文本样式 ── */
+::selection,
+body.theme-custom ::selection {
+    background: rgba(99, 102, 241, 0.18);
+    color: #1a1d26;
+}
+
+::-moz-selection,
+body.theme-custom ::-moz-selection {
+    background: rgba(99, 102, 241, 0.18);
+    color: #1a1d26;
+}
+
+/* ── 17. 特殊效果 ── */
+
+/* 图片容器增强 */
+body.theme-custom figure img {
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 列表样式优化 */
+body.theme-custom li::marker {
+    color: #a5b4fc;
+}
+
+ol li::marker {
+    color: #6366f1;
+    font-weight: 600;
+}
+
+/* 段落首字下沉效果（可选） */
+body.theme-custom #write > p:first-of-type::first-letter {
+    /* font-size: 1.3em;
+    font-weight: 700;
+    float: left;
+    margin-right: 6px;
+    color: #6366f1; */
+}
+
+/* 脚注样式 */
+body.theme-custom sup {
+    color: #6366f1;
+    font-size: 0.82em;
+    cursor: pointer;
+    vertical-align: super;
+    margin: 0 2px;
+}
+
+/* TOC 目录样式 */
+body.theme-custom .md-toc-content {
+    background: linear-gradient(135deg, #f8f9ff 0%, #fdf4ff 100%);
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 2em 0;
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.05);
+}
+
+body.theme-custom .md-toc-content .md-toc-title {
+    font-weight: 700;
+    color: #1a1d26;
+    font-size: 1.1em;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+body.theme-custom .md-toc-content a {
+    color: #4b5563;
+    border-bottom: none;
+    transition: all 0.2s ease;
+    display: inline-block;
+    padding: 2px 0;
+}
+
+body.theme-custom .md-toc-content a:hover {
+    color: #6366f1;
+    transform: translateX(4px);
+}
+
+/* 任务列表样式 */
+body.theme-custom input[type="checkbox"] {
+    accent-color: #6366f1;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    margin-right: 6px;
+}
+
+/* ── 15. YAML 元数�?── */
+pre.md-meta-block,
+body.theme-custom .frontmatter,
+body.theme-custom .yaml-front-matter {
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.85em;
+    background: linear-gradient(135deg, #f8f9ff 0%, #fdf4ff 100%);
+    border: 1px solid rgba(99, 102, 241, 0.12);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 2em;
+    color: #4b5563;
+}
+
+/* ── 16. 脚注 ── */
+.md-footnote { font-size: 0.85em; color: #6366f1; }
+sup.md-footnote {
+    background: transparent;
+    cursor: pointer;
+}
+
+/* ── 17. TOC 目录（完善） */
+.md-toc { font-size: 0.9em; }
+.md-toc-item { color: #2d3436; transition: all 0.2s ease; }
+.md-toc-item:hover { color: #6366f1; transform: translateX(3px); }
+.md-toc-h1 .md-toc-inner { font-weight: 700; color: #1a1d26; }
+.md-toc-h2 .md-toc-inner { font-weight: 600; color: #283149; }
+.md-toc-h3 .md-toc-inner { font-weight: 500; color: #374151; }
+
+/* ── 18. 侧边�?── */
+.sidebar-content { font-family: inherit; }
+.file-node-content { line-height: 1.65; transition: background 0.2s ease; }
+.file-node-content:hover { background: rgba(99, 102, 241, 0.05); border-radius: 5px; }
+.file-node-title { font-size: 1em; color: #2d3436; }
+.file-node-title:hover { color: #6366f1; }
+
+/* ── 19. 聚焦模式 ── */
+.on-focus-mode .md-end-block:not(.md-focus):not(.md-focus-container) * {
+    color: rgba(107, 114, 128, 0.35) !important;
+}
+.on-focus-mode .md-end-block:not(.md-focus):not(.md-focus-container) img {
+    opacity: 0.35;
+}
+.on-focus-mode .md-end-block:not(.md-focus):not(.md-focus-container) a,
+.on-focus-mode .md-end-block:not(.md-focus):not(.md-focus-container) strong {
+    color: rgba(99, 102, 241, 0.25) !important;
+}
+
+/* ── 20. 搜索 & 选择 ── */
+#write .md-search-hit {
+    background: rgba(99, 102, 241, 0.18);
+    border-radius: 3px;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+}
+
+/* ── 22. Megamenu ── */
+.megamenu-content { font-family: inherit; }
+#megamenu-back-btn { color: #2d3436; transition: color 0.2s ease; }
+#megamenu-back-btn:hover { color: #6366f1; }
+
+/* 打印样式优化 */
+@media print {
+    body.theme-custom {
+        background: #f8f9fb !important;
+        color: black !important;
+    }
+
+    body.theme-custom h1,
+    body.theme-custom h2 {
+        -webkit-text-fill-color: initial !important;
+        background: none !important;
+    }
+
+    body.theme-custom h2::after {
+        background: #333 !important;
+    }
+
+    body.theme-custom blockquote {
+        background: #f5f5f5 !important;
+        border-left: 4px solid #333 !important;
+    }
+
+    body.theme-custom blockquote::before {
+        display: none !important;
+    }
+}

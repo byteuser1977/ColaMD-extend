@@ -1,0 +1,143 @@
+/*
+ * ColaMD 主题系统：Foundation (基础层)
+ * 职责：全局 CSS 变量定义 + Mermaid 变量抽象 + 排版/颜色/间距语义化
+ * 版本：v2.0 (模块化架构)
+ */
+
+/* ================================================================
+   1. 全局 CSS Reset
+   ================================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ================================================================
+   2. CSS 变量系统 (语义化命名空间)
+   命名规则：
+   --color-*    颜色
+   --font-*     字体
+   --space-*    间距
+   --radius-*   圆角
+   --mermaid-*  Mermaid 图表的变量抽象 (core 20 variables)
+   ================================================================ */
+:root {
+  /* ---- 2.1 基础排版 ---- */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  --font-family-heading: var(--font-family-base);
+  --font-family-code: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+  --font-family-math: var(--font-family-base);
+  --font-size-root: 16px;
+  --line-height-base: 1.75;
+  --font-weight-bold: 600;
+
+  /* ---- 2.2 语义化颜色 ---- */
+  --color-bg: #ffffff;
+  --color-text: #24292f;
+  --color-text-muted: #656d76;
+  --color-border: #d0d7de;
+  --color-link: #0969da;
+  --color-accent: #6366f1;
+  --color-accent-dark: #4f46e5;
+  --color-accent-light: #eef2ff;
+  --color-selection-bg: rgba(9, 105, 218, 0.15);
+
+  /* ---- 2.3 代码块 ---- */
+  --code-bg: rgba(175, 184, 193, 0.2);
+  --code-color: var(--color-accent);
+  --code-block-bg: #f6f8fa;
+  --code-block-text: var(--color-text);
+  --code-block-color: var(--code-block-text);
+
+  /* ---- 2.4 引用块 ---- */
+  --blockquote-bg: transparent;
+  --blockquote-border: var(--color-border);
+  --blockquote-color: var(--color-text-muted);
+
+  /* ---- 2.5 表格 ---- */
+  --table-header-bg: #f6f8fa;
+  --table-border: var(--color-border);
+  --table-stripe: rgba(0, 0, 0, 0.03);
+  --table-hover-bg: transparent;
+
+  /* ---- 2.6 分割线 ---- */
+  --hr-color: var(--color-border);
+
+  /* ---- 2.7 滚动条 ---- */
+  --scrollbar-width: 6px;
+  --scrollbar-thumb: #d1d5db;
+  --scrollbar-thumb-hover: #9ca3af;
+
+  /* ---- 2.8 圆角系统 ---- */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+
+  /* ================================================================
+     2.9 Mermaid 图表变量抽象 (核心 20 变量体系)
+     每个变量都对应 Mermaid SVG 中的具体视觉属性
+     修改配色只需覆盖这些变量即可
+     ================================================================ */
+
+  /* -- 容器 -- */
+  --mermaid-background: var(--code-block-bg);
+  --mermaid-border-color: var(--color-border);
+  --mermaid-border-radius: var(--radius-md);
+  --mermaid-padding: 20px;
+
+  /* -- 字体 -- */
+  --mermaid-font-family: var(--font-family-base);
+  --mermaid-font-size: 14px;
+
+  /* -- 节点 (Node) -- */
+  --mermaid-node-stroke: var(--color-border);
+  --mermaid-node-fill: var(--code-bg);
+  --mermaid-node-text: var(--color-text);
+  --mermaid-node-stroke-width: 1.5px;
+
+  /* -- 连线 (Edge) -- */
+  --mermaid-edge-stroke: var(--color-border);
+  --mermaid-edge-stroke-width: 1.5px;
+
+  /* -- 聚类 (Cluster / Subgraph) -- */
+  --mermaid-cluster-stroke: var(--color-accent);
+  --mermaid-cluster-fill: rgba(99, 102, 241, 0.06);
+  --mermaid-cluster-dasharray: 4,4;
+
+  /* -- 标签 (Labels) -- */
+  --mermaid-label-text: var(--color-text);
+  --mermaid-label-bg: var(--mermaid-background);
+  --mermaid-edge-label-bg: var(--mermaid-background);
+  --mermaid-edge-label-text: var(--color-text-muted);
+  --mermaid-title-text: var(--color-text);
+  --mermaid-axis-text: var(--color-text-muted);
+
+  /* -- 特殊状态 -- */
+  --mermaid-highlight: var(--color-accent);
+  --mermaid-person-stroke: var(--color-text);
+  --mermaid-person-fill: var(--mermaid-node-fill);
+
+  /* -- 色板 (Color Scale: 用于 Pie/Gantt/Quadrant 等多色场景) -- */
+  --mermaid-cscale0: #6366f1;
+  --mermaid-cscale1: #ec4899;
+  --mermaid-cscale2: #06b6d4;
+  --mermaid-cscale3: #10b981;
+  --mermaid-cscale4: #f59e0b;
+  --mermaid-cscale5: #f43f5e;
+  --mermaid-cscale6: #3b82f6;
+  --mermaid-cscale7: #8b5cf6;
+  --mermaid-cscale8: #14b8a6;
+  --mermaid-cscale9: #eab308;
+  --mermaid-cscale10: #84cc16;
+  --mermaid-cscale11: #f97316;
+
+  /* -- 文本偏移 (跨主题通用) -- */
+  --mermaid-label-offset-y: -3px;
+}

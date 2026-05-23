@@ -89,7 +89,7 @@ export async function createEditor(
       ctx.set(remarkPluginsCtx, [
         ...pluginModules.map((m) => m.info.remarkPlugin),
         { plugin: remarkBreaks, options: undefined },
-      ])
+      ] as any)
       if (onChange) {
         ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => {
           onChange(markdown)
@@ -109,7 +109,38 @@ export async function createEditor(
     }
   }
 
-  editorInstance = await builder.create()
+  try {
+    editorInstance = await builder.create()
+  } catch (e: any) {
+    if (e?.message?.includes('math_inline') || e?.message?.includes('math_block')) {
+      console.warn('[editor] Milkdown context error, retrying without math plugins:', e.message)
+      const filteredModules = pluginModules.filter((m) => m.info.id !== 'math')
+      builder = Editor.make()
+        .config((ctx) => {
+          ctx.set(rootCtx, root)
+          ctx.set(defaultValueCtx, defaultContent)
+          ctx.set(remarkPluginsCtx, [
+            ...filteredModules.map((m) => m.info.remarkPlugin),
+            { plugin: remarkBreaks, options: undefined },
+          ] as any)
+          if (onChange) ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => { onChange(markdown) })
+        })
+        .use(commonmark)
+        .use(gfm)
+        .use(history)
+        .use(listener)
+        .use(clipboard)
+        .use(htmlView)
+      for (const mod of filteredModules) {
+        for (const p of mod.milkdownPlugins) {
+          builder = builder.use(p)
+        }
+      }
+      editorInstance = await builder.create()
+    } else {
+      throw e
+    }
+  }
 
   editorInstance.action((ctx) => {
     const nvs = ctx.get(nodeViewCtx)
@@ -127,8 +158,9 @@ export async function createEditor(
     ctx.set(nodeViewCtx, fixed)
 
     const oldView = ctx.get(editorViewCtx)
-    const rootEl = ctx.get(rootCtx)
+    const rootEl = ctx.get(rootCtx) as HTMLElement
     const nodeViews = Object.fromEntries(fixed)
+
     const newView = new EditorView(rootEl, {
       state: oldView.state,
       nodeViews,
@@ -142,6 +174,19 @@ export async function createEditor(
   root.addEventListener('copy', enhanceClipboard)
   root.addEventListener('cut', enhanceClipboard)
 
+  /*
+   * REMOVED: Custom IME composition handlers for mobile CJK input.
+   * ProseMirror handles IME composition natively via its DOM observer and input rules.
+   * These handlers dispatched synthetic input events that interfered with ProseMirror's
+   * internal state tracking, causing duplicated characters and broken undo history.
+   *
+   * Original code:
+   * if (/android|iphone|ipad/i.test(navigator.userAgent)) {
+   *     root.addEventListener('compositionstart', () => { ... })
+   *     root.addEventListener('compositionend', () => { ... })
+   * }
+   */
+
   root.addEventListener('click', (e) => {
     if (!(e.metaKey || e.ctrlKey)) return
     const link = (e.target as HTMLElement).closest('a')
@@ -149,7 +194,8 @@ export async function createEditor(
     const href = link.getAttribute('href')
     if (href) {
       e.preventDefault()
-      window.electronAPI.openExternal(href)
+      window.electronAPI?.openExternal(href)
+      window.capacitorAPI?.openExternal(href)
     }
   })
 
@@ -165,6 +211,43 @@ export function getMarkdown(): string {
     markdown = serializer(view.state.doc)
   })
   return markdown
+}
+
+/**
+ * Get HTML by cloning the live rendered DOM.
+ * Unlike {@link getHTML} which uses DOMSerializer (creating fresh nodes with
+ * "Rendering..." placeholders), this captures the actual rendered SVGs
+ * from mermaid, KaTeX math, etc. Used for PDF/HTML export.
+ */
+export function getLiveHTML(): string {
+  const editorDom = document.querySelector('#editor .ProseMirror')
+  if (!editorDom) return ''
+  const clone = editorDom.cloneNode(true) as HTMLElement
+
+  // Inline computed background colors so export preserves exact editor appearance.
+  // CSS variables from the export template may not match the editor's cascade.
+  const styleTargets: Array<{ selector: string; prop: string }> = [
+    { selector: '.math-inline', prop: 'backgroundColor' },
+    { selector: '.math-block', prop: 'backgroundColor' },
+    { selector: '.mermaid-block', prop: 'backgroundColor' },
+  ]
+  for (const { selector, prop } of styleTargets) {
+    const originals = editorDom.querySelectorAll(selector)
+    const clones = clone.querySelectorAll(selector)
+    originals.forEach((orig, i) => {
+      const computed = getComputedStyle(orig)
+      const val = computed.getPropertyValue(prop === 'backgroundColor' ? 'background-color' : prop)
+      if (val && clones[i]) (clones[i] as HTMLElement).style.setProperty(prop, val)
+    })
+  }
+
+  // Remove source-mode textareas
+  clone.querySelectorAll('textarea.mermaid-source, .math-inline-raw, .math-block-raw')
+    .forEach(el => el.remove())
+  // Hide loading/error placeholders
+  clone.querySelectorAll('.mermaid-loading, .mermaid-error')
+    .forEach(el => (el as HTMLElement).style.display = 'none')
+  return clone.innerHTML
 }
 
 export function getHTML(): string {

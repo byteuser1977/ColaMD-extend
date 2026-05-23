@@ -85,3 +85,59 @@ src/
 - 主题 CSS 与编辑器逻辑完全分离
 - 代码简洁，不过度设计
 - 每个新功能先问：这是必要的吗？
+
+### 插件系统规范
+
+插件与主程序通过 `RendererPlugin` 接口通信，遵循**弱耦合**原则：
+
+**1. 插件注册**
+
+插件通过 `registerPluginModule()` 自注册（副作用导入）：
+
+```typescript
+// ✅ 正确：副作用导入，仅触发 registerPluginModule
+import './editor/plugins/math-plugin'
+import './editor/plugins/mermaid-plugin'
+
+// ✅ 兜底：glob 加载可能遗漏的插件
+const _pluginRegistry = import.meta.glob('./editor/plugins/*-plugin.ts', { eager: true })
+
+// ❌ 禁止：导入插件专用函数/类型
+import { awaitAllMermaidRenders } from './editor/plugins/mermaid-plugin'
+```
+
+**2. 接口驱动**
+
+`main.ts` 只通过 `RendererPlugin` 接口方法与插件交互，**禁止**直接导入插件专用函数或硬编码插件 ID：
+
+```typescript
+// ✅ 正确：遍历插件，调用通用接口
+for (const p of getAllPlugins()) p.ensureRendered?.()
+
+// ❌ 禁止：直接导入插件专用函数
+import { awaitAllMermaidRenders } from './editor/plugins/mermaid-plugin'
+await awaitAllMermaidRenders()
+
+// ❌ 禁止：硬编码插件 ID 做特殊处理
+getAllPlugins().filter(p => p.id === 'mermaid')
+```
+
+**3. 功能归属**
+
+| 逻辑类型 | 归属 |
+|----------|------|
+| 插件注册、schema、视图、导出能力 | 插件文件 (`*-plugin.ts`) |
+| 通用插件查询、切换、导出能力发现 | `plugins/index.ts` |
+| 编辑器创建、markdown 读写 | `editor/editor.ts` |
+| IPC 事件路由、UI 协调 | `main.ts` |
+
+**4. 减少 main.ts 修改**
+
+新增插件功能时，优先在插件文件和 `plugins/index.ts` 中实现。`main.ts` 仅在需要新的 IPC 事件路由或 UI 协调时才修改。
+
+**5. `RendererPlugin` 接口约定**
+
+- `ensureRendered?: () => Promise<void>` — 导出前等待渲染完成
+- `onThemeChange?: (theme: string) => void` — 主题切换时重新配置
+- `exportCapabilities?: ExportCapability[]` — 右键导出菜单
+- `nodeTypes?: string[]` — 声明插件管理的 ProseMirror 节点类型
