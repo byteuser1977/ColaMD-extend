@@ -51,6 +51,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Typora compatible selectors (`.md-diagram-panel`)
   - Mobile responsive adaptation
 - **Pixso Design theme**: [`pixso-design.css`](themes/pixso-design.css)
+- **Swiss Design theme**: [`swiss-design.css`](themes/swiss-design.css) 🇨🇭
+  - Pure black-white-red color system inspired by Swiss International Typographic Style
+  - Geometric sans-serif fonts (Helvetica / Inter), grid-based layout with generous whitespace
+  - Form follows function design philosophy, minimal and restrained aesthetic
+  - Complete Mermaid diagram integration with monochrome + accent red styling
+
+#### Theme Development Framework
+- **Theme paradigm document**: [`docs/theme-paradigm.md`](docs/theme-paradigm.md)
+  - Comprehensive CSS theme development specification (v3.0)
+  - Design principles: variable-based, modular, semantic naming, AI-agent derivable
+  - Mandatory design constraints with validation methods (MUST / MUST NOT / SHOULD levels)
+  - Color space specification: 5 seed colors + 3 font stacks auto-derivation system
+  - Print fidelity requirements: `@media print` as screen style mirror enhancement
+
+- **Standardized theme template**: [`themes/template.css`](themes/template.css)
+  - Reference implementation following the v3.0 paradigm
+  - All required sections: design tokens, editor styles, code blocks, blockquotes, tables, Mermaid variables, print styles
+  - Ready-to-use template for creating new custom themes
+
+#### Documentation Updates
+- Updated [README.md](README.md) and [README_CN.md](README_CN.md) to include Swiss Design theme in the downloadable themes table
+- Added comprehensive theme descriptions for all 7 external themes (elegant, guizang, forest-ink, academic-paper, pixso-design, swiss-design, template)
 
 ---
 
@@ -294,6 +316,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.5.1-beta.3]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1-beta.3
 [1.5.1-beta.2]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1-beta.2
 [1.5.1-beta.1]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1-beta.1
 [1.5.1]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1

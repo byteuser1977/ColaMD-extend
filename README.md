@@ -630,6 +630,7 @@ Downloadable external themes (located in [`themes/`](themes/) directory):
 | [forest-ink.css](themes/forest-ink.css) | 🌲 Forest Ink, warm paper base + forest green ink text + forest green accent |
 | [academic-paper.css](themes/academic-paper.css) | 📄 **Academic Paper (Enhanced)** — GB/T 7713 compliant, SimHei headings + SimSun body text, three-line tables, print-optimized Mermaid diagrams, footnotes & references styling. See [`academic-demo.md`](docs/academic-demo.md) for a complete example |
 | [pixso-design.css](themes/pixso-design.css) | 🎨 Pixso Design, modern design system style |
+| [swiss-design.css](themes/swiss-design.css) | 🇨🇭 **Swiss Design (International Typographic Style)** — Pure black-white-red color system, geometric sans-serif fonts (Helvetica/Inter), grid-based layout with generous whitespace, form follows function. Minimalist and restrained aesthetic inspired by Swiss International Typographic Style |
 
 Custom theme support: Place CSS files in `~/.colamd/themes/` directory, then import via **Theme > Import Theme**. Imported themes persist across sessions.
 

@@ -690,6 +690,7 @@ ColaMD 内置 **4 个主题**，所有显示插件均会跟随主题自动适配
 | [forest-ink.css](themes/forest-ink.css) | 🌲 森林墨，宣纸暖白底 + 松烟墨绿文字 + 森林绿强调色 |
 | [academic-paper.css](themes/academic-paper.css) | 📄 **学术论文（增强版）** — 符合 GB/T 7713 规范，黑体标题 + 宋体正文，三线表格式，打印优化的 Mermaid 图表，脚注与参考文献样式。完整示例见 [`academic-demo.md`](docs/academic-demo.md) |
 | [pixso-design.css](themes/pixso-design.css) | 🎨 Pixso 设计，现代设计系统风格 |
+| [swiss-design.css](themes/swiss-design.css) | 🇨🇭 **瑞士国际主义平面设计风格** — 纯粹的黑白红三色体系，几何无衬线字体（Helvetica/Inter），网格化排版与大量留白，形式服从功能。极简克制的审美，灵感源自 Swiss International Typographic Style |
 
 自定义主题支持：将 CSS 文件放入 `~/.colamd/themes/` 目录，通过 **Theme > Import Theme** 导入。导入的主题会持久化保存，重启后仍然可用。
 
