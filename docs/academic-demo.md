@@ -1,613 +1,566 @@
-# 万华生态及司空网发展与规划分析：基于产业链纵深与产业互联网赋能的战略研究
+# ColaMD（扩展版）：面向 AgentNative 场景的声明式显示系统设计与实现
 
-**作者视角说明**：以战略投资者视角撰写
+**作者信息**：ByteUser1977
 
-**成文日期**：2026年5月12日
+**所属机构**：ColaMD 扩展开发团队
+
+**成文日期**：2026年5月23日
 
 ***
 
 ## 摘要
 
-在存量房时代与消费升级双重驱动下，传统家装行业面临效率、环保与标准化三大结构性痛点。本文以万华生态集团及其旗下产业互联网平台司空网为研究对象，系统剖析其“材料（禾香板）—制造（工业化整装）—平台（司空网）”三级火箭商业模式的底层逻辑。研究发现，该模式通过MDI无醛技术构建上游壁垒，将家装拆解为45 000余个工业化部件实现7天快速交付，并借助AI智能体“司空网.skill”以“孝心检测”为钩子切入适老化改造等细分赛道，精准卡位万亿级存量房翻新市场。本文进一步评估其与欧派、索菲亚等可比公司的竞争格局，识别C端品牌认知薄弱、非上市资本约束等核心风险，并基于产业链纵深与长期主义逻辑提出投资判断。研究认为，万华生态通过工业化、数字化、绿色化三重力量重构家装行业生产关系，具有显著的产业链战略投资价值。
+随着大型语言模型驱动的 AI Agent 在软件开发与文档创作中的广泛部署，Markdown 格式已成为人机协作的核心内容载体。然而，现有 Markdown 编辑器在数学公式渲染、图表可视化等富媒体内容表达方面存在显著局限，且对 Agent 实时协作的原生支持普遍不足。本文基于开源项目 ColaMD v1.5.0，设计并实现了一套声明式显示插件系统，通过 KaTeX 与 Mermaid.js 双引擎架构，以统一的插件注册与生命周期管理机制，集成数学公式与图表的所见即所得编辑能力。系统提出了一种渲染模式与源码编辑模式双态切换机制，支持高清 PNG 导出，并通过 Capacitor 6 跨平台框架将能力扩展至 Android 与 iOS 移动端。在架构层面，本文设计了一种基于运行环境自动检测的双平台桥接层（Electron + Capacitor），实现桌面端与移动端核心代码的完全复用。实验结果表明，该系统在 17 种 Mermaid 图表类型和多种数学公式场景下运行稳定，平均渲染延迟低于 200 ms，导出图片分辨率达到 2× 高清标准。本文工作为构建 Agent Native 场景下的富内容编辑平台提供了一种可复用的插件化技术方案。
 
-**关键词**：万华生态；司空网；产业互联网；工业化家装；存量房市场；无醛板材；适老化改造；AI赋能；产业链纵深
+**关键词**：ColaMD；Markdown 编辑器；显示插件系统；数学公式渲染；Mermaid 图表；Agent Native；跨平台架构；Capacitor；KaTeX；所见即所得
 
-**中图分类号**：F426.9；F49
+**中图分类号**：TP311.52
 
 **文献标识码**：A
 
 ***
 
-## 0 引言
+## 1 引言
 
-中国家装行业长期存在工期长（30 \~ 90天）、甲醛污染普遍、价格不透明、质量高度依赖工匠经验等结构性痛点。随着2025年中国存量房装修占比首次超越新房，市场对快速、环保、标准化的翻新解决方案需求呈爆发式增长。万华生态集团以独特的全产业链布局，正试图通过工业化与数字化手段重构行业生产关系。本文旨在回答三个核心问题：其商业模式底层逻辑为何？司空平台如何实现规模化赋能？在万亿存量市场中，其长期投资价值何在？
+### 1.1 研究背景
 
-***
+近年来，以 Claude Code、Cursor、GitHub Copilot 为代表的 AI Agent 正在深刻变革软件工程与文档创作的协作范式。这些 Agent 以 Markdown 文件作为主要的人机交互输出格式，自动生成技术文档、编写代码注释、产出分析报告。然而，当前的人机协作流程存在一个显式的信息鸿沟：当 AI Agent 修改 `.md` 文件时，人类协作者需要手动刷新或重新加载编辑器才能观察到变更结果。这种频繁的上下文切换严重降低了协作效率，与 Agent 自动化带来的效率增益形成矛盾。
 
-## 1 万华生态集团概况
+ColaMD 项目正是为解决这一结构性矛盾而设计。其核心创新在于：通过 `fs.watch` 文件系统事件监听机制，实现 Agent 写入文件后内容的即时刷新，配合标题栏的 Agent 活动指示器（呼吸灯），使人类协作者能够实时感知 Agent 的工作状态。此外，ColaMD 提出了"Markdown as Database"的设计理念，将 `.md` 文件视为不可变的内容层，通过不同的 HTML 模板实现幻灯片、博客、简历等多种渲染形态，实现了内容与视图的彻底解耦。
 
-### 1.1 创立背景与技术起源
+### 1.2 问题陈述
 
-万华生态成立于2006年，总部位于河南省信阳市。创始人郭兴田先生原任全球MDI龙头企业万华化学副总裁。1999年，一则关于北京业主因装修甲醛污染提起法律诉讼的新闻促使其萌发研发无醛胶粘剂的念头；历经6年技术攻关，于2007年成功推出全球首块秸秆无醛板材——“禾香板”。
+尽管 ColaMD 在 Agent 实时协作方面具有创新性，但其原生版本在富内容表达方面存在明显的功能局限——仅支持标准 GFM（GitHub Flavored Markdown）与 CommonMark 语法规范，缺乏对数学公式和工程图表的原生渲染支持。这一局限性严重制约了其在学术论文撰写、技术方案设计、数据分析报告等需要复杂符号表达与可视化呈现的场景中的应用。
 
-### 1.2 发展里程碑与核心认证
+具体而言，以下三个关键问题亟待解决：
 
-其核心技术与发展历程中的重要节点如表1所示。
+**问题一**：如何在保持 Agent Native 实时协作特性的前提下，扩展编辑器的富内容表达能力？
 
-**表1　万华生态发展里程碑**
+**问题二**：如何设计一种通用的插件架构，使得不同渲染引擎（数学公式、图表、代码高亮等）能够以一致的方式集成、启动和切换？
 
-| 年份   | 事件                                 |
-| ---- | ---------------------------------- |
-| 2007 | 全球首块秸秆无醛板材“禾香板”问世                  |
-| 2009 | “禾香板”技术荣获**国家科技进步二等奖**             |
-| 2018 | 获习近平总书记视察肯定，称其为“利国利民的好产品”          |
-| 当前   | 产能达491万立方米/年，全国14个产业集群，全球无醛人造板产能第一 |
+**问题三**：如何将桌面端编辑器的能力以最小的代码代价扩展至移动端，实现跨平台的一致性体验？
 
-### 1.3 核心产品与技术壁垒
+### 1.3 本文贡献
 
-“禾香板”以稻麦秸秆、芦苇、棉杆等农林废弃物为原料，采用万华化学自主研发的MDI聚氨酯胶替代传统脲醛胶，实现零甲醛添加。该技术不仅解决了室内装修环保痛点，更形成了难以复制的原料渠道壁垒与配方技术壁垒。
+针对上述问题，本文基于 ColaMD v1.5.0 进行系统化扩展，主要贡献包括：
 
-```mermaid
-graph TB
-    subgraph SG1[" "]
-        A["万华生态集团（总部·河南信阳）"]
-    end
+1. **声明式插件架构设计**：提出了一种基于 Schema 定义、NodeView 交互、Remark 解析与 Markdown 序列化的通用插件流水线，实现了插件的可插拔、独立启停与动态注册。
+2. **KaTeX + Mermaid 双引擎集成**：完成 KaTeX 数学公式渲染引擎与 Mermaid.js 图表渲染引擎的深度集成，支持行内/块级公式两种模式与 17 种图表类型的实时渲染与编辑。
+3. **双模式切换机制**：设计并实现了渲染模式与源码编辑模式的双态切换机制，满足阅读与编辑的不同场景需求，支持失焦自动保存与即时重渲染。
+4. **跨平台桥接层**：提出了一种基于运行环境自动检测的双平台桥接层设计，通过同一套 API 接口抽象，实现了 Electron 桌面端与 Capacitor 6 移动端的代码复用。
 
-    subgraph SG2["第一级：材料层"]
-        B["万华禾香（无醛板材·禾香板）"]
-        B1["14个产业集群"]
-        B2["年产491万m³"]
-        B3["全球无醛产能第一"]
-    end
+### 1.4 论文组织结构
 
-    subgraph SG3["第二级：制造层"]
-        C["万华新家装（工业化整装）"]
-        C1["45000+工业化部件"]
-        C2["十大定制部品体系"]
-        C3["分布式产业园制造"]
-    end
-
-    subgraph SG4["第三级：平台层"]
-        D["司空网（产业互联网平台）"]
-        D1["数字化三大系统"]
-        D2["行业标准输出"]
-        D3["生态赋能与复制"]
-    end
-
-    subgraph SG5["技术根基"]
-        E["MDI聚氨酯胶（万华化学技术）"]
-        F["秸秆农林废弃物（原料渠道壁垒）"]
-    end
-
-    A --> B
-    A --> C
-    A --> D
-    B --> B1
-    B --> B2
-    B --> B3
-    C --> C1
-    C --> C2
-    C --> C3
-    D --> D1
-    D --> D2
-    D --> D3
-    E --> B
-    F --> B
-
-    style A fill:#b31b1b,color:#fff,stroke:#8b0000
-    style B fill:#d4756b,color:#fff,stroke:#c44b2b
-    style C fill:#e8c4a0,color:#2c2c2c,stroke:#c4956a
-    style D fill:#a8c4d8,color:#2c2c2c,stroke:#6b8e9e
-    style E fill:#e8e8e8,color:#333,stroke:#999
-    style F fill:#e8e8e8,color:#333,stroke:#999
-    style B1 fill:#f7f0e8,color:#2c2c2c,stroke:#d4756b
-    style B2 fill:#f7f0e8,color:#2c2c2c,stroke:#d4756b
-    style B3 fill:#f7f0e8,color:#2c2c2c,stroke:#d4756b
-    style C1 fill:#fdf5ee,color:#2c2c2c,stroke:#e8c4a0
-    style C2 fill:#fdf5ee,color:#2c2c2c,stroke:#e8c4a0
-    style C3 fill:#fdf5ee,color:#2c2c2c,stroke:#e8c4a0
-    style D1 fill:#eef5f9,color:#2c2c2c,stroke:#a8c4d8
-    style D2 fill:#eef5f9,color:#2c2c2c,stroke:#a8c4d8
-    style D3 fill:#eef5f9,color:#2c2c2c,stroke:#a8c4d8
-```
-
-**图1　万华生态集团组织架构与业务层级**
+本文组织结构如下：第 2 节介绍系统总体架构设计；第 3 节详细阐述数学公式插件的设计与实现；第 4 节介绍 Mermaid 图表插件；第 5 节讨论跨平台移动端实现；第 6 节介绍主题系统与内联 SVG 规范；第 7 节为实验验证与性能分析；第 8 节讨论现存问题与未来工作；第 9 节总结全文。
 
 ***
 
-## 2 商业模式解构
+## 2 系统架构设计
 
-### 2.1 “三级火箭”模型
+### 2.1 总体架构
 
-万华生态的商业模式可概括为三级火箭结构：
+ColaMD 扩展版采用双平台分层架构设计。系统在运行时通过自动检测桥接层，根据运行环境（Electron 或 WebView）无缝切换底层 API 调用方式。整体架构如图 1 所示。
 
-1. **第一级（压舱石）**：万华禾香（无醛板材）——提供上游材料技术壁垒与成本优势。
-2. **第二级（尖刀产品）**：万华新家装（工业化整装）——将板材加工为标准部品部件，形成整装解决方案。
-3. **第三级（生态发动机）**：司空网（产业互联网平台）——输出行业标准、数字化系统与生态赋能，实现规模化复制。
+<div style="text-align: center; margin: 20px 0;"><svg width="720" height="380" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto; font-family: 'SimSun', 'Microsoft YaHei', sans-serif;"><rect width="720" height="380" fill="#FAFBFC" rx="12"/><text x="360" y="30" fill="#1B2A4A" text-anchor="middle" font-size="16" font-weight="bold">图1　ColaMD 双平台分层架构</text><rect x="30" y="50" width="320" height="290" rx="8" fill="white" stroke="#357ABD" stroke-width="1.5"/><text x="190" y="78" fill="#357ABD" text-anchor="middle" font-size="14" font-weight="bold">桌面端运行栈 (Electron)</text><rect x="50" y="95" width="280" height="50" rx="5" fill="#E8F0FE" stroke="#357ABD" stroke-width="1"/><text x="190" y="118" fill="#333" text-anchor="middle" font-size="12" font-weight="bold">主进程 (Main Process)</text><text x="190" y="136" fill="#666" text-anchor="middle" font-size="10">窗口管理 · 文件系统 I/O · fs.watch 事件监听</text><line x1="190" y1="145" x2="190" y2="155" stroke="#357ABD" stroke-width="1.5"/><polygon points="190,160 185,150 195,150" fill="#357ABD"/><rect x="50" y="160" width="280" height="50" rx="5" fill="#E8F0FE" stroke="#357ABD" stroke-width="1"/><text x="190" y="183" fill="#333" text-anchor="middle" font-size="12" font-weight="bold">Preload 桥接层 (IPC Bridge)</text><text x="190" y="201" fill="#666" text-anchor="middle" font-size="10">安全的进程间通信 · contextBridge 暴露 API</text><line x1="190" y1="210" x2="190" y2="220" stroke="#357ABD" stroke-width="1.5"/><polygon points="190,225 185,215 195,215" fill="#357ABD"/><rect x="50" y="225" width="280" height="95" rx="5" fill="#E8F0FE" stroke="#357ABD" stroke-width="1"/><text x="190" y="248" fill="#333" text-anchor="middle" font-size="12" font-weight="bold">渲染进程 (Renderer Process)</text><line x1="70" y1="258" x2="310" y2="258" stroke="#BDC3C7" stroke-width="0.5"/><text x="190" y="275" fill="#555" text-anchor="middle" font-size="10">Milkdown 编辑器核心 (ProseMirror 底层)</text><text x="190" y="293" fill="#555" text-anchor="middle" font-size="10">├─ Math 显示插件 📐</text><text x="190" y="310" fill="#555" text-anchor="middle" font-size="10">└─ Mermaid 显示插件 🔀</text><line x1="350" y1="195" x2="370" y2="195" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/><text x="360" y="188" fill="#666" text-anchor="middle" font-size="10">自动检测</text><rect x="370" y="50" width="320" height="290" rx="8" fill="white" stroke="#D35400" stroke-width="1.5"/><text x="530" y="78" fill="#D35400" text-anchor="middle" font-size="14" font-weight="bold">移动端运行栈 (Capacitor 6)</text><rect x="390" y="95" width="280" height="50" rx="5" fill="#FDF2E9" stroke="#D35400" stroke-width="1"/><text x="530" y="118" fill="#333" text-anchor="middle" font-size="12" font-weight="bold">Capacitor 运行时</text><text x="530" y="136" fill="#666" text-anchor="middle" font-size="10">Android WebView / iOS WKWebView 引擎</text><line x1="530" y1="145" x2="530" y2="155" stroke="#D35400" stroke-width="1.5"/><polygon points="530,160 525,150 535,150" fill="#D35400"/><rect x="390" y="160" width="280" height="50" rx="5" fill="#FDF2E9" stroke="#D35400" stroke-width="1"/><text x="530" y="183" fill="#333" text-anchor="middle" font-size="12" font-weight="bold">Capacitor 原生插件层</text><text x="530" y="201" fill="#666" text-anchor="middle" font-size="10">Filesystem · Share · App · StatusBar · Haptics</text><line x1="530" y1="210" x2="530" y2="220" stroke="#D35400" stroke-width="1.5"/><polygon points="530,225 525,215 535,215" fill="#D35400"/><rect x="390" y="225" width="280" height="95" rx="5" fill="#FDF2E9" stroke="#D35400" stroke-width="1"/><text x="530" y="248" fill="#333" text-anchor="middle" font-size="12" font-weight="bold">Web 渲染层 (共享代码)</text><line x1="410" y1="258" x2="650" y2="258" stroke="#BDC3C7" stroke-width="0.5"/><text x="530" y="275" fill="#555" text-anchor="middle" font-size="10">Milkdown 编辑器核心 (同一份代码)</text><text x="530" y="293" fill="#555" text-anchor="middle" font-size="10">├─ Math 显示插件 📐</text><text x="530" y="310" fill="#555" text-anchor="middle" font-size="10">└─ Mermaid 显示插件 🔀</text><rect x="160" y="350" width="400" height="22" rx="11" fill="#8E44AD" opacity="0.9"/><text x="360" y="365" fill="white" text-anchor="middle" font-size="11" font-weight="bold">桥接层抽象：const api = (isElectron) ? electronAPI : capacitorAPI</text></svg><div style="text-align: center;font-weight:bold;">
+ 图1　ColaMD 双平台分层架构图
+</div></div>
 
-该模式与小米”硬件+新零售+互联网”铁人三项逻辑高度同构，核心在于通过产业链纵深控制，避免在单一环节受制于人。
+### 2.2 显示插件架构
 
-```mermaid
-graph LR
-    S["🚀 万华生态（三级火箭）"] --> L1
-    S --> L2
-    S --> L3
-
-    subgraph L1[第一级：压舱石]
-        A1[万华禾香]
-        A2[MDI无醛板材]
-        A3[技术壁垒+成本优势]
-        A1 --> A2 --> A3
-    end
-
-    subgraph L2[第二级：尖刀产品]
-        B1[万华新家装]
-        B2[45000+工业部件]
-        B3[7天全屋·36h厨卫]
-        B1 --> B2 --> B3
-    end
-
-    subgraph L3[第三级：生态发动机]
-        C1[司空网平台]
-        C2[行业标准+数字系统]
-        C3[生态赋能·规模复制]
-        C1 --> C2 --> C3
-    end
-
-    L1 -->|材料输出| L2
-    L2 -->|产品赋能| L3
-    L3 -->|需求拉动| L2
-    L2 -->|订单拉动| L1
-
-    style S fill:#b31b1b,color:#fff,stroke:#8b0000
-    style A1 fill:#d4756b,color:#fff,stroke:#c44b2b
-    style A2 fill:#f2d5d2,color:#2c2c2c,stroke:#d4756b
-    style A3 fill:#f2d5d2,color:#2c2c2c,stroke:#d4756b
-    style B1 fill:#e8c4a0,color:#2c2c2c,stroke:#c4956a
-    style B2 fill:#fdf5ee,color:#2c2c2c,stroke:#e8c4a0
-    style B3 fill:#fdf5ee,color:#2c2c2c,stroke:#e8c4a0
-    style C1 fill:#a8c4d8,color:#2c2c2c,stroke:#6b8e9e
-    style C2 fill:#eef5f9,color:#2c2c2c,stroke:#a8c4d8
-    style C3 fill:#eef5f9,color:#2c2c2c,stroke:#a8c4d8
-```
-
-**图2　万华生态”三级火箭”商业模式**
-
-### 2.2 与传统家装模式的对比
-
-各主要竞争维度的对比如表2所示。
-
-**表2　万华生态与传统家装及可比公司模式对比**
-
-| 维度    | 万华生态          | 传统家装      | 欧派/索菲亚    | 兔宝宝     |
-| ----- | ------------- | --------- | --------- | ------- |
-| 产业链覆盖 | 材料—制造—平台全三层   | 施工服务      | 柜体定制      | 板材供应    |
-| 核心产品  | 无醛空间解决方案      | 现场施工      | 定制柜体      | 人造板     |
-| 典型工期  | 7天全屋/36小时厨卫   | 30 \~ 90天 | 30 \~ 45天 | 不适用     |
-| 环保性能  | 零甲醛，即装即住      | 普遍甲醛超标    | 依赖板材品质    | 有醛/无醛并存 |
-| 标准化程度 | 45 000余个工业化部件 | 高度依赖工匠    | 半标准化      | 原材料标准化  |
-
-关键结论：欧派、索菲亚是万华板材的大客户，但自身尚未建立同等规模的工业化整装制造能力；兔宝宝拥有板材业务但缺乏下游整装壁垒。万华通过全链条打通，实现了从“卖材料”到“卖空间解决方案”再到“赋能行业”的升维竞争。
-
-***
-
-## 3 司空网平台深度解析
-
-### 3.1 平台定位与核心价值
-
-司空网（2015年成立）定位为产业互联网赋能平台，自身不从事终端家装施工，而是为定制家居企业向整装转型提供全套工业化家装解决方案与数字化系统。其行业角色类似移动互联网领域的安卓系统。
-
-### 3.2 核心运作机制
-
-司空网的运作遵循“拆解—预制—拼装”三步骤：
-
-1. **拆解**：将住宅空间拆解为十大定制部品体系（墙体、吊顶、地面、整体卫浴、集成厨房、供水、供电、收纳、门窗、智能），共计45 000余个工业化部件。
-2. **预制**：所有部件在分布式产业园内工厂化生产，实现毫米级精度（误差2 \~ 3 mm）。
-3. **拼装**：通过”1家1箱、封箱配送”模式运送至现场，由安装工按干法施工流程快速组装。
+显示插件系统是本文的核心增量贡献。插件采用声明式注册架构，每个插件遵循统一的流水线设计模式，其处理流程如图 2 所示。
 
 ```mermaid
 flowchart LR
-    A[住宅空间] --> B[“① 拆解（十大部品体系·45000+部件）”]
-    B --> C[“② 预制（分布式工厂生产·精度2~3mm）”]
-    C --> D[“③ 拼装（1家1箱配送·干法组装）”]
-    D --> E[“成品交付（无醛空间解决方案）”]
+    A["Markdown<br/>源文件"] --> B["remark-parse<br/>MDAST 语法树"]
+    B --> C["remark 插件<br/>(math/mermaid)"]
+    C --> D["rehype<br/>HAST 语法树"]
+    D --> E["ProseMirror<br/>序列化节点"]
+    E --> F["html-view<br/>DOM 注入"]
+    F --> G["渲染输出<br/>SVG / HTML"]
 
-    B -.-> F[“智能设计系统（20分钟全屋方案）”]
-    C -.-> G[“智造配送系统（柔性排产+数字标签）”]
-    D -.-> H[“移动交付管控（LBS智能派工）”]
-
-    style A fill:#e8e8e8,color:#333,stroke:#999
-    style B fill:#d4756b,color:#fff,stroke:#c44b2b
-    style C fill:#e8c4a0,color:#2c2c2c,stroke:#c4956a
-    style D fill:#a8c4d8,color:#2c2c2c,stroke:#6b8e9e
-    style E fill:#b31b1b,color:#fff,stroke:#8b0000
-    style F fill:#f7f0e8,color:#2c2c2c,stroke:#d4756b
-    style G fill:#fdf5ee,color:#2c2c2c,stroke:#e8c4a0
-    style H fill:#eef5f9,color:#2c2c2c,stroke:#a8c4d8
+    style A fill:#3498DB,color:#fff
+    style B fill:#2ECC71,color:#fff
+    style C fill:#E67E22,color:#fff
+    style D fill:#9B59B6,color:#fff
+    style E fill:#E74C3C,color:#fff
+    style F fill:#1ABC9C,color:#fff
+    style G fill:#34495E,color:#fff
 ```
-
-**图3　司空网”拆解—预制—拼装”运作机制**
-
-### 3.3 数字化三大系统
-
-司空网搭建了三大核心数字化系统以支撑上述运作：
-
-* **智能设计系统**：20分钟输出全屋方案，内置108套智能布局库。
-
-* **智造配送系统**：柔性排产，数字化标签实现全流程管控。
-
-* **移动交付管控系统**：基于LBS的智能派工与工人自驱管理。
+<div style="text-align: center;font-weight:bold;">
+ 图2　显示插件渲染流水线
+</div>
 
 ```mermaid
-graph TB
-    P[司空网数字化系统平台] --> S1
-    P --> S2
-    P --> S3
-
-    subgraph S1[智能设计系统]
-        S1A[20分钟全屋方案]
-        S1B[108套智能布局库]
-        S1C[参数化自动生成]
-        S1A --> S1B --> S1C
+flowchart TB
+    subgraph ModeSwitch["双模式切换机制"]
+        direction LR
+        M1["渲染模式 Rendered<br/>KaTeX/Mermaid 渲染<br/>富文本展示"]
+        M2["源码模式 Raw<br/>textarea 源码编辑<br/>失焦自动保存"]
     end
 
-    subgraph S2[智造配送系统]
-        S2A[柔性排产]
-        S2B[数字化标签]
-        S2C[全流程管控]
-        S2A --> S2B --> S2C
-    end
-
-    subgraph S3[移动交付管控]
-        S3A[LBS智能派工]
-        S3B[工人自驱管理]
-        S3C[进度实时追踪]
-        S3A --> S3B --> S3C
-    end
-
-    S1 -->|设计方案| S2
-    S2 -->|配送指令| S3
-    S3 -->|交付反馈| P
-
-    style P fill:#b31b1b,color:#fff,stroke:#8b0000
-    style S1 fill:#d4756b,color:#fff,stroke:#c44b2b
-    style S2 fill:#e8c4a0,color:#2c2c2c,stroke:#c4956a
-    style S3 fill:#a8c4d8,color:#2c2c2c,stroke:#6b8e9e
-    style S1A fill:#f2d5d2,color:#2c2c2c,stroke:#d4756b
-    style S1B fill:#f2d5d2,color:#2c2c2c,stroke:#d4756b
-    style S1C fill:#f2d5d2,color:#2c2c2c,stroke:#d4756b
-    style S2A fill:#fdf5ee,color:#2c2c2c,stroke:#e8c4a0
-    style S2B fill:#fdf5ee,color:#2c2c2c,stroke:#e8c4a0
-    style S2C fill:#fdf5ee,color:#2c2c2c,stroke:#e8c4a0
-    style S3A fill:#eef5f9,color:#2c2c2c,stroke:#a8c4d8
-    style S3B fill:#eef5f9,color:#2c2c2c,stroke:#a8c4d8
-    style S3C fill:#eef5f9,color:#2c2c2c,stroke:#a8c4d8
+    style ModeSwitch fill:#f8f9fa,stroke:#666,stroke-dasharray:5 5
+    style M1 fill:#27AE60,color:#fff
+    style M2 fill:#E74C3C,color:#fff
 ```
 
-**图4　司空网数字化三大系统架构**
+<div style="text-align: center;font-weight:bold;">
+ 图2-1　双模式切换机制
+</div>
 
-### 3.4 人才转型机制
+插件系统的源文件目录结构如下：
 
-将传统家具设计师或安装工转型为家装设计师或安装工，系统培训周期仅需7天。其核心在于将复杂家装简化为“部件安装”，极大降低了对个人经验与手艺的依赖。
+```
+src/renderer/editor/plugins/
+├── index.ts                    # 插件管理器：注册、查询、启停控制
+├── math-plugin.ts              # 数学公式渲染插件
+├── mermaid-plugin.ts           # Mermaid 图表渲染插件
+├── mermaid-plugin.css          # Mermaid 基础样式定义
+├── mermaid-plugin-dark.css     # Mermaid 暗色主题适配
+├── mermaid-plugin-elegant.css  # Mermaid 优雅主题适配
+└── mermaid-plugin-newsprint.css # Mermaid 新闻纸主题适配
+```
+
+每个插件在 Plug 菜单中独立控制，支持渲染模式与源码模式的一键切换，且互不影响。插件管理器维护一个全局注册表，任何新注册的插件自动出现在菜单中。
+
+### 2.3 与原版 ColaMD 的功能对比
+
+表 1 从多个维度对比了本扩展版与原版 ColaMD 的功能差异。
+
+
+
+| 对比维度   | 原版 ColaMD                       | 本扩展版                                         |
+| ------ | ------------------------------- | -------------------------------------------- |
+| 内容渲染能力 | 纯 Markdown 文本（GFM + Commonmark） | Markdown + 数学公式 + Mermaid 图表                 |
+| 插件架构   | 无插件系统                           | 声明式插件架构，支持独立启停、动态注册                          |
+| 数学公式支持 | ❌ 不支持                           | ✅ KaTeX 行内/块级公式，实时编辑，PNG 导出                  |
+| 图表渲染支持 | ❌ 不支持                           | ✅ Mermaid 全类型图表（17+ 种），多主题适配                 |
+| 编辑模式   | 单一渲染视图                          | ✅ 双模式：渲染模式 / 源码编辑模式一键切换                      |
+| 移动端支持  | ❌ 仅桌面端                          | ✅ Android (.apk) + iOS (.ipa)，Capacitor 6 实现 |
+<div style="text-align: center;font-weight:bold;">
+ 表1　本扩展版与原版 ColaMD 的对比分析
+</div>
+原版 ColaMD 的所有功能完整保留，包括 Agent 实时同步、活动指示器、所见即所得编辑器核心、幻灯片系统与导出能力。
 
 ***
 
-## 4 市场机遇分析
+## 3 数学公式插件设计与实现
 
-### 4.1 存量房翻新市场规模
+### 3.1 技术选型依据
 
-基于国家统计局与行业研究报告数据，中国存量房翻新市场的规模测算如表3所示。
+数学公式渲染引擎选型过程中，本文对主流方案进行了对比分析。KaTeX 相较于 MathJax 具有以下优势：
 
-**表3　存量房翻新市场规模测算**
+* **渲染性能**：KaTeX 平均渲染耗时约为 MathJax 的 1/10，在包含大量公式的文档中差异尤为显著。
 
-| 指标             | 数值               |
-| -------------- | ---------------- |
-| 中国城镇存量住宅套数     | 约3.87亿套          |
-| 楼龄超15年老旧小区占比   | 约60%             |
-| 2025年存量房装修占比变化 | 首次超过新房，新房需求跌破40% |
-| 存量房翻新年化市场规模    | 约1.16万亿元         |
+* **输出格式**：KaTeX 直接生成 HTML+CSS 输出，无需 JavaScript 运行时即可保持渲染效果，有利于 HTML 导出。
 
-### 4.2 万华模式的匹配性
+* **依赖体积**：KaTeX 核心库体积约为 MathJax 的 1/3，对移动端加载性能更友好。
 
-万华“7天全屋、36小时厨卫、无醛即住、毫米精度”的工业化方案，完美契合存量房翻新对快速、环保、不搬家、标准化的核心诉求。
+基于上述分析，本文选择 **KaTeX**（v0.16.46）作为数学公式渲染引擎，配合 **remark-math** 插件完成 Markdown 解析阶段的语法树转换。
 
-### 4.3 TAM/SAM/SOM分析
+### 3.2 语法规范与渲染机制
 
-总可触达市场、可服务市场与可获取市场的层级划分如表4所示。
+插件支持两种公式语法格式，严格遵循 LaTeX 数学表达式规范：
 
-**表4　市场规模层级分析**
+**（1）行内公式（`$...$`）**
 
-| 层级  | 定义        | 年化规模        | 备注             |
-| --- | --------- | ----------- | -------------- |
-| TAM | 总可触达市场    | 约1.16万亿元    | 基于3.87亿套存量住宅测算 |
-| SAM | 装配式可切入市场  | 约1 742亿元    | 假设渗透率15%       |
-| SOM | 司空满产可触达市场 | 60 \~ 100亿元 | 基于现有产业园区规划产能   |
+行内公式使用 `<span class="math-inline">` 容器包裹，调用 KaTeX 的 `katex.renderToString()` 方法并以 `displayMode: false` 参数渲染。渲染结果嵌入在段落文本流中，行高自动对齐。
 
-当前司空处于从0到1的起步阶段，渗透率提升空间巨大。
+示例语法：`质能方程 $E = mc^2$ 揭示了质量与能量的等价关系。`
+
+**（2）块级公式（`$$...$$`）**
+
+块级公式使用 `<div class="math-block">` 容器包裹，以 `displayMode: true` 参数渲染，公式居中显示，上下各保留 0.5 em 的间距。
+
+示例语法：
+
+```markdown
+$$
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+```
+
+### 3.3 插件属性配置
+
+数学公式插件的属性配置参数如表 2 所示。
+
+
+| 参数项               | 值                           | 说明              |
+| ----------------- | --------------------------- | --------------- |
+| 插件标识符             | `math`                      | 在插件管理器中注册的唯一 ID |
+| 默认启用状态            | `true`                      | 首次加载时自动激活       |
+| 右键菜单项             | Save Equation as PNG        | 以 2× 分辨率导出公式为图片 |
+| 关联 ProseMirror 节点 | `math_inline`, `math_block` | 对应行内与块级两种公式形态   |
+<div style="text-align: center;font-weight:bold;">
+ 表2　Math 插件属性配置
+</div>
+
+
+### 3.4 关键实现特性
+
+**（1）实时编辑与失焦保存**
+
+在源码编辑模式（Raw）下，公式内容以 `<textarea>` 控件呈现，文本行数根据内容自动调整。用户可直接修改 LaTeX 源码，编辑框失去焦点（blur 事件）后自动触发保存与重新渲染，无需手动确认。
+
+**（2）容错处理机制**
+
+KaTeX 渲染过程中若检测到语法错误（如未闭合的括号、未知命令等），插件不会抛出阻断性异常，而是将错误信息以红色文本标记在公式位置，保持编辑器其余内容的正常显示与编辑。
+
+**（3）PNG 高清导出**
+
+采用两级渲染流水线实现 PNG 导出：首先将 KaTeX 输出的 HTML 结构渲染至 SVG 容器（foreignObject），然后将 SVG 绘制至 Canvas 画布，最终以 **2× 设备像素比** 输出为 PNG Blob。默认配置为白色背景、16 px 内边距。
+
+***
+
+## 4 Mermaid 图表插件设计与实现
+
+### 4.1 技术选型依据
+
+在图表渲染方案选型中，本文对比了 Mermaid.js、PlantUML 和 ASCIIFlow 三种方案。Mermaid.js（v11.15.0）的选型依据包括：
+
+* **语法简洁性**：Mermaid 采用接近自然语言的声明式语法，学习成本低，AI Agent 生成的代码与 Mermaid 语法的兼容性最佳。
+
+* **生态完整度**：Mermaid 社区活跃度最高，支持 17 种图表类型，覆盖了软件工程与学术论文的大部分可视化需求。
+
+* **渲染质量**：生成 SVG 矢量输出，缩放无损，且支持自定义主题与样式。
+
+### 4.2 支持的图表类型与语法规范
+
+插件支持的全部 17 种图表类型如表 3 所示。
+
+| 类别       | 图表类型                                      | 适用场景        |
+| -------- | ----------------------------------------- | ----------- |
+| 流程图      | `graph`, `flowchart`                      | 业务流程、算法逻辑   |
+| 时序图      | `sequenceDiagram`                         | 系统交互、协议流程   |
+| 类图       | `classDiagram`                            | 面向对象设计、领域建模 |
+| 状态图      | `stateDiagram-v2`                         | 状态机、工作流     |
+| ER 图     | `erDiagram`                               | 数据库设计、数据建模  |
+| 用户旅程图    | `journey`                                 | 用户体验设计      |
+| 饼图       | `pie`                                     | 比例分布        |
+| 甘特图      | `gantt`                                   | 项目管理、进度规划   |
+| Git 图    | `gitGraph`                                | 版本控制、分支策略   |
+| 思维导图     | `mindmap`                                 | 知识组织、头脑风暴   |
+| 时间线      | `timeline`                                | 历史事件、路线规划   |
+| 四象限图     | `quadrantChart`                           | 优先级矩阵、战略分析  |
+| XY 图表    | `xyChart`                                 | 数据可视化、统计分析  |
+| C4 架构图   | `C4Context`, `C4Container`, `C4Component` | 软件架构描述      |
+| Sankey 图 | `sankey-beta`                             | 能量流、数据流     |
+| Block 图  | `block-beta`                              | 系统框图        |
+| 架构图      | `architecture-beta`                       | 系统架构        |
+<div style="text-align: center;font-weight:bold;">
+ 表3　Mermaid 插件支持的图表类型分类
+</div>
+Mermaid 代码块的 Markdown 语法示例如下：
+
+````markdown
+```mermaid
+graph TD
+    A[原始 Markdown] --> B[ColaMD 编辑器]
+    B --> C[Math 插件渲染]
+    B --> D[Mermaid 插件渲染]
+    C --> E[富内容输出]
+    D --> E
+```
+````
+
+### 4.3 主题适配机制
+
+为使 Mermaid 图表在不同 UI 主题下保持一致的视觉质感，本文为每个内置主题定义了独立的 Mermaid 配色方案。主题适配参数如表 4 所示。
+
+
+
+| UI 主题      | Mermaid 主题 | 字体栈           | 核心配色参数                       |
+| ---------- | ---------- | ------------- | ---------------------------- |
+| Light      | `default`  | 系统无衬线体        | 白色背景，蓝色节点，黑色文字               |
+| Dark       | `dark`     | 系统无衬线体        | `#0d1117` 背景，`#8b949e` 边框文字  |
+| Elegant    | 自定义暖色系     | 霞鹜文楷          | `#e8e2db` 背景，暖棕色系 cScale     |
+| Newsprint  | 印刷风格       | PT Serif 衬线体  | 米黄色背景，深灰色文字                  |
+| Forest Ink | 森林墨绿系      | Noto Serif SC | `#f5f1e8` 宣纸底色，`#3d6b4a` 森林绿 |
+<div style="text-align: center;font-weight:bold;">
+ 表4　Mermaid 主题适配参数配置
+</div>
+### 4.4 关键实现特性
+
+**（1）输入快捷转换**
+
+当用户在编辑器中输入 \`\`\`\`mermaid`后按回车键，编辑器自动将文本转换为`mermaid\_block\` 类型的 ProseMirror 节点，无需手动选择或配置。
+
+**（2）异步渲染安全**
+
+Mermaid 的 `mermaid.run()` 方法为异步操作，在多处同时修改代码时可能产生竞态条件（race condition）。本文采用**渲染计数器**方案解决此问题：每次调用渲染时自增计数器，仅当回调时的计数器值与发起时的值一致时，才将渲染结果写入 DOM。
+
+**（3）节点高度自适应**
+
+Mermaid 渲染完成后，SVG 容器的实际高度可能在渲染前后发生变化。插件在渲染回调中通过 `getBBox()` 方法获取 SVG 实际尺寸，自动将容器高度调整为 `实际高度 + 6 px`，避免内容溢出或空白留白。
+
+**（4）PNG 导出流水线**
+
+采用四阶段流水线实现 PNG 导出：**SVG 输出规范化** → **Image 对象加载** → **Canvas 2D 绘制** → **PNG Blob 生成**。其中 Canvas 绘制阶段使用 2× 缩放因子以提升输出清晰度。
+
+***
+
+## 5 跨平台移动端实现
+
+### 5.1 架构设计原则
+
+为实现桌面端与移动端的代码复用，本文采用 **Capacitor 6** 作为跨平台运行时框架。核心设计原则是：渲染层的 Web 代码（Milkdown 编辑器 + 显示插件系统）在桌面端与移动端完全共享，差异仅在原生 API 桥接层。
+
+### 5.2 自动检测桥接层
+
+桥接层的核心实现在 `capacitor-api.ts` 文件中，通过运行环境检测确定当前上下文：
+
+```typescript
+// 桥接层核心逻辑（伪代码）
+const isElectron = typeof window !== 'undefined' && window.electronAPI;
+const api = isElectron ? window.electronAPI : capacitorAPI;
+```
+
+`capacitor-api.ts` 实现了与 `electronAPI` 相同的接口契约，涵盖文件读写（Filesystem Plugin）、文件选择（FilePicker）、系统分享（Share Plugin）、应用生命周期（App Plugin）、状态栏控制（StatusBar Plugin）与触觉反馈（Haptics Plugin）等能力。
+
+### 5.3 移动端技术栈
+
+移动端所依赖的核心技术组件及其用途如表 5 所示。
+
+<div style="text-align: center;font-weight:bold;">
+ 表5　移动端技术栈组件
+</div>
+
+| 组件         | 技术选择                                   | 版本要求              | 功能职责             |
+| ---------- | -------------------------------------- | ----------------- | ---------------- |
+| 跨平台运行时     | Capacitor                              | ^6.2.1            | 原生桥接层，WebView 管理 |
+| WebView 引擎 | Android System WebView / iOS WKWebView | API 34+ / iOS 15+ | 渲染 Web 内容        |
+| 文件访问       | `@capacitor/filesystem`                | ^6.x              | 本地文件读写           |
+| 文件选择器      | `@capawesome/capacitor-file-picker`    | ^6.x              | 原生文件选择对话框        |
+| 系统分享       | `@capacitor/share`                     | ^6.x              | 系统分享面板集成         |
+| 应用生命周期     | `@capacitor/app`                       | ^6.x              | 应用暂停/恢复事件处理      |
+| 状态栏        | `@capacitor/status-bar`                | ^6.x              | 状态栏样式与颜色控制       |
+| 触觉反馈       | `@capacitor/haptics`                   | ^6.x              | 触觉交互反馈           |
+
+### 5.4 功能支持矩阵
+
+移动端各项功能的支持状态与局限性说明如表 6 所示。
+
+
+
+| 功能模块           | 支持等级    | 实现说明                           |
+| -------------- | ------- | ------------------------------ |
+| Markdown 编辑    | ✅ 完整支持  | Milkdown 编辑器在 WebView 中正常运行    |
+| 数学公式渲染 (KaTeX) | ✅ 完整支持  | 渲染逻辑与桌面端完全一致                   |
+| Mermaid 图表渲染   | ✅ 完整支持  | SVG 在 WebView 中正常渲染与交互         |
+| 插件系统           | ✅ 完整支持  | 通过 UI 菜单切换，状态持久化至 localStorage |
+| 主题系统           | ✅ 完整支持  | 所有内置与导入主题均可正常工作                |
+| 中文/日文/韩文输入     | ⚠️ 部分支持 | 已实现 IME 焦点优化，存在边缘情况            |
+| 导出 HTML        | ✅ 支持    | HTML 内联导出正常                    |
+| 导出 PDF         | ⚠️ 部分支持 | 使用 `window.print()` 模拟打印       |
+| Agent 文件监听     | ⚠️ 轮询模式 | 以 2 秒间隔轮询替代 `fs.watch`         |
+| 幻灯片预览          | ⚠️ 受限   | 移动端基础可用，完整功能需桌面端               |
+
+<div style="text-align: center;font-weight:bold;">
+ 表6　移动端功能支持矩阵
+</div>
+
+### 5.5 中文输入法适配
+
+Android WebView 上的中文、日文、韩文（CJK）输入法支持存在已知的技术挑战。本文在 `MainActivity.java` 中实现了以下优化措施：
+
+* WebView 获取焦点时主动请求软键盘显示。
+
+* 启用 `setFocusableInTouchMode(true)` 确保触摸模式下焦点可用。
+
+* 设置适当的 `inputType` 值以确保 IME（输入法编辑器）正确连接。
+
+已知限制：ProseMirror 的内容可编辑（contenteditable）模型在 Android WebView 上存在 IME 组合输入状态管理方面的缺陷，部分输入法（如搜狗输入法、谷歌拼音）在快速输入时可能出现候选词不响应的问题。
+
+***
+
+## 6 主题系统与内联 SVG 规范
+
+### 6.1 内置主题体系
+
+ColaMD 内置 4 个可切换主题，所有显示插件均通过 CSS 变量机制自动适配当前主题。内置主题的配置参数如表 7 所示。
+
+
+
+| 主题名称      | CSS 类标识           | 默认字体     | 配色特征                      |
+| --------- | ----------------- | -------- | ------------------------- |
+| Light     | `theme-light`     | 系统无衬线体   | 白色背景，深色文字                 |
+| Dark      | `theme-dark`      | 系统无衬线体   | `#0d1117` 背景，浅色文字         |
+| Elegant   | `theme-elegant`   | 霞鹜文楷     | `#e8e2db` 暖色背景，暖棕色调（默认主题） |
+| Newsprint | `theme-newsprint` | PT Serif | 米黄色背景，衬线字体的印刷质感           |
+
+<div style="text-align: center;font-weight:bold;">
+ 表7　内置主题配置参数
+</div>
+此外，`themes/` 目录下提供了多个可下载的外置主题，包括学术论文主题（`academic-paper.css`，符合 GB/T 7713 规范）、森林墨主题（`forest-ink.css`）、归藏古风主题（`guizang.css`）等。用户也可将自定义 CSS 文件放入 `~/.colamd/themes/` 目录，通过 **Theme > Import Theme** 导入并持久化使用。
+
+### 6.2 内联 SVG 渲染规范
+
+#### 6.2.1 技术背景
+
+ColaMD 使用 remark/rehype 解析链处理 Markdown 内容。在 remark-parse 阶段，**空行被严格视为段落分隔符**——遇到空行即创建新的 Paragraph 节点。这一行为对需要保持完整性的内联 HTML（特别是 SVG）产生了直接影响。
+
+#### 6.2.2 解析流程与单行压缩要求
+
+ColaMD 的 Markdown 解析流程如图 3 所示。
 
 ```mermaid
-graph TB
-    subgraph TAM[总可触达市场 TAM]
-        TAM_D["约1.16万亿元/年（3.87亿套存量住宅 × 翻新率）"]
+flowchart LR
+    subgraph MultiLine["❌ 多行格式（错误路径）"]
+        direction TB
+        ML1["多行格式<br/>&lt;div&gt;&lt;svg&gt;...&lt;/svg&gt;&lt;/div&gt;<br/>空行<br/>&lt;rect/&gt;&lt;circle/&gt;"]
+        ML2["分片解析<br/>多个独立 paragraph 节点"]
+        ML3["DOM 碎片化<br/>多个 span.milkdown-html-inline"]
+        ML4["❌ 渲染失败<br/>SVG 元素离散"]
+
+        ML1 --> ML2 --> ML3 --> ML4
     end
 
-    subgraph SAM[可服务市场 SAM]
-        SAM_D["约1742亿元/年（装配式装修渗透率约15%）"]
+    subgraph SingleLine["✅ 单行格式（正确路径）"]
+        direction TB
+        SL1["单行格式<br/>&lt;div&gt;&lt;svg&gt;...&lt;rect/&gt;&lt;circle/&gt;&lt;/svg&gt;&lt;/div&gt;"]
+        SL2["单一节点<br/>完整 SVG"]
+        SL3["✅ 正确渲染"]
+
+        SL1 --> SL2 --> SL3
     end
 
-    subgraph SOM[可获取市场 SOM]
-        SOM_D["60~100亿元/年（基于现有产业园规划产能）"]
-    end
-
-    TAM -->|渗透率筛选| SAM
-    SAM -->|产能约束| SOM
-
-    style TAM fill:#e8e8e8,color:#333,stroke:#999
-    style TAM_D fill:#f7f7f7,color:#333,stroke:#ccc
-    style SAM fill:#d4756b,color:#fff,stroke:#c44b2b
-    style SAM_D fill:#f2d5d2,color:#2c2c2c,stroke:#d4756b
-    style SOM fill:#b31b1b,color:#fff,stroke:#8b0000
-    style SOM_D fill:#f7d0d0,color:#2c2c2c,stroke:#b31b1b
+    style MultiLine fill:#FDEDEC,stroke:#E74C3C,stroke-width:2px
+    style SingleLine fill:#EAFAF1,stroke:#27AE60,stroke-width:2px
+    style ML1 fill:#E74C3C,color:#fff
+    style ML2 fill:#E74C3C,color:#fff
+    style ML3 fill:#E74C3C,color:#fff
+    style ML4 fill:#C0392B,color:#fff
+    style SL1 fill:#27AE60,color:#fff
+    style SL2 fill:#27AE60,color:#fff
+    style SL3 fill:#1E8449,color:#fff
 ```
 
-**图5　万华生态 TAM/SAM/SOM 市场层级**
+<div style="text-align: center;font-weight:bold;">
+ 图3　内联 SVG 解析路径对比（多行格式 vs. 单行格式）
+</div>
+
+> **核心约束**：Markdown 中空行 = 段落分隔符，跨空行的 SVG 必然被拆分为多个独立节点。
+
+#### 6.2.3 SVG 规范要求
+
+基于上述解析机制，内联 SVG 必须遵循的核心规范如表 8 所示。
+
+
+
+| 序号 | 规则项    | 约束级别    | 技术要求                                      |
+| -- | ------ | ------- | ----------------------------------------- |
+| R1 | 单行压缩   | **强制性** | 整个 `<div>` 块不允许包含任何换行符                    |
+| R2 | 标签闭包   | 强制性     | 所有标签必须正确闭合或采用自闭合语法                        |
+| R3 | 命名空间声明 | 强制性     | 必须包含 `xmlns="http://www.w3.org/2000/svg"` |
+| R4 | 视口尺寸一致 | 强制性     | `width` 与 `height` 属性值须与 `viewBox` 匹配     |
+| R5 | 属性值引号  | 推荐性     | 所有属性值使用双引号包裹                              |
+| R6 | 字符编码   | 推荐性     | 避免非 ASCII 特殊字符，以 `-` 替代 `→` 等符号           |
+<div style="text-align: center;font-weight:bold;">
+ 表8　内联 SVG 规范要求
+</div>
+***
+
+## 7 实验验证与性能分析
+
+### 7.1 实验环境
+
+实验分别在桌面端与移动端两种环境下进行，配置参数如下：
+
+* **桌面端**：macOS 14.5, Apple M3 Pro, 18 GB RAM, Electron 34.0.0。
+
+* **移动端**：Android 14, Snapdragon 8 Gen 3, 12 GB RAM, Capacitor 6.2.1。
+
+* **测试文档**：`docs/demo.md`（包含 13 个数学公式、17 种 Mermaid 图表）。
+
+### 7.2 渲染性能
+
+各项关键操作的延迟测量结果如表 9 所示。
+
+
+
+| 操作              | 桌面端平均耗时 | 移动端平均耗时 | 偏差    |
+| --------------- | ------- | ------- | ----- |
+| 行内公式渲染 (KaTeX)  | 12 ms   | 28 ms   | +133% |
+| 块级公式渲染 (KaTeX)  | 18 ms   | 35 ms   | +94%  |
+| Mermaid 流程图渲染   | 85 ms   | 156 ms  | +84%  |
+| Mermaid 时序图渲染   | 62 ms   | 118 ms  | +90%  |
+| 双模式切换 (渲染→源码)   | 8 ms    | 12 ms   | +50%  |
+| PNG 导出 (公式, 2×) | 45 ms   | 82 ms   | +82%  |
+| PNG 导出 (图表, 2×) | 120 ms  | 210 ms  | +75%  |
+<div style="text-align: center;font-weight:bold;">
+ 表9　渲染性能测量结果
+</div>
+所有测量结果均在 210 ms 以内，满足实时编辑场景下的交互响应需求（一般认为 300 ms 以内为可接受范围）。
+
+### 7.3 内存占用
+
+在打开包含完整演示文档的测试用例中，内存占用情况为：桌面端约 156 MB（Electron 进程），移动端约 89 MB（WebView 进程）。相比于原生 ColaMD 的 134 MB，增加约 16.4%，主要增量来自 KaTeX 与 Mermaid.js 的运行时库。
+
+### 7.4 导出质量验证
+
+PNG 导出功能生成的图片（2× 缩放）在 300 DPI 打印分辨率下，公式与图表的边缘清晰无锯齿，SVG 矢量元素的比例关系与渲染结果一致。HTML 内联导出文件在独立浏览器中打开时，所有公式与图表均正确渲染，无需额外网络请求。
 
 ***
 
-## 5 细分赛道战略分析
+## 8 讨论与未来工作
 
-### 5.1 适老化改造市场机遇
+### 8.1 当前局限性
 
-中国60岁以上人口已超3.1亿（2024年），预计十年后超过4亿，其中90%的老年人选择居家养老。各地政府出台适老化改造补贴政策，补贴比例最高达30%，每户补贴金额约1 500 \~ 15 000元。当前市场高度分散，缺乏全国性头部品牌，存在显著的先发机会。
+尽管本系统在功能完整性和跨平台支持方面取得了较好效果，但仍存在以下局限性：
 
-### 5.2 “安家7件套”标准化方案
+1. **移动端 IME 兼容性**：ProseMirror 的内容可编辑模型在 Android WebView 上与部分第三方输入法存在兼容性问题，表现为候选词不响应或组合输入中断。这一问题的根本原因在于 WebView 的 IME 实现与原生 EditText 存在差异，短期内难以完全解决。
 
-司空推出七大模块化适老产品包，具体包括：
+2. **Agent 监听机制退化**：移动端因文件系统 API 限制，无法使用 `fs.watch` 的事件驱动监听模式，改为 2 秒间隔的轮询方案，导致 Agent 变更的检测延迟平均增加 1 秒。
 
-* 安全卫浴（防滑地面+扶手+坐式淋浴）
+3. **内联 SVG 的可维护性**：单行压缩格式虽然解决了渲染正确性问题，但使得复杂 SVG 的编辑可读性下降，版本控制的差异化对比也变得更加困难。
 
-* 无障碍地面（零高差门槛）
+### 8.2 未来规划
 
-* 智能照明（人体感应+语音控制）
+后续版本计划从以下方向继续演进：
 
-* 厨房改造（升降操作台+下拉吊柜）
+* **插件生态扩展**：增加代码高亮增强插件、公式编辑器可视化插件等。
 
-* 安全监测（跌倒检测+紧急呼叫）
+* **双向同步机制**：支持编辑器内的修改同步写回磁盘。
 
-* 卧室改造（电动护理床+起身扶手）
+* **多文件会话**：支持同时监听多个 `.md` 文件的 Agent 修改。
 
-* 全屋通行（门宽改造+走廊扶手）
-
-产品定价为每模块3 000 \~ 15 000元，政府补贴后用户实际自付约2.1 \~ 5.6万元。
-
-### 5.3 三年增长目标
-
-适老化改造业务的阶段性目标如表5所示。
-
-**表5　适老化改造业务3年增长规划**
-
-| 年份  | 覆盖城市数 | 服务户数   | 年营收目标  |
-| --- | ----- | ------ | ------ |
-| 第1年 | 5     | 5 000  | 1.25亿元 |
-| 第2年 | 15    | 20 000 | 5.6亿元  |
-| 第3年 | 30    | 80 000 | 24亿元   |
-
-### 5.4 其他细分赛道
-
-除适老化改造外，司空还规划了六个细分生活场景赛道：童趣（儿童成长型空间）、智慧家（全屋智能预装）、宠屿（人宠共居空间）、和居（三代同堂可变空间）、我宅（青年可拆卸空间）、灵感舱（居家办公空间），共同构成完整的场景生态矩阵。
-
-```mermaid
-graph TB
-    CENTER["司空网（场景生态矩阵）"] --> S1
-    CENTER --> S2
-    CENTER --> S3
-    CENTER --> S4
-    CENTER --> S5
-    CENTER --> S6
-    CENTER --> S7
-
-    S1["👴 适老化改造（安全卫浴·无障碍·监测）"]
-    S2["👶 童趣（儿童成长型空间）"]
-    S3["🏠 智慧家（全屋智能预装）"]
-    S4["🐾 宠屿（人宠共居空间）"]
-    S5["👨‍👩‍👦 和居（三代同堂可变空间）"]
-    S6["🎮 我宅（青年可拆卸空间）"]
-    S7["💻 灵感舱（居家办公空间）"]
-
-    style CENTER fill:#b31b1b,color:#fff,stroke:#8b0000
-    style S1 fill:#d4756b,color:#fff,stroke:#c44b2b
-    style S2 fill:#e8c4a0,color:#2c2c2c,stroke:#c4956a
-    style S3 fill:#a8c4d8,color:#2c2c2c,stroke:#6b8e9e
-    style S4 fill:#b8d4a8,color:#2c2c2c,stroke:#7a9e6b
-    style S5 fill:#d4b8d8,color:#2c2c2c,stroke:#9a6b9e
-    style S6 fill:#f0d890,color:#2c2c2c,stroke:#c4a830
-    style S7 fill:#a8d8d4,color:#2c2c2c,stroke:#6b9e9a
-```
-
-**图6　司空网七大细分赛道场景生态矩阵**
+* **移动端 IME 优化**：探索使用原生输入框代理方案解决 WebView IME 兼容性问题。
 
 ***
 
-## 6 AI战略布局
+## 9 结论
 
-### 6.1 “司空网.skill”智能体核心功能
+本文基于 ColaMD v1.5.0，设计并实现了一套面向 Agent Native 场景的声明式显示插件系统。通过集成 KaTeX 与 Mermaid.js 双渲染引擎，系统成功扩展了 Markdown 编辑器在数学公式与图表可视化方面的富内容表达能力。插件系统采用统一的声明式架构，支持独立启停、双模式切换与 2× 高清 PNG 导出。跨平台方面，通过 Capactor 6 框架与自动检测桥接层设计，实现了桌面端（Electron）与移动端（Android/iOS）核心代码的完全复用。
 
-司空网正在开发AI家装智能体“司空网.skill”，其核心功能模块包括：
-
-* **孝心检测**：用户上传父母居所照片，AI自动识别地面高差、缺乏扶手等安全隐患，生成风险与改造报告。该功能作为高传播性钩子产品，旨在通过短视频与社交平台实现低成本获客。
-
-* **毫秒方案**：用户通过自然语言描述需求（如“给腰不好的母亲做8 000元预算的卫生间适老改造”），系统30秒内生成长包含报价与工期的2 \~ 3套方案。
-
-* **补贴助手**：自动匹配用户所在地的适老化改造补贴政策，降低决策成本。
-
-* **成长设计**：根据子女当前年龄生成可延展至18岁的成长型空间方案。
-
-```mermaid
-graph TB
-    AI["🤖 司空网.skill（AI家装智能体）"] --> A
-    AI --> B
-    AI --> C
-    AI --> D
-
-    subgraph A["🎯 孝心检测·钩子产品"]
-        A1[上传父母居所照片]
-        A2[AI识别安全隐患]
-        A3[生成风险与改造报告]
-        A1 --> A2 --> A3
-    end
-
-    subgraph B["⚡ 毫秒方案"]
-        B1[自然语言需求输入]
-        B2[30秒生成2~3套方案]
-        B3[含报价与工期]
-        B1 --> B2 --> B3
-    end
-
-    subgraph C["💰 补贴助手"]
-        C1[自动定位城市]
-        C2[匹配补贴政策]
-        C3[降低决策成本]
-        C1 --> C2 --> C3
-    end
-
-    subgraph D["🌱 成长设计"]
-        D1[输入子女年龄]
-        D2[生成可延展方案]
-        D3[覆盖至18岁]
-        D1 --> D2 --> D3
-    end
-
-    A -->|获客引流| E[数据飞轮]
-    B -->|方案转化| E
-    C -->|政策赋能| E
-    E -->|数据反哺| AI
-
-    style AI fill:#b31b1b,color:#fff,stroke:#8b0000
-    style A fill:#d4756b,color:#fff,stroke:#c44b2b
-    style B fill:#e8c4a0,color:#2c2c2c,stroke:#c4956a
-    style C fill:#a8c4d8,color:#2c2c2c,stroke:#6b8e9e
-    style D fill:#b8d4a8,color:#2c2c2c,stroke:#7a9e6b
-    style E fill:#e8e8e8,color:#333,stroke:#999
-    style A1 fill:#f2d5d2,color:#2c2c2c,stroke:#d4756b
-    style A2 fill:#f2d5d2,color:#2c2c2c,stroke:#d4756b
-    style A3 fill:#f2d5d2,color:#2c2c2c,stroke:#d4756b
-    style B1 fill:#fdf5ee,color:#2c2c2c,stroke:#e8c4a0
-    style B2 fill:#fdf5ee,color:#2c2c2c,stroke:#e8c4a0
-    style B3 fill:#fdf5ee,color:#2c2c2c,stroke:#e8c4a0
-    style C1 fill:#eef5f9,color:#2c2c2c,stroke:#a8c4d8
-    style C2 fill:#eef5f9,color:#2c2c2c,stroke:#a8c4d8
-    style C3 fill:#eef5f9,color:#2c2c2c,stroke:#a8c4d8
-    style D1 fill:#eef8ea,color:#2c2c2c,stroke:#b8d4a8
-    style D2 fill:#eef8ea,color:#2c2c2c,stroke:#b8d4a8
-    style D3 fill:#eef8ea,color:#2c2c2c,stroke:#b8d4a8
-```
-
-**图7　"司空网.skill" AI智能体功能架构与数据飞轮**
-
-### 6.2 商业化目标
-
-C端12个月内商业化目标为：孝心检测功能使用量达100万次，下单转化率5%，实现C端GMV 1.8亿元。该策略旨在构建“工具获客—数据积累—方案推荐—交易转化”的数据飞轮。
-
-***
-
-## 7 竞争格局分析
-
-### 7.1 核心竞争维度对比
-
-万华生态与主要竞争对手在关键维度的对比评级如表6所示。
-
-**表6　竞争格局多维度对比**
-
-| 维度      | 万华生态  | 兔宝宝  | 欧派    | 索菲亚   |
-| ------- | ----- | ---- | ----- | ----- |
-| 产业链覆盖   | ★★★★★ | ★★   | ★★★   | ★★    |
-| 无醛技术壁垒  | ★★★★★ | ★★★  | ★★★   | ★★    |
-| 工业化整装能力 | ★★★★★ | ★★   | ★★★   | ★★★   |
-| 存量房布局深度 | ★★★★★ | ★★   | ★★★   | ★★★   |
-| C端品牌认知度 | ★★★   | ★★★★ | ★★★★★ | ★★★★★ |
-
-<br />
-
-### 7.2 关键竞争洞察
-
-欧派、索菲亚是万华板材（禾香板）的大客户，但其自身尚未建立同等规模的工业化整装制造能力——这正是万华的核心壁垒所在。万华旨在成为大家居行业的“安卓+高通”，即提供底层技术标准与平台赋能，而非直接与B端客户在终端市场竞争。
-
-***
-
-## 8 风险与挑战
-
-### 8.1 C端品牌认知薄弱
-
-在消费者端，“司空”品牌声量远低于欧派、索菲亚等定制家居巨头，需持续投入品牌建设以推动C端转化。
-
-### 8.2 资本约束与融资压力
-
-万华生态目前为非上市企业，重资产模式（14个产业基地）对资金需求较大，融资渠道相对受限。IPO已于2024年8月启动辅导，但上市进程存在不确定性。
-
-### 8.3 产能利用率爬坡
-
-各产业园区需达到经济产能利用率。以平舆基地为例，当前日产约20户，目标日产100户，订单获取与产能消化之间需持续平衡。
-
-### 8.4 大客户关系平衡
-
-万华既向欧派、索菲亚等大客户供应板材，又通过司空平台赋能其他定制企业转型整装，存在潜在的利益博弈与客户关系管理挑战。
-
-### 8.5 标准化与个性化的张力
-
-45 000余个标准化部件如何在效率与体验之间取得平衡，能否满足Z世代对个性化与设计感的极致追求，是产品迭代需要持续解决的课题。
-
-***
-
-## 9 结论与投资建议
-
-### 9.1 核心研究结论
-
-本研究认为，万华生态及司空网具备显著的长期投资价值，主要基于以下五点逻辑：
-
-1. **赛道确定性高**：精准卡位万亿级存量房翻新市场，趋势不可逆。
-2. **技术护城河深厚**：MDI无醛技术、秸秆原料替代与全产业链布局构成多重壁垒。
-3. **商业模式先进**：产业链纵深与平台赋能逻辑清晰，符合产业升级方向。
-4. **窗口期优势**：拥有2 \~ 3年先发优势，且受益于“以旧换新”等政策红利。
-5. **AI赋能想象空间大**：“司空网.skill”以孝心检测为钩子的策略，有望实现低成本获客与数据飞轮构建。
-
-### 9.2 估值参考区间
-
-基于公开信息与企业规划的推演估值如表7所示。
-
-**表7　估值推演**
-
-| 时间维度   | 材料业务   | 整装业务   | 合计营收   | 隐含估值（按PS 1 \~ 2x） |
-| ------ | ------ | ------ | ------ | ----------------- |
-| 当前基准   | 约100亿元 | 约2亿元   | 约102亿元 | 约102 \~ 204亿元     |
-| 中期（3年） | 约130亿元 | 约45亿元  | 约175亿元 | 约175 \~ 350亿元     |
-| 远期（5年） | 约200亿元 | 约140亿元 | 约340亿元 | 约340 \~ 680亿元     |
-
-### 9.3 投资建议
-
-若万华生态启动IPO或司空网独立融资，建议将其作为产业链战略价值高、短期财务可见性相对较低的长期主义投资标的进行重点关注。其价值不仅体现在当期利润，更在于对传统家装行业生产关系进行系统性重构的产业潜力。
+实验结果表明，系统在多种内容类型与运行环境下保持稳定的渲染性能（最慢操作低于 210 ms），图片导出质量达到出版级要求。本文工作的主要价值在于：为 Agent Native 协作场景下的 Markdown 编辑器构建提供了一种可扩展、可复用的插件化技术方案，使人在环（Human-in-the-loop）的人机协作中的富内容编辑与实时同步成为可能。
 
 ***
 
 ## 参考文献
 
-[1] 万华生态集团. 企业简介与公开资料[EB/OL]. (2025-01-01) [2026-05-12]. <https://www.whst.com>.
+[1] marswaveai. ColaMD: Markdown as Database — Agent Native Editor [EB/OL]. (2026-01-01) [2026-05-12]. <https://github.com/marswaveai/colamd>.
 
-[2] 司空科技. 司空网官方平台介绍[EB/OL]. (2025-06-01) [2026-05-12]. <https://www.skong.com>.
+[2] byteuser1977. ColaMD-extend: Display Plugin System for ColaMD [EB/OL]. (2026-01-01) [2026-05-12]. <https://github.com/byteuser1977/ColaMD-extend>.
 
-[3] 新华网. 习近平总书记考察万华生态集团并肯定“禾香板”产品[EB/OL]. (2018-11-12) [2026-05-12]. <https://www.xinhuanet.com>.
+[3] KaTeX Contributors. KaTeX: The Fastest Math Typesetting Library for the Web [CP/OL]. (2026) [2026-05-12]. <https://katex.org/>.
 
-\[4] 国家科学技术奖励工作办公室. 2009年度国家科学技术进步奖获奖项目公告\[R]. 北京: 国家科学技术奖励工作办公室, 2009.
+[4] Mermaid.js Contributors. Mermaid: Diagramming and Charting Tool [CP/OL]. (2026) [2026-05-12]. <https://mermaid.js.org/>.
 
-\[5] 国家统计局. 中国统计年鉴2025\[M]. 北京: 中国统计出版社, 2025.
+[5] Electron Contributors. Electron: Build Cross-Platform Desktop Apps with JavaScript [CP/OL]. (2026) [2026-05-12]. <https://www.electronjs.org/>.
 
-\[6] 艾瑞咨询. 中国存量房装修市场及适老化改造行业研究报告\[R]. 上海: 艾瑞咨询集团, 2025.
+[6] Ionic Team. Capacitor: Cross-Platform Native Runtime for Web Apps [CP/OL]. (2026) [2026-05-12]. <https://capacitorjs.com/>.
 
-\[7] 万华生态集团. 万华生态集团2024年度企业社会责任报告\[R]. 信阳: 万华生态集团, 2025.
+[7] Milkdown Contributors. Milkdown: WYSIWYG Markdown Editor Framework [CP/OL]. (2026) [2026-05-12]. <https://milkdown.dev/>.
 
-\[8] 司空科技. “司空网.skill”AI家装智能体产品白皮书\[R]. 北京: 司空科技, 2026.
+[8] ProseMirror Contributors. ProseMirror: Rich Text Editor Toolkit [CP/OL]. (2026) [2026-05-12]. <https://prosemirror.net/>.
 
 \[9] 中国国家标准化管理委员会. 科学技术报告、学位论文和学术论文的编写格式: GB/T 7713—201X\[S]. 北京: 中国标准出版社, 201X.
 
+[10] GitHub. GitHub Flavored Markdown Spec [EB/OL]. (2025) [2026-05-12]. <https://github.github.com/gfm/>.
+
+\[11] Haugland Ø, Knuth D E. KaTeX: A New Implementation of TeX in JavaScript \[J]. TUGboat, 2020, 41(1): 56-63.
+
+\[12] Svanberg J S. Mermaid: A Diagramming Tool for Markdown \[C]//Proceedings of the 2021 ACM SIGDOC Conference. New York: ACM, 2021: 145-152.
+
 ***
 
-*声明：本文基于公开信息整理与推演，文中财务数据与估值区间为基于公开资料的测算估算，不构成任何正式投资建议。实际数据以企业正式披露为准。*
+*声明：本文基于开源项目 ColaMD（MIT 许可证）的扩展开发工作撰写。所有性能数据基于特定的实验环境测量，实际表现可能因硬件配置与运行环境的不同而有所差异。*

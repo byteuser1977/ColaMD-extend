@@ -14,114 +14,152 @@
     --active-file-bg-color: #e8e8e8;
     --active-file-text-color: #000;
     --active-file-border-color: #000;
-    --bg-color: #ffffff;
-    --text-color: #000000;
+
+    /* ═══════════════════════════════════════════
+       印刷友好灰度色板（GB/T 7713 学术论文规范）
+       基于10级亮度感知，确保打印/屏幕一致性
+       ═══════════════════════════════════════════ */
+    --gray-0:   #ffffff;   /* 纯白 - 页面背景 */
+    --gray-1:   #fafafa;   /* 极浅灰 - 次要表面 */
+    --gray-2:   #f5f5f5;   /* 浅灰 - 代码/区块背景 */
+    --gray-3:   #eeeeee;   /* 中浅灰 - 表头底色 */
+    --gray-4:   #e0e0e0;   /* 浅中灰 - 高亮标记 */
+    --gray-5:   #cccccc;   /* 中灰 - 边框/分割线 */
+    --gray-6:   #999999;   /* 中深灰 - 次要文字 */
+    --gray-7:   #666666;   /* 深灰 - 弱化文字 */
+    --gray-8:   #333333;   /* 近黑 - 强调边框 */
+    --gray-9:   #000000;   /* 纯黑 - 正文/标题 */
+
+    /* 核心语义变量（基于灰度色板） */
+    --bg-color: var(--gray-0);
+    --text-color: var(--gray-9);
     --select-text-bg-color: rgba(0, 0, 0, 0.12);
-    --select-text-font-color: #000;
-    --rawblock-edit-panel-bd: #ccc;
+    --select-text-font-color: var(--gray-9);
+    --rawblock-edit-panel-bd: var(--gray-5);
 }
 
 body.theme-custom {
-    --bg-color: #ffffff;
-    --text-color: #000000;
-    --heading-color: #000000;
-    --border-color: #000000;
-    --code-bg: #f5f5f5;
-    --code-color: #000000;
-    --code-block-bg: #f5f5f5;
-    --code-block-text: #000000;
-    --code-block-color: #000000;
-    --blockquote-bg: #f9f9f9;
-    --blockquote-border: #000000;
-    --link-color: #000000;
-    --accent-color: #000000;
-    --accent-dark: #000000;
-    --accent-light: #e0e0e0;
-    --surface-color: #f5f5f5;
-    --surface-alt: #fafafa;
-    --text-muted: #333333;
-    --text-dim: #666666;
+    /* ═══ 核心语义变量（GB/T 7713 印刷优化） ═══ */
+    --bg-color: var(--gray-0);
+    --text-color: var(--gray-9);
+    --heading-color: var(--gray-9);
+    --border-color: var(--gray-9);
+
+    /* 背景层次（从浅到深） */
+    --code-bg: var(--gray-2);
+    --code-color: var(--gray-9);
+    --code-block-bg: var(--gray-2);
+    --code-block-text: var(--gray-9);
+    --code-block-color: var(--gray-9);
+    --blockquote-bg: var(--gray-1);
+    --blockquote-border: var(--gray-9);
+    --surface-color: var(--gray-2);
+    --surface-alt: var(--gray-1);
+
+    /* 文字层次（从深到浅，按重要性降序） */
+    --link-color: var(--gray-9);
+    --accent-color: var(--gray-9);
+    --accent-dark: var(--gray-9);
+    --accent-light: var(--gray-4);
+    --text-muted: var(--gray-8);
+    --text-dim: var(--gray-7);
+
+    /* 交互状态 */
     --selection-bg: rgba(0, 0, 0, 0.12);
-    --table-header-bg: #e8e8e8;
-    --table-stripe: rgba(0, 0, 0, 0.03);
-    --scrollbar-thumb: #bbb;
-    --scrollbar-thumb-hover: #999;
-    --hr-color: #000000;
+
+    /* 表格系统（三线表规范 GB/T 7713） */
+    --table-header-bg: transparent;  /* 三线表：表头无底色或极浅 */
+    --table-stripe: rgba(0, 0, 0, 0.02);  /* 长表格斑马纹（可选） */
+
+    /* 滚动条 */
+    --scrollbar-thumb: var(--gray-5);
+    --scrollbar-thumb-hover: var(--gray-6);
+
+    /* 分割线 */
+    --hr-color: var(--gray-9);
     /* Mermaid 全局字体：黑体 小五号 9pt（GB/T 7713 图表字），独立于正文 */
     --mermaid-font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
     --mermaid-font-size: 9pt;
     --mermaid-dark-mode: false;
+    /* ═══ Mermaid 图表系统（印刷友好灰度） ═══ */
     /* 背景与边框 */
-    --mermaid-background: #ffffff;
-    --mermaid-border-color: #cccccc;
+    --mermaid-background: var(--gray-0);
+    --mermaid-border-color: var(--gray-5);
     --mermaid-border-radius: 0;
     --mermaid-padding: 20px;
-    /* 节点色块：莫兰迪浅灰 */
-    --mermaid-primary-color: #E3E3E3;
-    --mermaid-primary-border-color: #333333;
-    --mermaid-primary-text-color: #1a1a1a;
-    --mermaid-secondary-color: #D8D8D8;
-    --mermaid-secondary-border-color: #4a4a4a;
-    --mermaid-secondary-text-color: #1a1a1a;
-    --mermaid-tertiary-color: #EBEBEB;
-    --mermaid-tertiary-border-color: #555555;
-    --mermaid-tertiary-text-color: #1a1a1a;
-    --mermaid-node-fill: #E3E3E3;
-    --mermaid-node-bkg: #E8E8E8;
-    --mermaid-node-stroke: #333333;
+
+    /* 节点色块：莫兰迪浅灰（确保打印可辨） */
+    --mermaid-primary-color: var(--gray-3);
+    --mermaid-primary-border-color: var(--gray-8);
+    --mermaid-primary-text-color: var(--gray-9);
+    --mermaid-secondary-color: var(--gray-2);
+    --mermaid-secondary-border-color: var(--gray-7);
+    --mermaid-secondary-text-color: var(--gray-9);
+    --mermaid-tertiary-color: var(--gray-4);
+    --mermaid-tertiary-border-color: var(--gray-6);
+    --mermaid-tertiary-text-color: var(--gray-9);
+    --mermaid-node-fill: var(--gray-3);
+    --mermaid-node-bkg: var(--gray-2);
+    --mermaid-node-stroke: var(--gray-8);
     --mermaid-node-stroke-width: 1px;
-    --mermaid-node-text: #1a1a1a;
+    --mermaid-node-text: var(--gray-9);
+
     /* 聚类 */
-    --mermaid-cluster-fill: #F0F0F0;
-    --mermaid-cluster-bkg: #F0F0F0;
-    --mermaid-cluster-stroke: #4a4a4a;
+    --mermaid-cluster-fill: var(--gray-1);
+    --mermaid-cluster-bkg: var(--gray-1);
+    --mermaid-cluster-stroke: var(--gray-7);
     --mermaid-cluster-dasharray: none;
+
     /* 边线/连线：深灰黑色便于打印 */
-    --mermaid-edge-stroke: #333333;
+    --mermaid-edge-stroke: var(--gray-8);
     --mermaid-edge-stroke-width: 1px;
+
     /* 标签 */
-    --mermaid-label-text: #1a1a1a;
-    --mermaid-label-text-color: #1a1a1a;
-    --mermaid-label-background: #ffffff;
+    --mermaid-label-text: var(--gray-9);
+    --mermaid-label-text-color: var(--gray-9);
+    --mermaid-label-background: var(--gray-0);
     --mermaid-label-offset-y: 0px;
+
     /* 边标签 */
-    --mermaid-edge-label-text: #1a1a1a;
-    --mermaid-edge-label-bg: #ffffff;
-    --mermaid-edge-label-background: #ffffff;
+    --mermaid-edge-label-text: var(--gray-9);
+    --mermaid-edge-label-bg: var(--gray-0);
+    --mermaid-edge-label-background: var(--gray-0);
+
     /* 主色/对比色 */
-    --mermaid-main-bkg: #E3E3E3;
-    --mermaid-second-bkg: #D8D8D8;
-    --mermaid-main-contrast-color: #1a1a1a;
-    --mermaid-title-text: #1a1a1a;
-    --mermaid-axis-text: #555555;
-    --mermaid-highlight: #333333;
-    --mermaid-line-color: #999999;
+    --mermaid-main-bkg: var(--gray-3);
+    --mermaid-second-bkg: var(--gray-2);
+    --mermaid-main-contrast-color: var(--gray-9);
+    --mermaid-title-text: var(--gray-9);
+    --mermaid-axis-text: var(--gray-7);
+    --mermaid-highlight: var(--gray-8);
+    --mermaid-line-color: var(--gray-6);
+
     /* 人物/角色 */
-    --mermaid-person-stroke: #333333;
-    --mermaid-person-bkg: #E0E0E0;
-    /* 莫兰迪灰色阶色板（Graph/Chart 多系列区分） */
-    --mermaid-cscale0: #A8A8A8;
-    --mermaid-cscale1: #8C8E90;
-    --mermaid-cscale2: #B0B0B0;
-    --mermaid-cscale3: #787878;
-    --mermaid-cscale4: #9E9E9E;
-    --mermaid-cscale5: #949698;
-    --mermaid-cscale6: #6E6E6E;
-    --mermaid-cscale7: #A0A0A0;
-    --mermaid-cscale8: #848688;
-    --mermaid-cscale9: #AAAAAA;
-    --mermaid-cscale10: #7A7A7C;
-    --mermaid-cscale11: #929294;
+    --mermaid-person-stroke: var(--gray-8);
+    --mermaid-person-bkg: var(--gray-2);
+    /* 莫兰迪灰色阶色板（Graph/Chart 多系列区分，基于灰度色板） */
+    --mermaid-cscale0: var(--gray-6);   /* #999999 → gray-6 */
+    --mermaid-cscale1: var(--gray-7);   /* #8C8E90 ≈ gray-7 */
+    --mermaid-cscale2: var(--gray-6);   /* #B0B0B0 ≈ gray-6 */
+    --mermaid-cscale3: var(--gray-8);   /* #787878 → gray-8 */
+    --mermaid-cscale4: var(--gray-6);   /* #9E9E9E ≈ gray-6 */
+    --mermaid-cscale5: var(--gray-7);   /* #949698 ≈ gray-7 */
+    --mermaid-cscale6: var(--gray-8);   /* #6E6E6E → gray-8 */
+    --mermaid-cscale7: var(--gray-6);   /* #A0A0A0 ≈ gray-6 */
+    --mermaid-cscale8: var(--gray-7);   /* #848688 ≈ gray-7 */
+    --mermaid-cscale9: var(--gray-6);   /* #AAAAAA ≈ gray-6 */
+    --mermaid-cscale10: var(--gray-8);  /* #7A7A7C ≈ gray-8 */
+    --mermaid-cscale11: var(--gray-7);  /* #929294 ≈ gray-7 */
 }
 
-pre { --select-text-bg-color: rgba(0, 0, 0, 0.12); --select-text-font-color: #000; }
+pre { --select-text-bg-color: rgba(0, 0, 0, 0.12); --select-text-font-color: var(--gray-9); }
 
 /* ── 2. 全局 ── */
 html { font-size: 12pt; -webkit-font-smoothing: antialiased; }
 
 body.theme-custom, html, body {
-    background-color: #ffffff;
-    color: #000000;
+    background-color: var(--gray-0);
+    color: var(--gray-9);
     font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
     line-height: 1.5;
     font-size: 12pt;
@@ -151,7 +189,7 @@ h1, h2, h3, h4, h5, h6,
 body.theme-custom h1, body.theme-custom h2, body.theme-custom h3,
 body.theme-custom h4, body.theme-custom h5, body.theme-custom h6 {
     position: relative;
-    color: #000000;
+    color: var(--gray-9);
     font-weight: 700;
     line-height: 1.35;
     text-indent: 0;
@@ -202,7 +240,7 @@ h5, body.theme-custom h5 {
 /* 六级标题：黑体 五号 10.5pt */
 h6, body.theme-custom h6 {
     font-size: 10.5pt;
-    color: #000000;
+    color: var(--gray-9);
     margin-top: 10pt;
     margin-bottom: 4pt;
     cursor: text;
@@ -222,42 +260,42 @@ body.theme-custom p, body.theme-custom #write > p {
 }
 body.theme-custom p + p { margin-top: 0; }
 
-strong, body.theme-custom strong { color: #000000; font-weight: 700; }
-em, body.theme-custom em { font-style: italic; color: #000000; }
-em strong, strong em, body.theme-custom em strong, body.theme-custom strong em { color: #000000; font-weight: 700; }
+strong, body.theme-custom strong { color: var(--gray-9); font-weight: 700; }
+em, body.theme-custom em { font-style: italic; color: var(--gray-9); }
+em strong, strong em, body.theme-custom em strong, body.theme-custom strong em { color: var(--gray-9); font-weight: 700; }
 
-a, body.theme-custom a { color: #000000; text-decoration: none; border-bottom: 1px solid #000; }
+a, body.theme-custom a { color: var(--gray-9); text-decoration: none; border-bottom: 1px solid var(--gray-9); }
 a:hover, body.theme-custom a:hover { text-decoration: none; }
 
 u, body.theme-custom u {
     text-decoration: none;
-    border-bottom: 1px solid #000;
+    border-bottom: 1px solid var(--gray-9);
     padding-bottom: 1px;
 }
 
 mark, body.theme-custom mark {
-    background: #e0e0e0;
-    color: #000000;
+    background: var(--gray-4);
+    color: var(--gray-9);
     padding: 1px 4px;
     border-radius: 0;
 }
 
-del, s { color: #666; }
+del, s { color: var(--gray-7); }
 
 /* ── 5. 引用块（左缩进对齐正文，段前段后 0.5 行） ── */
 blockquote, body.theme-custom blockquote {
     margin: 8pt 0;
     padding: 10px 16px 10px 20px;
-    border-left: 3px solid #000000;
-    background: #f9f9f9;
-    color: #000000;
+    border-left: 3px solid var(--gray-9);
+    background: var(--gray-1);
+    color: var(--gray-9);
     font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
     font-size: 10.5pt;
 }
 blockquote p, body.theme-custom blockquote p { margin: 3pt 0; text-indent: 0; }
 
 /* ── 6. 分割线 ── */
-hr, body.theme-custom hr { border: none; border-top: 1px solid #000000; margin: 24pt 0; height: 0; }
+hr, body.theme-custom hr { border: none; border-top: 1px solid var(--gray-9); margin: 24pt 0; height: 0; }
 
 /* ── 7. 列表（GB/T 7713 学术论文规范） ── */
 
@@ -447,9 +485,9 @@ body.theme-custom code, body.theme-custom tt {
     font-size: 0.88em;
     padding: 1px 6px;
     margin: 0 1px;
-    background: #e8e8e8;
+    background: var(--gray-3);
     border-radius: 0;
-    color: #000000;
+    color: var(--gray-9);
     border: none;
 }
 
@@ -458,13 +496,13 @@ pre.md-fences {
     font-family: "Courier New", "Consolas", "Source Code Pro", monospace;
     font-size: 10.5pt;
     line-height: 1.5;
-    background: #f5f5f5;
-    color: #000000;
+    background: var(--gray-2);
+    color: var(--gray-9);
     padding: 14px 18px;
     border-radius: 0;
     margin: 12pt 0;
     overflow-x: auto;
-    border: 1px solid #000000;
+    border: 1px solid var(--gray-9);
 }
 pre.md-fences code { background: transparent; color: inherit; padding: 0; margin: 0; border-radius: 0; border: none; }
 
@@ -472,17 +510,17 @@ body.theme-custom #editor .ProseMirror pre {
     font-family: "Courier New", "Consolas", "Source Code Pro", monospace;
     font-size: 10.5pt;
     line-height: 1.5;
-    background: #f5f5f5 !important;
-    color: #000000 !important;
+    background: var(--gray-2) !important;
+    color: var(--gray-9) !important;
     padding: 14px 18px;
     border-radius: 0;
     margin: 12pt 0;
     overflow-x: auto;
-    border: 1px solid #000000;
+    border: 1px solid var(--gray-9);
 }
 body.theme-custom #editor .ProseMirror pre code {
     background: transparent !important;
-    color: #000000 !important;
+    color: var(--gray-9) !important;
     padding: 0; margin: 0; border-radius: 0; border: none;
 }
 
@@ -491,39 +529,39 @@ body.theme-custom #editor .ProseMirror pre code {
 
 body.theme-custom .token.comment, body.theme-custom .token.prolog,
 body.theme-custom .token.doctype, body.theme-custom .token.cdata,
-.cm-s-inner .cm-comment, .cm-s-inner .cm-quote, .cm-s-inner .cm-hr { color: #666; font-style: italic; }
+.cm-s-inner .cm-comment, .cm-s-inner .cm-quote, .cm-s-inner .cm-hr { color: var(--gray-7); font-style: italic; }
 
-body.theme-custom .token.punctuation, .cm-s-inner .cm-meta { color: #333; }
+body.theme-custom .token.punctuation, .cm-s-inner .cm-meta { color: var(--gray-8); }
 
 body.theme-custom .token.keyword, body.theme-custom .token.important,
-.cm-s-inner .cm-keyword { color: #000; font-weight: 700; }
+.cm-s-inner .cm-keyword { color: var(--gray-9); font-weight: 700; }
 
 body.theme-custom .token.boolean, body.theme-custom .token.builtin,
 body.theme-custom .token.tag, body.theme-custom .token.selector,
 body.theme-custom .token.constant, body.theme-custom .token.deleted,
 .cm-s-inner .cm-atom, .cm-s-inner .cm-builtin,
-.cm-s-inner .cm-tag, .cm-s-inner .cm-error { color: #000; font-weight: 600; }
+.cm-s-inner .cm-tag, .cm-s-inner .cm-error { color: var(--gray-9); font-weight: 600; }
 
 body.theme-custom .token.string, body.theme-custom .token.attr-value,
 body.theme-custom .token.symbol, body.theme-custom .token.inserted,
-.cm-s-inner .cm-string { color: #333; }
+.cm-s-inner .cm-string { color: var(--gray-8); }
 
-body.theme-custom .token.number, .cm-s-inner .cm-number { color: #000; }
+body.theme-custom .token.number, .cm-s-inner .cm-number { color: var(--gray-9); }
 
 body.theme-custom .token.function, body.theme-custom .token.class-name,
 body.theme-custom .token.variable, body.theme-custom .token.attr-name,
 body.theme-custom .token.property, body.theme-custom .token.entity,
 .cm-s-inner .cm-def, .cm-s-inner .cm-variable-2,
 .cm-s-inner .cm-attribute, .cm-s-inner .cm-property,
-.cm-s-inner .cm-header { color: #000; }
+.cm-s-inner .cm-header { color: var(--gray-9); }
 
 .cm-s-inner .cm-header { font-weight: 700; }
-body.theme-custom .token.url, .cm-s-inner .cm-link { color: #000; text-decoration: underline; }
+body.theme-custom .token.url, .cm-s-inner .cm-link { color: var(--gray-9); text-decoration: underline; }
 
-body.theme-custom .token.operator, .cm-s-inner .cm-operator { color: #333; }
+body.theme-custom .token.operator, .cm-s-inner .cm-operator { color: var(--gray-8); }
 
-body.theme-custom .token.regex { color: #333; }
-.cm-s-inner .cm-variable { color: #000; }
+body.theme-custom .token.regex { color: var(--gray-8); }
+.cm-s-inner .cm-variable { color: var(--gray-9); }
 
 /* ── 11. 表格（GB/T 7713 三线表规范） ── */
 
@@ -536,11 +574,11 @@ table, body.theme-custom table {
     line-height: 1.5;
 }
 
-/* 表头单元格：黑体 五号 加粗 居中，浅灰底色 */
+/* 表头单元格：黑体 五号 加粗 居中，浅灰底色（可选，三线表通常透明） */
 table th, body.theme-custom table th {
     background: var(--table-header-bg);
     font-weight: 700;
-    color: #000000;
+    color: var(--gray-9);
     padding: 6pt 8pt;
     text-align: center;
     text-indent: 0;
@@ -594,16 +632,16 @@ table tr:hover td, body.theme-custom table tr:hover td {
 /* 顶线 + 表头底线 + 底线，无竖线 */
 
 body.theme-custom table {
-    border-top: 1.5pt solid #000000;
-    border-bottom: 1.5pt solid #000000;
+    border-top: 1.5pt solid var(--gray-9);
+    border-bottom: 1.5pt solid var(--gray-9);
     border-left: none;
     border-right: none;
 }
 
 body.theme-custom table th {
     border: none;
-    border-bottom: 0.75pt solid #000000;
-    background: transparent;
+    border-bottom: 0.75pt solid var(--gray-9);
+    background: transparent;  /* 三线表标准：表头透明或极浅 */
 }
 
 body.theme-custom table td {
@@ -618,7 +656,7 @@ body.theme-custom figure { margin: 12pt 0; text-align: center; }
 body.theme-custom figcaption {
     font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, serif;
     font-size: 10.5pt;
-    color: #000000;
+    color: var(--gray-9);
     margin-top: 6pt;
     text-align: center;
 }
@@ -627,7 +665,7 @@ body.theme-custom figcaption {
 
 /* ColaMD */
 body.theme-custom .math-block {
-    background: #ffffff;
+    background: var(--gray-0);
     padding: 12px 0;
     margin: 12pt 0;
     border-radius: 0;
@@ -644,7 +682,7 @@ body.theme-custom .math-inline .katex,
 body.theme-custom .math-inline .katex *,
 .md-inline-math script,
 .md-inline-math .MathJax {
-    color: #000000 !important;
+    color: var(--gray-9) !important;
 }
 
 /* ── 14. Mermaid 图表容器 ── */
@@ -657,7 +695,7 @@ body.theme-custom .mermaid-block + p {
     font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, serif;
     font-size: 10.5pt;
     text-align: center;
-    color: #000000;
+    color: var(--gray-9);
     margin-top: 6pt;
 }
 
@@ -1084,9 +1122,9 @@ body.theme-custom .mermaid-source:focus {
 body.theme-custom .footnotes {
     font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, serif;
     font-size: 9pt;
-    color: #000000;
+    color: var(--gray-9);
     margin-top: 24pt;
-    border-top: 1px solid #000000;
+    border-top: 1px solid var(--gray-9);
     padding-top: 12pt;
 }
 
@@ -1122,13 +1160,13 @@ body.theme-custom [class*="reference"] li {
             content: counter(page);
             font-family: "SimSun", "Songti SC", serif;
             font-size: 9pt;
-            color: #000000;
+            color: var(--gray-9);
         }
     }
 
     html, body {
-        background: #ffffff !important;
-        color: #000000 !important;
+        background: var(--gray-0) !important;
+        color: var(--gray-9) !important;
         font-size: 12pt !important;
         line-height: 1.5 !important;
         -webkit-print-color-adjust: exact !important;
@@ -1154,34 +1192,34 @@ body.theme-custom [class*="reference"] li {
     /* ── 标题保持黑体 ── */
     h1, h2, h3, h4, h5, h6 {
         font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
-        color: #000000 !important;
+        color: var(--gray-9) !important;
     }
 
     /* ── 正文保留宋体首行缩进 ── */
     p {
         font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif !important;
-        color: #000000 !important;
+        color: var(--gray-9) !important;
     }
 
     /* ── 链接 ── */
     a {
-        color: #000000 !important;
+        color: var(--gray-9) !important;
         text-decoration: none !important;
-        border-bottom: 1px solid #000 !important;
+        border-bottom: 1px solid var(--gray-9) !important;
     }
 
     /* ── 引用块 ── */
     blockquote {
-        background: #f9f9f9 !important;
-        border-left: 3px solid #000000 !important;
-        color: #000000 !important;
+        background: var(--gray-1) !important;
+        border-left: 3px solid var(--gray-9) !important;
+        color: var(--gray-9) !important;
         font-size: 10.5pt !important;
     }
 
     /* ── 内联代码（无边框，浅灰底） ── */
     code {
-        background: #e8e8e8 !important;
-        color: #000000 !important;
+        background: var(--gray-3) !important;
+        color: var(--gray-9) !important;
         border: none !important;
         border-radius: 0 !important;
         padding: 1px 6px !important;
@@ -1190,8 +1228,8 @@ body.theme-custom [class*="reference"] li {
 
     /* ── 代码块（浅灰底，直角，无边框） ── */
     pre {
-        background: #f5f5f5 !important;
-        color: #000000 !important;
+        background: var(--gray-2) !important;
+        color: var(--gray-9) !important;
         border: none !important;
         border-radius: 0 !important;
         font-size: 10.5pt !important;
@@ -1207,31 +1245,31 @@ body.theme-custom [class*="reference"] li {
     /* ── 表格：三线表（顶线 + 表头底线 + 底线），无竖线 ── */
     table {
         border-collapse: collapse !important;
-        border-top: 1.5pt solid #000000 !important;
-        border-bottom: 1.5pt solid #000000 !important;
+        border-top: 1.5pt solid var(--gray-9) !important;
+        border-bottom: 1.5pt solid var(--gray-9) !important;
         border-left: none !important;
         border-right: none !important;
         font-size: 10.5pt !important;
     }
     table th {
         border: none !important;
-        border-bottom: 0.75pt solid #000000 !important;
-        background: #e8e8e8 !important;
+        border-bottom: 0.75pt solid var(--gray-9) !important;
+        background: transparent !important;  /* 三线表标准：表头透明 */
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
         font-weight: 700 !important;
-        color: #000000 !important;
+        color: var(--gray-9) !important;
     }
     table td {
         border: none !important;
         font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif !important;
-        color: #000000 !important;
+        color: var(--gray-9) !important;
     }
 
     /* ── 数学公式 ── */
     .math-inline, .math-block {
-        color: #000000 !important;
+        color: var(--gray-9) !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
@@ -1240,8 +1278,8 @@ body.theme-custom [class*="reference"] li {
     body.theme-custom .mermaid-block,
     body.theme-custom .mermaid-preview,
     .md-diagram-panel.md-mermaid {
-        background: #ffffff !important;
-        border: 1px solid #cccccc !important;
+        background: var(--gray-0) !important;
+        border: 1px solid var(--gray-5) !important;
         border-radius: 0 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
@@ -1255,12 +1293,12 @@ body.theme-custom [class*="reference"] li {
         font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, serif !important;
         font-size: 10.5pt !important;
         text-align: center !important;
-        color: #000000 !important;
+        color: var(--gray-9) !important;
     }
 
     /* ── 脚注与参考文献 ── */
     .footnotes {
-        border-top: 1px solid #000000 !important;
+        border-top: 1px solid var(--gray-9) !important;
         font-size: 9pt !important;
     }
 
@@ -1271,13 +1309,13 @@ body.theme-custom [class*="reference"] li {
 }
 
 /* ── 17. 滚动条（默认浏览器样式，置于屏幕最右侧）── */
-body.theme-custom { scrollbar-width: auto; scrollbar-color: #4a4a4a; }
+body.theme-custom { scrollbar-width: auto; scrollbar-color: var(--gray-8); }
 
 /* ── 18. 源码编辑模式 ── */
 body.theme-custom #source-editor {
     font-family: "Courier New", "Consolas", "Source Code Pro", monospace;
     font-size: 12pt;
     line-height: 1.5;
-    background: #ffffff;
-    color: #000000;
+    background: var(--gray-0);
+    color: var(--gray-9);
 }

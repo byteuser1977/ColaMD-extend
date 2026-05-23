@@ -787,6 +787,139 @@ src/
 
 ---
 
+## 内联 SVG 规范指南
+
+> ⚠️ **重要提示**：ColaMD 使用 remark/rehype 解析 Markdown，其中**空行会被当作段落分隔符**。为了让内联 SVG 正确渲染，整个 HTML 块（包括 `<div>`、`<svg>`、`<p>` 标签）**必须写在一行内，不能有任何换行符**。
+
+### 为什么必须使用单行格式？
+
+ColaMD 的解析流程：
+
+```
+Markdown 源文件
+    ↓
+remark-parse (Markdown → MDAST)
+    ↓
+remark 插件处理
+    ↓
+空行检测：遇到空行 → 创建新的 paragraph 节点
+    ↓
+rehype (MDAST → HAST)
+    ↓
+ProseMirror 序列化
+    ↓ 每个 paragraph → 独立的 htmlSchema.node
+    ↓
+html-view.ts 注入到 DOM
+    ↓
+最终输出：<span class="milkdown-html-inline">单个块</span>
+```
+
+**多行格式的后果**：
+
+```html
+<!-- 如果 SVG 分成多行（有空行） -->
+
+Markdown:
+<div>
+<svg>
+  <defs>...</defs>
+
+  <rect/>
+
+  <circle/>
+</svg>
+</div>
+
+导出 HTML:
+<p><span>...<svg><defs>...</defs></svg></span></p>  ← 块1
+<p><span>  <rect/></span></p>                        ← 块2（独立！）
+<p><span>  <circle/></span></p>                      ← 块3（独立！）
+
+结果：❌ SVG 被拆成碎片，无法正确渲染
+```
+
+**单行格式的效果**：
+
+```html
+<!-- 整个内容在一行（无空行） -->
+
+Markdown:
+<div><svg><defs>...</defs><rect/><circle/></svg><p>图注</p></div>
+
+导出 HTML:
+<p><span>
+  <div><svg>完整内容</svg><p>图注</p></div>
+</span></p>
+
+结果：✅ 完整的 SVG 正确渲染
+```
+
+### SVG 规范要求
+
+| # | 规则 | 重要级 | 说明 |
+|---|------|--------|------|
+| 1 | 🔴 **单行压缩** | **必须** | 整个 `<div>` 块不能有换行 |
+| 2 | ✅ **标签闭包** | 必须 | 所有标签正确闭合或自闭合 |
+| 3 | ✅ **命名空间** | 必须 | 包含 `xmlns="http://www.w3.org/2000/svg"` |
+| 4 | ✅ **尺寸匹配** | 必须 | `width`/`height` 与 `viewBox` 一致 |
+| 5 | ✅ **双引号** | 推荐 | 所有属性值使用双引号 |
+| 6 | ✅ **ASCII字符** | 推荐 | 避免特殊符号，用 `-` 代替 `→` |
+
+### 示例：复杂内联 SVG
+
+```html
+<div style="text-align: center; margin: 20px 0;"><svg width="600" height="400" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto; background: #f5f5f5; border-radius: 12px;"><defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1"/><stop offset="100%" style="stop-color:#357ABD;stop-opacity:1"/></linearGradient><linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#7ED321;stop-opacity:1"/><stop offset="100%" style="stop-color:#5DB80D;stop-opacity:1"/></linearGradient></defs><rect width="600" height="400" fill="#f5f5f5" rx="12"/><rect x="40" y="40" width="520" height="60" rx="8" fill="url(#grad1)"/><text x="300" y="78" fill="white" text-anchor="middle" font-size="22" font-weight="bold">内联 SVG 示例</text><circle cx="150" cy="180" r="50" fill="url(#grad1)"/><text x="150" y="188" fill="white" text-anchor="middle" font-size="16" font-weight="bold">节点 A</text><rect x="250" y="130" width="100" height="100" rx="10" fill="url(#grad2)"/><text x="300" y="185" fill="white" text-anchor="middle" font-size="16" font-weight="bold">节点 B</text><polygon points="450,130 500,180 450,230 400,180" fill="#E74C3C"/><text x="450" y="188" fill="white" text-anchor="middle" font-size="14" font-weight="bold">节点 C</text><line x1="200" y1="180" x2="250" y2="180" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/><line x1="350" y1="180" x2="400" y2="180" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/><rect x="100" y="280" width="400" height="80" rx="8" fill="white" stroke="#ddd" stroke-width="1"/><text x="300" y="310" fill="#333" text-anchor="middle" font-size="14" font-weight="bold">三级火箭模型</text><text x="300" y="335" fill="#666" text-anchor="middle" font-size="12">材料 - 制造 - 平台</text></svg><p style="font-size: 10pt; color: #666; margin-top: 12px;">图：复杂内联 SVG 示例（单行压缩格式）</p></div>
+```
+
+### 对比：内联 vs 外联 SVG
+
+| 特性 | 内联 SVG | 外联 SVG |
+|------|---------|---------|
+| **适用场景** | 演示、学习、简单图标 | 生产环境、复杂图形 |
+| **代码位置** | Markdown 文件内 | 独立 `.svg` 文件 |
+| **格式要求** | 🔴 **必须单行压缩** | 无特殊要求 |
+| **可维护性** | ⚠️ 困难（长行难读） | ✅ 优秀（独立文件） |
+| **复杂度上限** | 受限于单行长度 | 无限制 |
+| **浏览器缓存** | ❌ 无法缓存 | ✅ 自动缓存 |
+
+### 最佳实践
+
+#### 适合使用内联 SVG 的场景：
+- ✅ 演示和学习目的
+- ✅ 简单图标（< 10 个元素）
+- ✅ 需要单文件交付
+- ✅ 快速原型开发
+
+#### 适合使用外联 SVG 的场景：
+- ✅ 生产环境文档
+- ✅ 复杂图形（> 20 个元素）
+- ✅ 需要频繁编辑和维护
+- ✅ 团队协作项目
+
+### 维护技巧
+
+1. **编辑时使用临时换行**
+   ```html
+   <!-- 开发阶段：可读格式 -->
+   <svg ...>
+     <rect .../>
+     <circle .../>
+   </svg>
+
+   <!-- 保存前：压缩为一行 -->
+   <svg ...><rect .../><circle .../></svg>
+   ```
+
+2. **使用代码编辑器的"合并行"功能**
+   - VS Code: `Ctrl+J` (Windows) / `Cmd+J` (Mac)
+   - WebStorm: `Ctrl+Shift+J`
+
+3. **版本控制友好**
+   - Git diff 会显示整行变更
+   - 可考虑使用 `.gitattributes` 处理长行
+
+---
+
 ## 致谢与版权
 
 ### 原版项目

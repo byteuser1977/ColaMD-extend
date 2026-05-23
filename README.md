@@ -727,6 +727,139 @@ The entire project has only **5 runtime dependencies** + **6 dev dependencies**,
 
 ---
 
+## Inline SVG Guide
+
+> ⚠️ **Important**: ColaMD uses remark/rehype to parse Markdown, where **blank lines act as paragraph separators**. For inline SVG to render correctly, the entire HTML block (including `<div>`, `<svg>`, `<p>` tags) **must be on a single line without any line breaks**.
+
+### Why Single-Line Format?
+
+ColaMD's parsing pipeline:
+
+```
+Markdown Source
+    ↓
+remark-parse (Markdown → MDAST)
+    ↓
+remark plugins processing
+    ↓
+Blank line detection: encountering blank line → creates new paragraph node
+    ↓
+rehype (MDAST → HAST)
+    ↓
+ProseMirror serialization
+    ↓ Each paragraph → independent htmlSchema.node
+    ↓
+html-view.ts injects into DOM
+    ↓
+Final output: <span class="milkdown-html-inline">single block</span>
+```
+
+**Multi-line format consequence**:
+
+```html
+<!-- If SVG is split across multiple lines (with blank lines) -->
+
+Markdown:
+<div>
+<svg>
+  <defs>...</defs>
+
+  <rect/>
+
+  <circle/>
+</svg>
+</div>
+
+Exported HTML:
+<p><span>...<svg><defs>...</defs></svg></span></p>  ← Block 1
+<p><span>  <rect/></span></p>                        ← Block 2 (independent!)
+<p><span>  <circle/></span></p>                      ← Block 3 (independent!)
+
+Result: ❌ SVG fragmented, cannot render correctly
+```
+
+**Single-line format effect**:
+
+```html
+<!-- Entire content on one line (no blank lines) -->
+
+Markdown:
+<div><svg><defs>...</defs><rect/><circle/></svg><p>Caption</p></div>
+
+Exported HTML:
+<p><span>
+  <div><svg>complete content</svg><p>Caption</p></div>
+</span></p>
+
+Result: ✅ Complete SVG renders correctly
+```
+
+### SVG Specification Requirements
+
+| # | Rule | Importance | Description |
+|---|------|------------|-------------|
+| 1 | 🔴 **Single-line compression** | **Required** | Entire `<div>` block must not contain line breaks |
+| 2 | ✅ **Tag closure** | Required | All tags must be properly closed or self-closing |
+| 3 | ✅ **Namespace** | Required | Must include `xmlns="http://www.w3.org/2000/svg"` |
+| 4 | **Size matching** | Required | `width`/`height` must match `viewBox` |
+| 5 | **Double quotes** | Recommended | All attribute values should use double quotes |
+| 6 | **ASCII characters** | Recommended | Avoid special symbols; use `-` instead of `→` |
+
+### Example: Complex Inline SVG
+
+```html
+<div style="text-align: center; margin: 20px 0;"><svg width="600" height="400" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto; background: #f5f5f5; border-radius: 12px;"><defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1"/><stop offset="100%" style="stop-color:#357ABD;stop-opacity:1"/></linearGradient><linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#7ED321;stop-opacity:1"/><stop offset="100%" style="stop-color:#5DB80D;stop-opacity:1"/></linearGradient></defs><rect width="600" height="400" fill="#f5f5f5" rx="12"/><rect x="40" y="40" width="520" height="60" rx="8" fill="url(#grad1)"/><text x="300" y="78" fill="white" text-anchor="middle" font-size="22" font-weight="bold">Inline SVG Example</text><circle cx="150" cy="180" r="50" fill="url(#grad1)"/><text x="150" y="188" fill="white" text-anchor="middle" font-size="16" font-weight="bold">Node A</text><rect x="250" y="130" width="100" height="100" rx="10" fill="url(#grad2)"/><text x="300" y="185" fill="white" text-anchor="middle" font-size="16" font-weight="bold">Node B</text><polygon points="450,130 500,180 450,230 400,180" fill="#E74C3C"/><text x="450" y="188" fill="white" text-anchor="middle" font-size="14" font-weight="bold">Node C</text><line x1="200" y1="180" x2="250" y2="180" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/><line x1="350" y1="180" x2="400" y2="180" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/><rect x="100" y="280" width="400" height="80" rx="8" fill="white" stroke="#ddd" stroke-width="1"/><text x="300" y="310" fill="#333" text-anchor="middle" font-size="14" font-weight="bold">Three-Layer Rocket Model</text><text x="300" y="335" fill="#666" text-anchor="middle" font-size="12">Material - Manufacturing - Platform</text></svg><p style="font-size: 10pt; color: #666; margin-top: 12px;">Figure: Complex inline SVG example (single-line compressed format)</p></div>
+```
+
+### Comparison: Inline vs External SVG
+
+| Feature | Inline SVG | External SVG |
+|---------|-----------|--------------|
+| **Use case** | Demo, learning, simple icons | Production environment, complex graphics |
+| **Code location** | Inside Markdown file | Independent `.svg` file |
+| **Format requirement** | 🔴 **Must be single-line compressed** | No special requirements |
+| **Maintainability** | ⚠️ Difficult (long lines hard to read) | ✅ Excellent (independent files) |
+| **Complexity limit** | Limited by single-line length | Unlimited |
+| **Browser cache** | ❌ Cannot be cached | ✅ Auto-cached |
+
+### Best Practices
+
+#### When to Use Inline SVG:
+- ✅ Demonstrations and learning purposes
+- ✅ Simple icons (< 10 elements)
+- ✅ Need single-file delivery
+- ✅ Quick prototype development
+
+#### When to Use External SVG:
+- ✅ Production documents
+- ✅ Complex graphics (> 20 elements)
+- ✅ Need frequent editing and maintenance
+- ✅ Team collaboration projects
+
+### Maintenance Tips
+
+1. **Use temporary line breaks during editing**
+   ```html
+   <!-- Development phase: readable format -->
+   <svg ...>
+     <rect .../>
+     <circle .../>
+   </svg>
+
+   <!-- Before saving: compress to one line -->
+   <svg ...><rect .../><circle .../></svg>
+   ```
+
+2. **Use editor's "Join Lines" feature**
+   - VS Code: `Ctrl+J` (Windows) / `Cmd+J` (Mac)
+   - WebStorm: `Ctrl+Shift+J`
+
+3. **Version control friendly**
+   - Git diff shows entire line changes
+   - Consider using `.gitattributes` for long-line handling
+
+---
+
 ## Acknowledgments & Copyright
 
 ### Original Project
