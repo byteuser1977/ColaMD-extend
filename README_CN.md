@@ -44,13 +44,15 @@ AI Agent 正在改变我们的工作方式。它们编辑文件、生成文档�
 
 ### 演示文档
 
-本项目包含一份完整的演示文档 [`demo.md`](docs/demo.md)，涵盖：
+本项目包含多份演示文档，全面展示插件能力：
+
+#### 通用演示 — [`demo.md`](docs/demo.md)
+
+一份综合性演示文档，涵盖：
 
 - **Math 公式**：7 个行内公式 + 6 个块级公式（含方程组、矩阵、物理公式等）
 - **Mermaid 图表**：17 种图表类型全部覆盖（流程图、时序图、类图、状态图、ER 图、甘特图、饼图、用户旅程图、Git 图、思维导图、时间线、四象限图、XY 图表、C4 架构图、Sankey 图、Block 图、复杂聚群图）
 - **混合内容**：公式与图表在同一文档中协同渲染
-
-#### 打开演示文档
 
 在 ColaMD 中打开 [`demo.md`](docs/demo.md) 即可全面测试插件渲染、模式切换、源码编辑和 PNG 导出功能：
 
@@ -64,6 +66,22 @@ npm run dev docs/demo.md
 # 方式三：在 ColaMD 编辑器中 Cmd+点击 demo.md 链接
 # 直接在浏览器中查看源码：https://github.com/byteuser1977/ColaMD-extend/blob/main/docs/demo.md
 ```
+
+#### 学术论文演示 — [`academic-demo.md`](docs/academic-demo.md) 🆕
+
+一份真实的学术论文示例，展示增强版**学术论文主题**（`academic-paper.css`）的完整效果：
+
+- **完整学术结构**：摘要、关键词、中图分类号、文献标识码、引言、方法论、表格、参考文献
+- **符合 GB/T 7713 规范**：遵循中文学术论文排版标准，正确的字体搭配（黑体标题 + 宋体正文）
+- **三线表格式**：学术标准表格样式（顶线 + 表头底线 + 底线，无竖线）
+- **Mermaid 图表**：复杂的组织架构图，采用打印优化的自定义配色方案
+- **混合内容**：数学公式、Mermaid 图表、表格、引用在同一文档中协同展示
+
+在 ColaMD 中打开 [`academic-demo.md`](docs/academic-demo.md) 并启用**学术论文主题**，即可看到完整效果。本演示文档展示了：
+- 专业学术排版（黑体标题、宋体正文、首行缩进）
+- 打印优化的 Mermaid 图表渲染
+- 学术场景下的代码块和引用块样式
+- 脚注与参考文献区域格式化
 
 ***
 
@@ -670,7 +688,7 @@ ColaMD 内置 **4 个主题**，所有显示插件均会跟随主题自动适配
 | [elegant.css](themes/elegant.css) | 典雅暖调，朱砂红强调色、霞鹜文楷衬线体 |
 | [guizang.css](themes/guizang.css) | 归藏古风，赭石强调色、松烟墨代码块 |
 | [forest-ink.css](themes/forest-ink.css) | 🌲 森林墨，宣纸暖白底 + 松烟墨绿文字 + 森林绿强调色 |
-| [academic-paper.css](themes/academic-paper.css) | 📄 学术论文，适配学术打印，Mermaid 暖色系配色 |
+| [academic-paper.css](themes/academic-paper.css) | 📄 **学术论文（增强版）** — 符合 GB/T 7713 规范，黑体标题 + 宋体正文，三线表格式，打印优化的 Mermaid 图表，脚注与参考文献样式。完整示例见 [`academic-demo.md`](docs/academic-demo.md) |
 | [pixso-design.css](themes/pixso-design.css) | 🎨 Pixso 设计，现代设计系统风格 |
 
 自定义主题支持：将 CSS 文件放入 `~/.colamd/themes/` 目录，通过 **Theme > Import Theme** 导入。导入的主题会持久化保存，重启后仍然可用。

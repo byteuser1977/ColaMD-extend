@@ -42,15 +42,35 @@ This repository extends **[marswaveai/ColaMD](https://github.com/marswaveai/cola
 
 > All original features are fully preserved: Agent real-time sync, activity indicator, WYSIWYG editor, slide system, themes & export, etc.
 
-### Demo Document
+### Demo Documents
 
-This project includes a comprehensive demo document [`demo.md`](docs/demo.md) that covers:
+This project includes comprehensive demo documents to showcase the plugin capabilities:
+
+#### General Demo — [`demo.md`](docs/demo.md)
+
+A comprehensive demo covering:
 
 - **Math Equations**: 7 inline equations + 6 block equations (including systems of equations, matrices, physics formulas)
 - **Mermaid Diagrams**: All 17 diagram types (flowchart, sequence, class, state, ER, Gantt, pie, journey, git graph, mindmap, timeline, quadrant, XY chart, C4 context, Sankey, block, complex clustered)
 - **Mixed Content**: Formulas and diagrams rendered together in the same document
 
 Open `docs/demo.md` to fully test the plugin rendering, mode switching, source editing, and PNG export capabilities of the extended ColaMD.
+
+#### Academic Paper Demo — [`academic-demo.md`](docs/academic-demo.md) 🆕
+
+A real-world academic paper demonstrating the enhanced **Academic Paper theme** (`academic-paper.css`):
+
+- **Full Academic Structure**: Abstract, keywords, CLC number, document identifier, introduction, methodology, tables, and references
+- **GB/T 7713 Compliance**: Follows Chinese academic paper formatting standards with proper typography (SimHei headings + SimSun body text)
+- **Three-Line Tables**: Academic-standard table format (top line + header bottom line + bottom line, no vertical borders)
+- **Mermaid Diagrams**: Complex organizational charts with custom color schemes optimized for print
+- **Mixed Content**: Mathematical formulas, Mermaid diagrams, tables, and citations in a single document
+
+Open `docs/academic-demo.md` in ColaMD with the **Academic Paper** theme active to see the full effect. This demo showcases:
+- Professional academic typography (黑体 for headings, 宋体 for body text)
+- Print-optimized Mermaid diagram rendering
+- Proper code block and blockquote styling for academic contexts
+- Footnotes and reference section formatting
 
 ---
 
@@ -608,7 +628,7 @@ Downloadable external themes (located in [`themes/`](themes/) directory):
 | [elegant.css](themes/elegant.css) | Warm serif with terracotta accents, LXGW WenKai font |
 | [guizang.css](themes/guizang.css) | Ancient Guizang style, ochre accents, ink-black code blocks |
 | [forest-ink.css](themes/forest-ink.css) | 🌲 Forest Ink, warm paper base + forest green ink text + forest green accent |
-| [academic-paper.css](themes/academic-paper.css) | 📄 Academic Paper, optimized for academic printing with Mermaid warm color palette |
+| [academic-paper.css](themes/academic-paper.css) | 📄 **Academic Paper (Enhanced)** — GB/T 7713 compliant, SimHei headings + SimSun body text, three-line tables, print-optimized Mermaid diagrams, footnotes & references styling. See [`academic-demo.md`](docs/academic-demo.md) for a complete example |
 | [pixso-design.css](themes/pixso-design.css) | 🎨 Pixso Design, modern design system style |
 
 Custom theme support: Place CSS files in `~/.colamd/themes/` directory, then import via **Theme > Import Theme**. Imported themes persist across sessions.
