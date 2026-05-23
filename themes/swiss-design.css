@@ -1,0 +1,596 @@
+/*
+ * ColaMD 主题：Swiss Design (瑞士国际主义平面设计风格)
+ * 版本：v3.0（遵循 theme-paradigm.md 范式）
+ *
+ * 风格特征：
+ *   - 纯粹的黑白红三色体系，极简克制
+ *   - 几何无衬线字体（Helvetica / Inter），拒绝任何衬线体
+ *   - 网格化排版，大量留白，不对称但平衡
+ *   - 形式服从功能，无任何装饰性元素
+ *
+ * 配色来源：Swiss Design / International Typographic Style
+ * 字体哲学：Typography is the primary design element
+ *
+ * 导入：Theme > Import Theme
+ */
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION 1 — 设计令牌 (Design Tokens)
+   ═══════════════════════════════════════════════════════════ */
+
+body.theme-custom {
+
+  /* ═══════════════════════════════════════════════════════════
+     1.1 种子色板
+     Swiss Design 三色体系：白底 + 黑字 + 红点缀
+     ═══════════════════════════════════════════════════════════ */
+
+  /* 点缀色：Swiss Red — 用于链接、强调、标题、关键分割线 */
+  --seed-accent:        #e30613;   /* Swiss Red (标准瑞士红)  */
+  --seed-accent-light:  #fef0f1;   /* 极浅红（仅作极少数背景）  */
+  --seed-accent-dark:   #b8000b;   /* 深红（hover 态）        */
+
+  /* 表面色：纯白体系 — Swiss Design 以留白为核心设计元素 */
+  --seed-surface:       #ffffff;   /* L0 页面背景（纯白）      */
+  --seed-panel:         #f4f4f4;   /* L1 卡片/代码区背景（极浅灰） */
+  --seed-panel-alt:     #eaeaea;   /* L2 表头/引用块背景       */
+
+  /* 文字色：黑白灰三阶 — 高对比度，拒绝暧昧的中间调 */
+  --seed-ink:           #0d0d0d;   /* T0 正文/标题（近乎纯黑）  */
+  --seed-ink-muted:     #5c5c5c;   /* T1 次要文字              */
+  --seed-ink-dim:       #999999;   /* T2 弱化/禁用文字          */
+
+  /* 边框色：极克制 — Swiss Design 避免可见边框，仅用留白分隔 */
+  --seed-border:        #e0e0e0;   /* 极浅灰（仅在必要时出现）  */
+  --seed-border-strong: #0d0d0d;   /* 强调边框 = 纯黑          */
+
+  /* ═══════════════════════════════════════════════════════════
+     1.2 字体系统
+     Swiss Design 的核心：几何无衬线体，拒绝一切衬线体
+     ═══════════════════════════════════════════════════════════ */
+
+  /* 正文字体栈：Helvetica → Inter → 通用无衬线 */
+  --font-body: "Helvetica Neue", "Inter", -apple-system, BlinkMacSystemFont,
+               "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  /* 标题字体栈：与正文同体系，粗体 + 紧凑字距体现 Swiss 风格 */
+  --font-heading: "Helvetica Neue", "Inter", -apple-system, BlinkMacSystemFont,
+                  "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  /* 等宽字体栈 */
+  --font-code: "JetBrains Mono", "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+
+  /* Mermaid 图表字体：与标题一致（无衬线几何体） */
+  --font-mermaid: var(--font-heading);
+
+  /* ═══════════════════════════════════════════════════════════
+     1.3 字号 & 间距
+     Swiss Design 偏爱大标题 + 紧凑字距 + 大量留白
+     ═══════════════════════════════════════════════════════════ */
+
+  --font-size-root: 16px;
+
+  /* 标题倍率 — Swiss 风格：大而有力 */
+  --font-scale-h1: 2.25;    /* 36px — 强有力的主标题     */
+  --font-scale-h2: 1.625;   /* 26px                      */
+  --font-scale-h3: 1.25;    /* 20px                      */
+  --font-scale-h4: 1.1;     /* 17.6px                    */
+  --font-scale-h5: 1.0;     /* 16px                      */
+  --font-scale-h6: 0.875;   /* 14px — 小号仍保持清晰     */
+
+  /* Mermaid 独立字号 */
+  --font-size-mermaid: 13px;
+
+  /* 行高 — Swiss Design：适度紧凑，拒绝松散 */
+  --line-height-body: 1.6;
+  --line-height-heading: 1.2;
+  --line-height-code: 1.5;
+
+  /* ═══════════════════════════════════════════════════════════
+     1.4 圆角 & 间距
+     Swiss Design：直角优先，圆角仅作极小值
+     ═══════════════════════════════════════════════════════════ */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --content-width: 780px;
+
+  /* ═══════════════════════════════════════════════════════════
+     SECTION 2 — 语义映射 (Semantic Mapping)
+     ═══════════════════════════════════════════════════════════ */
+
+  /* ── 2.1 编辑区表面色 ── */
+  --bg-color:           var(--seed-surface);
+  --surface-color:      var(--seed-panel);
+  --surface-alt:        var(--seed-panel-alt);
+
+  /* ── 2.2 编辑区文字色 ── */
+  --text-color:         var(--seed-ink);
+  --heading-color:      var(--seed-ink);
+  --text-muted:         var(--seed-ink-muted);
+  --text-dim:           var(--seed-ink-dim);
+
+  /* ── 2.3 链接 & 强调 ── */
+  --link-color:         var(--seed-accent);
+  --accent-color:       var(--seed-accent);
+  --accent-dark:        var(--seed-accent-dark);
+  --accent-light:       var(--seed-accent-light);
+  --selection-bg:       rgba(227, 6, 19, 0.12);  /* Swiss Red 选区 */
+
+  /* ── 2.4 边框 & 分割线 ── */
+  --border-color:       var(--seed-border);
+  --blockquote-border:  var(--seed-ink);          /* 引用线用黑色，不用红色 */
+  --hr-color:           var(--seed-border);
+
+  /* ── 2.5 内联代码 ── */
+  --code-bg:            var(--seed-panel);
+  --code-color:         var(--seed-accent-dark);
+
+  /* ── 2.6 代码块 ── */
+  --code-block-bg:      var(--seed-panel-alt);
+  --code-block-text:    var(--seed-ink);
+  --code-block-color:   var(--seed-ink);
+
+  /* ── 2.7 引用块 ── */
+  --blockquote-bg:      var(--seed-panel);
+
+  /* ── 2.8 表格 ── */
+  --table-header-bg:    var(--seed-ink);           /* 表头黑底白字 — Swiss 风格 */
+  --table-border:       var(--seed-border);
+
+  /* ── 2.9 表格 — Swiss 黑底白字表头 ── */
+  --table-header-text:  #ffffff;
+
+  /* ── 2.10 滚动条 — 极简 ── */
+  --scrollbar-thumb:    var(--seed-border);
+  --scrollbar-thumb-hover: var(--seed-ink-muted);
+
+  /* ═══════════════════════════════════════════════════════════
+     SECTION 3 — Mermaid 图表变量
+     Swiss 风格图表：白底黑框红点缀，极致克制
+     ═══════════════════════════════════════════════════════════ */
+
+  /* ── 3.1 容器 ── */
+  --mermaid-background:   var(--seed-surface);
+  --mermaid-border-color: var(--seed-border);
+  --mermaid-border-radius: var(--radius-md);
+  --mermaid-padding:     24px;
+
+  /* ── 3.2 字体 ── */
+  --mermaid-font-family:  var(--font-mermaid);
+  --mermaid-font-size:    var(--font-size-mermaid);
+
+  /* ── 3.3 节点 — 白底黑框，Swiss 式克制 ── */
+  --mermaid-node-fill:        var(--seed-surface);
+  --mermaid-node-stroke:      var(--seed-ink);         /* 黑色描边          */
+  --mermaid-node-stroke-width: 1.5px;
+  --mermaid-node-text:        var(--seed-ink);
+
+  /* ── 3.4 连线 ── */
+  --mermaid-edge-stroke:       var(--seed-ink-muted);
+  --mermaid-edge-stroke-width: 1.5px;
+
+  /* ── 3.5 聚类 — 极浅灰，几乎不可见 ── */
+  --mermaid-cluster-fill:      rgba(0, 0, 0, 0.03);
+  --mermaid-cluster-stroke:    var(--seed-ink-muted);
+
+  /* ── 3.6 标签 ── */
+  --mermaid-label-text:      var(--seed-ink);
+  --mermaid-edge-label-text: var(--seed-ink-muted);
+  --mermaid-edge-label-bg:   var(--seed-surface);
+
+  /* ── 3.7 标题 & 坐标轴 ── */
+  --mermaid-title-text:      var(--seed-ink);
+  --mermaid-axis-text:       var(--seed-ink-muted);
+  --mermaid-highlight:       var(--seed-accent);       /* 仅高亮处用红色       */
+
+  /* ── 3.8 人物节点 ── */
+  --mermaid-person-stroke:   var(--seed-ink);
+  --mermaid-person-fill:     var(--seed-panel);
+
+  /* ── 3.9 偏移 ── */
+  --mermaid-label-offset-y: 0px;
+
+  /* ═══════════════════════════════════════════════════════════
+     SECTION 4 — 排版微调变量
+     ═══════════════════════════════════════════════════════════ */
+  --line-height-base: var(--line-height-body);
+}
+
+/* ═════════════════════════════════════════════════════════════
+   SECTION 5 — 选择器级微调 (Selector Fine-Tuning)
+   ═════════════════════════════════════════════════════════════ */
+
+/* ── 5.1 全局：纯白底 + 无衬线体 + 左对齐 ── */
+html { font-size: var(--font-size-root); }
+body.theme-custom, html, body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-body);
+  line-height: var(--line-height-body);
+  /* Swiss Design: flush left, ragged right — 禁止两端对齐 */
+  text-align: left;
+}
+
+/* ── 5.2 编辑区 — 大量留白 ── */
+#write {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 40px 60px 100px;
+}
+
+/* ── 5.3 标题：大而有力，紧凑字距，左对齐 ── */
+body.theme-custom h1, body.theme-custom h2, body.theme-custom h3,
+body.theme-custom h4, body.theme-custom h5, body.theme-custom h6 {
+  font-family: var(--font-heading);
+  color: var(--heading-color);
+  font-weight: 700;
+  line-height: var(--line-height-heading);
+  text-align: left;
+  letter-spacing: -0.02em;  /* Swiss 风格：紧凑字距 */
+}
+
+/* h1 用 Swiss Red — 标志性设计特征 */
+body.theme-custom h1 {
+  font-size: calc(var(--font-size-root) * var(--font-scale-h1));
+  color: var(--accent-color);
+  margin-top: 1.5em;
+  margin-bottom: 0.35em;
+  letter-spacing: -0.03em;
+}
+
+/* h2 用黑色 + 底线分割 */
+body.theme-custom h2 {
+  font-size: calc(var(--font-size-root) * var(--font-scale-h2));
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.25em;
+  border-bottom: 2px solid var(--seed-ink);
+}
+
+body.theme-custom h3 {
+  font-size: calc(var(--font-size-root) * var(--font-scale-h3));
+  margin-top: 1.25em;
+  margin-bottom: 0.4em;
+}
+
+body.theme-custom h4 {
+  font-size: calc(var(--font-size-root) * var(--font-scale-h4));
+}
+
+body.theme-custom h5 {
+  font-size: calc(var(--font-size-root) * var(--font-scale-h5));
+}
+
+body.theme-custom h6 {
+  font-size: calc(var(--font-size-root) * var(--font-scale-h6));
+  color: var(--text-muted);
+}
+
+/* ── 5.4 内联强调：用 Swiss Red ── */
+body.theme-custom strong { color: var(--accent-dark); font-weight: 700; }
+body.theme-custom em { font-style: italic; }
+
+/* ── 5.5 链接：红 + 底部横线 ── */
+body.theme-custom a {
+  color: var(--link-color);
+  text-decoration: none;
+  border-bottom: 1px solid var(--link-color);
+}
+body.theme-custom a:hover {
+  color: var(--accent-dark);
+  border-bottom: 2px solid var(--accent-dark);
+}
+
+/* ── 5.6 内联代码 ── */
+body.theme-custom code {
+  font-family: var(--font-code);
+  background: var(--code-bg);
+  color: var(--code-color);
+  border-radius: 0;  /* Swiss: 直角 */
+  padding: 1px 6px;
+}
+
+/* ── 5.7 代码块 — 浅灰底黑字，直角 ── */
+body.theme-custom pre {
+  background: var(--code-block-bg);
+  font-family: var(--font-code);
+  line-height: var(--line-height-code);
+  border-radius: 0;
+  border-left: 4px solid var(--seed-ink);
+}
+
+body.theme-custom pre code {
+  color: var(--code-block-text);
+  background: transparent;
+}
+
+/* ── 5.8 引用块 — 黑线左侧，极简 ── */
+body.theme-custom blockquote {
+  background: var(--blockquote-bg);
+  border-left: 4px solid var(--blockquote-border);
+  padding: 12px 20px 12px 24px;
+  border-radius: 0;
+}
+
+/* ── 5.9 表格：Swiss 风格 — 黑底白字表头 + 极细边框 ── */
+body.theme-custom table {
+  border-collapse: collapse;
+}
+body.theme-custom table th {
+  background: var(--seed-ink);
+  color: var(--table-header-text);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.875em;
+  padding: 10px 14px;
+  border: 1px solid var(--seed-ink);
+}
+body.theme-custom table td {
+  padding: 8px 14px;
+  border: 1px solid var(--seed-border);
+}
+
+/* ── 5.10 分割线：极细，大量上下留白 ── */
+body.theme-custom hr {
+  border: none;
+  border-top: 1px solid var(--hr-color);
+  margin: 3em 0;
+}
+
+/* ── 5.11 图片 — 无圆角，满宽或居中 ── */
+body.theme-custom img { max-width: 100%; border-radius: 0; }
+
+/* ── 5.12 图表标题（.mermaid-block + p）：无衬线居中 ── */
+body.theme-custom .mermaid-block + p {
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: calc(var(--font-size-root) * 0.875);
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* ── 5.13 响应式 ── */
+@media only screen and (max-width: 768px) {
+  #write { padding: 20px; }
+  body.theme-custom h1 { font-size: calc(var(--font-size-root) * 1.75); }
+  body.theme-custom .mermaid-block { padding: 12px; }
+  body.theme-custom .mermaid-preview svg { max-width: 100% !important; height: auto !important; }
+}
+
+/* ═════════════════════════════════════════════════════════════
+   SECTION 6 — 打印 / 导出
+   原则：屏幕样式的完整镜像。每个屏幕属性都必须在 print 中显式声明。
+   Swiss Design 印刷品：保留 Swiss Red + 黑底白字表头 + 纯白底色 + 紧凑字距
+   ═════════════════════════════════════════════════════════════ */
+@media print {
+  @page { margin: 20mm; }
+
+  /* ── 6.0 变量重声明 ── */
+  body.theme-custom {
+    --seed-accent:       #e30613;
+    --seed-accent-dark:  #b8000b;
+    --seed-surface:      #ffffff;
+    --seed-ink:          #0d0d0d;
+    --seed-ink-muted:    #5c5c5c;
+    --seed-panel:        #f4f4f4;
+    --seed-panel-alt:    #eaeaea;
+    --seed-border:       #e0e0e0;
+    --font-size-root:    16px;
+    --line-height-body:  1.6;
+    --line-height-heading: 1.2;
+    --line-height-code:  1.5;
+    --font-scale-h1:     2.25;
+    --font-scale-h2:     1.625;
+    --font-scale-h3:     1.25;
+    --font-scale-h4:     1.1;
+    --font-scale-h5:     1.0;
+    --font-scale-h6:     0.875;
+    --content-width:     780px;
+    --font-size-mermaid: 13px;
+    --accent-color:      var(--seed-accent);
+    --accent-dark:       var(--seed-accent-dark);
+    --code-bg:           var(--seed-panel);
+    --code-color:        var(--seed-accent-dark);
+    --code-block-bg:     var(--seed-panel-alt);
+    --code-block-text:   var(--seed-ink);
+    --blockquote-bg:     var(--seed-panel);
+    --table-header-bg:   var(--seed-ink);
+    --table-header-text: #ffffff;
+    --border-color:      var(--seed-border);
+    --hr-color:          var(--seed-border);
+    --font-body: "Helvetica Neue", "Inter", -apple-system, BlinkMacSystemFont,
+                 "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --font-heading: "Helvetica Neue", "Inter", -apple-system, BlinkMacSystemFont,
+                    "PingFang SC", "Microsoft YaHei", sans-serif;
+    --font-code: "JetBrains Mono", "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+  }
+
+  /* ── 6.1 根元素：字号 + 无衬线体 + 左对齐 + 底色 ── */
+  html {
+    font-size: var(--font-size-root) !important;
+  }
+  html, body, body.theme-custom {
+    background: var(--seed-surface) !important;
+    color: var(--seed-ink) !important;
+    font-family: var(--font-body) !important;
+    line-height: var(--line-height-body) !important;
+    text-align: left !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── 6.2 编辑区：大量留白 ── */
+  #write {
+    max-width: var(--content-width) !important;
+    margin: 0 auto !important;
+    padding: 40px 60px 100px !important;
+  }
+
+  /* ── 6.3 标题：紧凑字距 + 无衬线体 ── */
+  body.theme-custom h1, body.theme-custom h2, body.theme-custom h3,
+  body.theme-custom h4, body.theme-custom h5, body.theme-custom h6 {
+    font-family: var(--font-heading) !important;
+    font-weight: 700 !important;
+    line-height: var(--line-height-heading) !important;
+    text-align: left !important;
+    letter-spacing: -0.02em !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* h1: Swiss Red + 紧凑字距（标志性特征） */
+  body.theme-custom h1 {
+    font-size: calc(var(--font-size-root) * var(--font-scale-h1)) !important;
+    color: var(--seed-accent) !important;
+    letter-spacing: -0.03em !important;
+    margin-top: 1.5em !important;
+    margin-bottom: 0.35em !important;
+  }
+
+  /* h2: 黑色 + 底线 */
+  body.theme-custom h2 {
+    font-size: calc(var(--font-size-root) * var(--font-scale-h2)) !important;
+    color: var(--seed-ink) !important;
+    margin-top: 1.5em !important;
+    margin-bottom: 0.5em !important;
+    padding-bottom: 0.25em !important;
+    border-bottom: 2px solid var(--seed-ink) !important;
+  }
+
+  body.theme-custom h3 {
+    font-size: calc(var(--font-size-root) * var(--font-scale-h3)) !important;
+    color: var(--seed-ink) !important;
+    margin-top: 1.25em !important;
+    margin-bottom: 0.4em !important;
+  }
+
+  body.theme-custom h4 {
+    font-size: calc(var(--font-size-root) * var(--font-scale-h4)) !important;
+    color: var(--seed-ink) !important;
+  }
+
+  body.theme-custom h5 {
+    font-size: calc(var(--font-size-root) * var(--font-scale-h5)) !important;
+    color: var(--seed-ink) !important;
+  }
+
+  body.theme-custom h6 {
+    font-size: calc(var(--font-size-root) * var(--font-scale-h6)) !important;
+    color: var(--seed-ink-muted) !important;
+  }
+
+  /* ── 6.4 内联强调 ── */
+  body.theme-custom strong {
+    color: var(--seed-accent-dark) !important;
+    font-weight: 700 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body.theme-custom em {
+    font-style: italic !important;
+  }
+
+  /* ── 6.5 链接：红 + 底部横线 ── */
+  body.theme-custom a {
+    color: var(--seed-accent) !important;
+    text-decoration: none !important;
+    border-bottom: 1px solid var(--seed-accent) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── 6.6 内联代码：直角 ── */
+  body.theme-custom code {
+    font-family: var(--font-code) !important;
+    background: var(--code-bg) !important;
+    color: var(--code-color) !important;
+    border-radius: 0 !important;
+    padding: 1px 6px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── 6.7 代码块：浅灰底 + 左侧黑线 + 直角 ── */
+  body.theme-custom pre {
+    background: var(--code-block-bg) !important;
+    font-family: var(--font-code) !important;
+    line-height: var(--line-height-code) !important;
+    border-radius: 0 !important;
+    border-left: 4px solid var(--seed-ink) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body.theme-custom pre code {
+    color: var(--code-block-text) !important;
+    background: transparent !important;
+  }
+
+  /* ── 6.8 引用块：黑线左侧 + 极简 + 直角 ── */
+  body.theme-custom blockquote {
+    background: var(--blockquote-bg) !important;
+    border-left: 4px solid var(--seed-ink) !important;
+    padding: 12px 20px 12px 24px !important;
+    border-radius: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── 6.9 表格：黑底白字表头（Swiss 标志性特征） ── */
+  body.theme-custom table {
+    border-collapse: collapse !important;
+  }
+  body.theme-custom table th {
+    background: var(--seed-ink) !important;
+    color: var(--table-header-text) !important;
+    font-family: var(--font-heading) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-size: 0.875em !important;
+    padding: 10px 14px !important;
+    border: 1px solid var(--seed-ink) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body.theme-custom table td {
+    padding: 8px 14px !important;
+    border: 1px solid var(--seed-border) !important;
+  }
+
+  /* ── 6.10 分割线：大量上下留白 ── */
+  body.theme-custom hr {
+    border: none !important;
+    border-top: 1px solid var(--hr-color) !important;
+    margin: 3em 0 !important;
+  }
+
+  /* ── 6.11 图片：无圆角 ── */
+  body.theme-custom img {
+    max-width: 100% !important;
+    border-radius: 0 !important;
+  }
+
+  /* ── 6.12 Mermaid 图表容器 ── */
+  body.theme-custom .mermaid-block {
+    background: var(--seed-surface) !important;
+    border-color: var(--seed-border) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body.theme-custom .mermaid-preview svg * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ── 6.13 图表标题：无衬线居中 ── */
+  body.theme-custom .mermaid-block + p {
+    color: var(--seed-ink-muted) !important;
+    text-align: center !important;
+    font-family: var(--font-heading) !important;
+    font-size: calc(var(--font-size-root) * 0.875) !important;
+    margin-top: 8px !important;
+  }
+}
