@@ -316,7 +316,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[1.5.1-beta.3]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1-beta.3
 [1.5.1-beta.2]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1-beta.2
 [1.5.1-beta.1]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1-beta.1
 [1.5.1]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1
