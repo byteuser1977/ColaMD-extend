@@ -278,6 +278,7 @@ graph TD
 <div style="text-align: center;font-weight:bold;">
  表4　Mermaid 主题适配参数配置
 </div>
+
 ### 4.4 关键实现特性
 
 **（1）输入快捷转换**

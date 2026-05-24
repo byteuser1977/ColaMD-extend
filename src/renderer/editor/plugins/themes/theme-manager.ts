@@ -90,3 +90,51 @@ export function applyTheme(name: string, customCSS?: string): void {
 export function loadSavedTheme(): string {
   return localStorage.getItem('colamd-theme') || 'elegant'
 }
+
+/** 获取当前激活的自定义主题 CSS 内容；非自定义主题返回 null */
+export function getActiveCustomThemeCSS(): string | null {
+  const name = loadSavedTheme()
+  if (name.startsWith('custom:')) {
+    const key = name.slice(7)
+    return customThemeCache.get(key)?.css || null
+  }
+  return null
+}
+
+/**
+ * 从已注入的自定义主题 <style> 元素的 CSSOM 中提取 @media print 规则内容。
+ * 使用 CSSOM API 而非文本解析，避免嵌套 at-rule 导致的解析问题。
+ * @returns 去除了 @media print 包装的纯 CSS 规则文本（保留 @page 规则），无自定义主题返回 null
+ */
+export function extractPrintCSSFromSheet(): string | null {
+  console.log('[extractPrintCSS] customStyleEl exists:', !!customStyleEl, 'sheet exists:', !!customStyleEl?.sheet)
+  if (!customStyleEl?.sheet) return null
+  const sheet = customStyleEl.sheet
+
+  const rules: string[] = []
+  try {
+    console.log('[extractPrintCSS] total cssRules:', sheet.cssRules.length)
+    for (let i = 0; i < sheet.cssRules.length; i++) {
+      const rule = sheet.cssRules[i]
+      console.log(`[extractPrintCSS] rule[${i}]: type=${rule.constructor.name}`, rule instanceof CSSMediaRule ? `condition="${rule.conditionText}"` : rule.cssText?.slice(0, 80))
+      // 找到 @media print 规则
+      if (rule instanceof CSSMediaRule && rule.conditionText?.includes('print')) {
+        console.log(`[extractPrintCSS] found @media print with ${rule.cssRules.length} inner rules`)
+        for (let j = 0; j < rule.cssRules.length; j++) {
+          const inner = rule.cssRules[j]
+          console.log(`[extractPrintCSS]   inner[${j}]: type=${inner.constructor.name}`, inner instanceof CSSPageRule ? '@page (skipped)' : inner.cssText?.slice(0, 80))
+          // 跳过 @page 规则（页面尺寸由 printToPDF 参数控制）
+          if (inner instanceof CSSPageRule) continue
+          rules.push(inner.cssText)
+        }
+        break
+      }
+    }
+  } catch (e) {
+    console.error('[extractPrintCSS] error reading rules:', e)
+    return null
+  }
+
+  console.log(`[extractPrintCSS] extracted ${rules.length} rules`)
+  return rules.length > 0 ? rules.join('\n') : null
+}

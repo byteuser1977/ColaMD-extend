@@ -1,4 +1,4 @@
-@media (max-width: 768px) {
+@media screen and (max-width: 768px) {
   :root {
     --mobile-header-height: 48px;
   }
@@ -366,7 +366,7 @@
   .visible { display: block !important; }
 }
 
-@media (min-width: 769px) {
+@media screen and (min-width: 769px) {
   #menu-btn {
     display: none;
   }
@@ -376,7 +376,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media screen and (max-width: 480px) {
   .ProseMirror { font-size: 15px !important; }
   .ProseMirror pre { font-size: 12px !important; padding: 10px !important; }
   #editor { padding: 12px !important; }
@@ -410,20 +410,20 @@
   #editor {
     position: static !important;
     overflow: visible !important;
-    padding: 0 !important;
   }
 
   .ProseMirror {
     min-height: auto !important;
-    font-size: 14px !important;
   }
 
   .mermaid-preview svg {
     max-height: none !important;
   }
 
+  /* 默认的边界设定， 可以根据需要调整 
   @page {
     margin: 15mm;
     size: A4;
   }
+  */
 }

@@ -69,6 +69,8 @@ function createWindow(filePath?: string): BrowserWindow {
   }
 
   win.webContents.on('did-finish-load', () => {
+    // 开发环境自动打开 DevTools 方便调试
+    win.webContents.openDevTools({ mode: 'bottom' })
     if (filePath) {
       loadFileInWindow(win, filePath)
     }
@@ -389,8 +391,9 @@ ipcMain.handle('export-pdf', async (event) => {
   if (result.canceled || !result.filePath) return false
 
   try {
+    console.log('[export-pdf] Starting PDF export, injecting CSS overrides')
     const cssKey = await win.webContents.insertCSS(
-      'html, body { height: auto !important; overflow: visible !important; } #titlebar { display: none !important; } #editor { height: auto !important; overflow: visible !important; } #editor .ProseMirror { min-height: auto !important; } .mermaid-error { display: none !important; } .mermaid-loading { display: none !important; } svg .error-icon, svg .error-text { display: none !important; } .math-inline-raw, .math-block-raw, textarea.mermaid-source { display: none !important; }'
+      'html, body { height: auto !important; overflow: visible !important; } #titlebar { display: none !important; } #editor { height: auto !important; overflow: visible !important; padding: 0 !important; } #editor .ProseMirror { min-height: auto !important; } .mermaid-error { display: none !important; } .mermaid-loading { display: none !important; } svg .error-icon, svg .error-text { display: none !important; } .math-inline-raw, .math-block-raw, textarea.mermaid-source { display: none !important; }'
     )
     const pdfData = await Promise.race([
       win.webContents.printToPDF({
@@ -400,9 +403,11 @@ ipcMain.handle('export-pdf', async (event) => {
       new Promise<Buffer>((_, reject) => setTimeout(() => reject(new Error('PDF timeout')), 30000))
     ])
     await win.webContents.removeInsertedCSS(cssKey)
+    console.log('[export-pdf] PDF generated successfully, writing to file')
     await writeFile(result.filePath, pdfData)
     return true
-  } catch {
+  } catch (e) {
+    console.error('[export-pdf] PDF export failed:', e)
     return false
   }
 })
