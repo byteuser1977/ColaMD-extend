@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-05-23
+
+### Added
+
+#### Themes
+- **Academic Paper theme** ([`themes/academic-paper.css`](themes/academic-paper.css)) — 严格遵循 GB/T 7713 国标规范的学术论文主题，含三线表、宋体/黑体排版、多级标题、图题/表题规范
+- **Swiss Design theme** ([`themes/swiss-design.css`](themes/swiss-design.css)) 🇨🇭 — 瑞士国际主义平面设计风格：黑白红三色体系、几何无衬线字体、网格化排版、黑底白字表头
+- **Pixso Design theme** ([`themes/pixso-design.css`](themes/pixso-design.css)) — Pixso 设计规范主题
+- **Forest Ink theme** ([`themes/forest-ink.css`](themes/forest-ink.css)) — 森林墨水风格主题
+- **Standardized template** ([`themes/template.css`](themes/template.css)) — 遵循 v3.0 范式的参考实现模板，变量化 + 模块化 + 打印保真
+
+#### Theme Development Framework
+- **Theme paradigm document** ([`docs/theme-paradigm.md`](docs/theme-paradigm.md)) — 完整的 CSS 主题开发规范 (v3.2)：
+  - 设计原则：变量驱动、模块化、语义命名、AI Agent 可推导
+  - 设计规范：30+ 条可验证规则 (MUST / MUST NOT / SHOULD)，含 WCAG 对比度公式
+  - 打印保真规范：变量重声明、必覆盖元素清单 (12 类)、Chromium 打印约束
+  - px 单位统一规范 (9.x)：禁止 pt/rem 混用，确保 PDF 导出字号一致
+
+#### Platform Support
+- **Android 平台**：Capacitor 6 集成，原生 APK 构建，文件选择器、移动端适配样式 ([`mobile.css`](src/renderer/mobile.css))
+- **iOS 平台**：Capacitor 6 集成，原生 IPA 构建
+- **双平台桥接**：运行时自动检测 Electron / Capacitor API (`capacitor-api.ts`)
+
+#### Documentation & Demo
+- **学术论文演示文档** ([`docs/academic-demo.md`](docs/academic-demo.md)) — 万华生态研究报告，含 8 组 Mermaid 图表
+- **PDF 字体补偿指南** ([`docs/PDF_FONT_COMPENSATION.md`](docs/PDF_FONT_COMPENSATION.md)) — Electron 打印字号缩放问题与补偿方案
+- **行内 SVG 指南** ([`docs/demo.html`](docs/demo.html)) — Markdown 嵌入 SVG 的最佳实践演示
+- **通用演示文档** ([`docs/demo.md`](docs/demo.md)) — 全功能特性演示
+
+### Changed
+
+#### Theme System Architecture
+- **模块化重构**：主题系统拆分为 `foundation.css` + `base/` 内置主题 + `components/mermaid/` Mermaid 变量映射 + 用户主题目录
+- **Mermaid 变量体系**：20 个核心 CSS 变量 (`--mermaid-*`)，自动映射到 22 种图表类型 SVG 选择器
+- **学术论文主题重构**：Section 14 硬编码色值全部重构为 `var()` 变量引用；所有 `pt` 单位替换为 `px` 偶数整数
+
+#### Editor Core
+- 移除调试用开发者工具自动打开代码
+- 优化学术论文主题样式
+
+### Fixed
+- 修复 Mermaid 文字偏移、变量名不匹配及双重边框问题 (elegant + academic-paper)
+- 修复 TypeScript 类型错误 15 处 (capacitor-api, editor, math-plugin, mermaid-plugin, main/index)
+- 修复模板 CSS 与 Swiss Design CSS 打印保真：`@media print` 补全所有屏幕属性镜像（字号、行高、字体、边框、间距、字距等）
+- 插件导入修复与包版本更新
+
+### Changed (since beta)
+
+| Beta | Date | Key Changes |
+|------|------|-------------|
+| `1.5.1-beta.1` | 2026-05-22 | Android/iOS 平台、移动端样式、应用图标自动生成 |
+| `1.5.1-beta.2` | 2026-05-22 | TS 类型修复、Mermaid 主题重构、学术/Swiss/Pixso 主题、范式文档 |
+
+---
+
 ## [1.5.1-beta.2] - 2026-05-22
 
 ### Fixed
@@ -148,89 +203,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 |---------|---------|---------|
 | @capawesome/capacitor-file-picker | ^6.2.0 | Android file picker plugin |
 | sharp | ^0.34.5 | Icon generation tool |
-
----
-
-## [1.5.1] - 2026-05-18
-
-### Added
-
-#### Capacitor 6 — Mobile Platform Support (Cross-Platform Extension)
-- **Capacitor 6 integration** for building native Android (.apk) and iOS (.ipa) apps
-- **Platform bridge layer** ([`capacitor-api.ts`](src/renderer/capacitor-api.ts)): Full replacement of Electron IPC with Capacitor native plugins
-  - Filesystem plugin for file read/write on mobile devices
-  - Share plugin for content sharing and export
-  - App plugin for lifecycle management and deep linking
-  - Status bar plugin for mobile UI integration
-  - Haptics plugin for tactile feedback support
-- **Auto-detection runtime**: `window.electronAPI || createCapacitorAPI()` — seamless switching between desktop (Electron) and mobile (Capacitor) environments
-- **Mobile responsive UI** ([`mobile.css`](src/renderer/mobile.css)):
-  - Touch-optimized interactions with `-webkit-tap-highlight-color: transparent`
-  - Safe area insets support (`env(safe-area-inset-*)`) for notched devices
-  - Responsive breakpoints: 768px (tablet), 480px (phone)
-  - Optimized font sizes, padding, and scroll behavior for mobile screens
-  - Context menu adaptation for touch interfaces
-
-#### Android Platform Configuration
-- Android project initialized at [`android/`](android/) with Gradle build system
-- **File association**: Registered `.md` / `.markdown` file handlers in `AndroidManifest.xml`
-- **Storage permissions**: `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, `MANAGE_EXTERNAL_STORAGE`
-- **Network security config**: Cleartext traffic allowed for local development
-- **Soft input mode**: `adjustResize` for proper keyboard handling in editor
-- **5 Capacitor plugins auto-detected**: @capacitor/app, filesystem, haptics, share, status-bar
-
-#### iOS Platform Configuration
-- Xcode project initialized at [`ios/`](ios/) with CocoaPods dependency management
-- Requires Xcode + CocoaPods for full build (pod install)
-- Web assets synced to `ios/App/App/public/`
-
-#### Build Scripts & Workflow
-- New npm scripts for Capacitor development workflow:
-
-| Script | Purpose |
-|--------|---------|
-| `npm run cap:sync` | Sync web assets to native platforms |
-| `npm run cap:open:android` | Open in Android Studio |
-| `npm run cap:open:ios` | Open in Xcode |
-| `npm run cap:run:android` | Build → Sync → Run on Android device/emulator |
-| `npm run cap:run:ios` | Build → Sync → Run on iOS simulator |
-| `npm run cap:build:android` | Build debug APK |
-| `npm run cap:build:ios` | Build iOS project |
-
-#### Dual-Platform Architecture
-```
-┌─────────────────────────────────────┐
-│         src/renderer/main.ts         │
-│   api = electronAPI || capacitorAPI  │ ← Auto-detect platform
-├──────────────┬──────────────────────┤
-│  Electron    │     Capacitor 6      │
-│  (Desktop)   │     (Mobile)          │
-│              │                      │
-│ IPC comm     │ Filesystem Plugin    │
-│ dialog       │ Share Plugin         │
-│ shell.open   │ App Plugin           │
-│ fs module    │ localStorage storage │
-└──────────────┴──────────────────────┘
-```
-
-### Changed
-- Updated [`editor.ts`](src/renderer/editor/editor.ts): Added fallback `window.capacitorAPI?.openExternal()` for link handling on mobile
-- Updated [`env.d.ts`](src/renderer/env.d.ts): Extended type declarations to include `window.capacitorAPI`
-- Package version bumped to **1.5.1**
-
-### Dependencies
-
-| Package | Version | Purpose |
-|---------|---------|---------|
-| @capacitor/core | ^6.2.1 | Capacitor core runtime |
-| @capacitor/cli | ^6.2.1 | Capacitor CLI tools |
-| @capacitor/android | ^6.2.1 | Android native bridge |
-| @capacitor/ios | ^6.2.1 | iOS native bridge |
-| @capacitor/filesystem | ^6.0.4 | Mobile file I/O |
-| @capacitor/share | ^6.0.4 | Native sharing |
-| @capacitor/app | ^6.0.3 | App lifecycle |
-| @capacitor/haptics | ^6.0.3 | Tactile feedback |
-| @capacitor/status-bar | ^6.0.3 | Status bar control |
 
 ## [1.5.0] - 2026-05-18
 
