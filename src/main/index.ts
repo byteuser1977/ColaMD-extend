@@ -1,12 +1,23 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu, shell } from 'electron'
 import { join, basename, dirname, extname } from 'path'
-import { readFile, writeFile, readdir, copyFile, mkdir } from 'fs/promises'
-import { watch, FSWatcher, existsSync, readdirSync, readFileSync, createServer } from 'fs'
+import { readFile, writeFile, readdir, copyFile, mkdir, stat } from 'fs/promises'
+import { existsSync, readFileSync } from 'fs'
 import { IncomingMessage, ServerResponse } from 'http'
 import { createServer as createHttpServer } from 'http'
 
 // Custom themes directory
 const themesDir = join(app.getPath('home'), '.colamd', 'themes')
+
+// PDF 导出时注入的布局 CSS（insertCSS 引擎级注入，仅负责页面结构调整）
+const BASE_PRINT_CSS = [
+  'html, body { height:auto !important; overflow:visible !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }',
+  '#titlebar, #slides-btn, #agent-dot { display:none !important; }',
+  '#editor { height:auto !important; overflow:visible !important; }',
+  '#editor .ProseMirror { min-height:auto !important; }',
+  '.mermaid-error, .mermaid-loading { display:none !important; }',
+  'svg .error-icon, svg .error-text { display:none !important; }',
+  '.math-inline-raw, .math-block-raw, textarea.mermaid-source { display:none !important; }',
+].join('\n')
 
 function ensureThemesDir(): void {
   if (!existsSync(themesDir)) {
@@ -14,19 +25,10 @@ function ensureThemesDir(): void {
   }
 }
 
-async function scanCustomThemes(): Promise<string[]> {
-  try {
-    const files = await readdir(themesDir)
-    return files.filter(f => f.endsWith('.css')).sort()
-  } catch {
-    return []
-  }
-}
-
 // Per-window state
 interface WindowState {
   filePath: string | null
-  watcher: FSWatcher | null
+  watcher: ReturnType<typeof setInterval> | null
   isInternalSave: boolean
   debounceTimer: ReturnType<typeof setTimeout> | null
   agentState: 'idle' | 'active' | 'cooldown'
@@ -78,6 +80,8 @@ function createWindow(filePath?: string): BrowserWindow {
   }
 
   win.webContents.on('did-finish-load', () => {
+    // 开发环境自动打开 DevTools 方便调试
+   // win.webContents.openDevTools({ mode: 'bottom' })
     if (filePath) {
       loadFileInWindow(win, filePath)
     }
@@ -110,7 +114,7 @@ function suggestFileName(win: BrowserWindow, content?: string): string | undefin
 
 function stopWatching(state: WindowState): void {
   if (state.watcher) {
-    state.watcher.close()
+    clearInterval(state.watcher)
     state.watcher = null
   }
   if (state.agentCooldownTimer) {
@@ -152,28 +156,36 @@ function watchFile(win: BrowserWindow, state: WindowState): void {
   if (!state.filePath) return
   stopWatching(state)
   const filePath = state.filePath
-  state.watcher = watch(filePath, (eventType) => {
-    if (eventType !== 'change' || state.isInternalSave) return
+  let lastMtime = 0
 
-    // Agent activity detection
-    const now = Date.now()
-    const gap = now - state.lastExternalChange
-    state.lastExternalChange = now
-    if (gap > 0 && gap < 2000) {
-      transitionAgentState(win, state, 'active')
-    } else if (state.agentState === 'active') {
-      transitionAgentState(win, state, 'active') // reset cooldown timer
-    }
+  stat(filePath).then(s => { lastMtime = s.mtimeMs }).catch(() => {})
 
-    if (state.debounceTimer) clearTimeout(state.debounceTimer)
-    state.debounceTimer = setTimeout(() => {
-      readFile(filePath, 'utf-8')
-        .then((data) => {
-          if (!win.isDestroyed()) win.webContents.send('file-changed', resolveImagePaths(data, filePath))
-        })
-        .catch(() => {})
-    }, 100)
-  })
+  state.watcher = setInterval(() => {
+    if (state.isInternalSave) return
+    stat(filePath).then(s => {
+      if (s.mtimeMs === lastMtime) return
+      lastMtime = s.mtimeMs
+
+      // Agent activity detection
+      const now = Date.now()
+      const gap = now - state.lastExternalChange
+      state.lastExternalChange = now
+      if (gap > 0 && gap < 2000) {
+        transitionAgentState(win, state, 'active')
+      } else if (state.agentState === 'active') {
+        transitionAgentState(win, state, 'active') // reset cooldown timer
+      }
+
+      if (state.debounceTimer) clearTimeout(state.debounceTimer)
+      state.debounceTimer = setTimeout(() => {
+        readFile(filePath, 'utf-8')
+          .then((data) => {
+            if (!win.isDestroyed()) win.webContents.send('file-changed', resolveImagePaths(data, filePath))
+          })
+          .catch(() => {})
+      }, 100)
+    }).catch(() => {})
+  }, 500)
 }
 
 // Rewrite relative image paths in markdown to absolute file:// URLs
@@ -379,28 +391,32 @@ ipcMain.handle('save-export-file', async (event, dataUrl: string, defaultName: s
 })
 
 
-ipcMain.handle('export-pdf', async (event) => {
+ipcMain.handle('export-pdf', async (event, printCSS?: string) => {
   const win = getWinFromEvent(event)
   if (!win) return false
+  const defaultName = (suggestFileName(win) || 'colamd-print') + '.pdf'
   const result = await dialog.showSaveDialog(win, {
-    defaultPath: suggestFileName(win),
+    defaultPath: defaultName,
     filters: [{ name: 'PDF', extensions: ['pdf'] }]
   })
   if (result.canceled || !result.filePath) return false
 
   try {
-    const cssKey = await win.webContents.insertCSS(
-      'html, body { height: auto !important; overflow: visible !important; } #titlebar { display: none !important; } #editor { height: auto !important; overflow: visible !important; } #editor .ProseMirror { min-height: auto !important; } .mermaid-error { display: none !important; } .mermaid-loading { display: none !important; } svg .error-icon, svg .error-text { display: none !important; } .math-inline-raw, .math-block-raw, textarea.mermaid-source { display: none !important; }'
-    )
-    const pdfData = await win.webContents.printToPDF({
-      marginType: 0,
-      printBackground: true,
-      pageSize: 'A4'
-    })
+    const cssKey = await win.webContents.insertCSS(BASE_PRINT_CSS + '\n' + (printCSS || ''))
+    // 等待样式重排完成（Chromium 需要一帧来应用注入的 CSS）
+    await new Promise(r => setTimeout(r, 200))
+    const pdfData = await Promise.race([
+      win.webContents.printToPDF({
+        printBackground: true,
+        pageSize: 'A4'
+      }),
+      new Promise<Buffer>((_, reject) => setTimeout(() => reject(new Error('PDF timeout')), 30000))
+    ])
     await win.webContents.removeInsertedCSS(cssKey)
     await writeFile(result.filePath, pdfData)
     return true
-  } catch {
+  } catch (e) {
+    console.error('[export-pdf] PDF export failed:', e)
     return false
   }
 })
@@ -408,8 +424,9 @@ ipcMain.handle('export-pdf', async (event) => {
 ipcMain.handle('export-html', async (event, htmlContent: string) => {
   const win = getWinFromEvent(event)
   if (!win) return false
+  const defaultName = (suggestFileName(win) || 'colamd-export') + '.html'
   const result = await dialog.showSaveDialog(win, {
-    defaultPath: suggestFileName(win),
+    defaultPath: defaultName,
     filters: [{ name: 'HTML', extensions: ['html'] }]
   })
   if (result.canceled || !result.filePath) return false
@@ -652,7 +669,8 @@ ipcMain.handle('load-custom-theme', async (event) => {
     const destPath = join(themesDir, fileName)
     await copyFile(srcPath, destPath)
     const css = await readFile(destPath, 'utf-8')
-    buildMenu() // rebuild menu to include new theme
+    invalidateThemeCache()
+    await buildMenu() // rebuild menu to include new theme
     return { name: fileName, css }
   } catch {
     return null
@@ -677,17 +695,39 @@ ipcMain.handle('register-plugins', (_event, plugins: Array<{ id: string; name: s
     checked: p.enabled,
     click: () => sendToFocused('menu-toggle-plugin', p.id)
   }))
-  buildMenu()
+  void buildMenu()
   return true
 })
 
 ipcMain.handle('sync-plugin-state', (_event, id: string, enabled: boolean) => {
   const item = pluginMenuItems.find((p: any) => p.id === id)
   if (item) item.checked = enabled
-  buildMenu()
+  void buildMenu()
 })
 
 // Menu — targets the focused window
+
+let cachedThemeFiles: string[] = []
+let themeFilesValid = false
+
+function invalidateThemeCache(): void {
+  themeFilesValid = false
+}
+
+async function scanThemeFiles(): Promise<void> {
+  try {
+    const files = await readdir(themesDir)
+    cachedThemeFiles = files.filter(f => f.endsWith('.css')).sort()
+  } catch {
+    cachedThemeFiles = []
+  }
+  themeFilesValid = true
+}
+
+async function getCachedThemeFiles(): Promise<string[]> {
+  if (!themeFilesValid) await scanThemeFiles()
+  return cachedThemeFiles
+}
 
 function getFocusedWindow(): BrowserWindow | null {
   return BrowserWindow.getFocusedWindow()
@@ -698,26 +738,23 @@ function sendToFocused(channel: string, ...args: unknown[]): void {
   if (win) win.webContents.send(channel, ...args)
 }
 
-function buildMenu(): void {
+async function buildMenu(): Promise<void> {
   const isMac = process.platform === 'darwin'
 
-  // Scan custom themes synchronously for menu building
   const customThemeItems: Electron.MenuItemConstructorOptions[] = []
-  try {
-    const files = readdirSync(themesDir).filter((f: string) => f.endsWith('.css')).sort()
-    for (const file of files) {
-      customThemeItems.push({
-        label: file.replace(/\.css$/, ''),
-        click: async () => {
-          try {
-            const css = await readFile(join(themesDir, file), 'utf-8')
-            sendToFocused('set-theme', `custom:${file}`)
-            sendToFocused('set-custom-css', css)
-          } catch { /* ignore */ }
-        }
-      })
-    }
-  } catch { /* themes dir may not exist yet */ }
+  const files = await getCachedThemeFiles()
+  for (const file of files) {
+    customThemeItems.push({
+      label: file.replace(/\.css$/, ''),
+      click: async () => {
+        try {
+          const css = await readFile(join(themesDir, file), 'utf-8')
+          sendToFocused('set-theme', `custom:${file}`)
+          sendToFocused('set-custom-css', css)
+        } catch { /* ignore */ }
+      }
+    })
+  }
 
   const themeSubmenu: Electron.MenuItemConstructorOptions[] = [
     { label: 'Light', click: () => sendToFocused('set-theme', 'light') },
@@ -842,9 +879,10 @@ function buildMenu(): void {
 
 // App lifecycle
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   ensureThemesDir()
-  buildMenu()
+  await scanThemeFiles()
+  await buildMenu()
 
   // Check command line args for file paths
   const args = process.argv.slice(app.isPackaged ? 1 : 2)

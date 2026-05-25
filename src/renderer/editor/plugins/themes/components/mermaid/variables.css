@@ -1,0 +1,592 @@
+/*
+ * ColaMD 主题系统：Mermaid 变量映射层
+ * 职责：将 CSS 变量映射到 Mermaid SVG 选择器
+ * 本文件定义了「变量 → 视觉样式」的完整映射关系
+ * 修改配色只需覆盖 foundation.css 或配色方案文件中的变量
+ *
+ * 架构：foundation.css (变量定义) → 本文件 (变量映射) → 配色方案 (变量覆盖)
+ */
+
+/* ================================================================
+   1. 容器 (Panel / Container)
+   ================================================================ */
+.md-diagram-panel { margin: 1.5em 0; }
+
+.md-diagram-panel.md-mermaid,
+body.theme-custom .mermaid-block,
+body.theme-custom .mermaid-preview {
+  background: var(--mermaid-background);
+  border: 1px solid var(--mermaid-border-color);
+  border-radius: var(--mermaid-border-radius);
+  padding: var(--mermaid-padding);
+  margin: 1.5em 0;
+}
+
+.md-diagram-panel.md-mermaid svg,
+body.theme-custom .mermaid-preview svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ================================================================
+   2. 字体 (Font)
+   ================================================================ */
+.md-diagram-panel.md-mermaid svg text,
+body.theme-custom .mermaid-preview svg text {
+  fill: var(--mermaid-text-color);
+  font-family: var(--mermaid-font-family);
+  font-size: var(--mermaid-font-size);
+}
+
+.md-diagram-panel.md-mermaid .node .label {
+  color: var(--mermaid-label-text) !important;
+  font-family: var(--mermaid-font-family) !important;
+  font-size: var(--mermaid-font-size) !important;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel span,
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+  font-family: var(--mermaid-font-family);
+}
+
+body.theme-custom .mermaid-preview svg foreignObject span {
+  color: var(--mermaid-node-text) !important;
+  font-family: var(--mermaid-font-family) !important;
+  font-size: var(--mermaid-font-size) !important;
+}
+
+/* ================================================================
+   3. 通用节点 (Node: rect, circle, ellipse, polygon, path)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .node rect,
+body.theme-custom .mermaid-preview svg .node circle,
+body.theme-custom .mermaid-preview svg .node ellipse,
+body.theme-custom .mermaid-preview svg .node polygon,
+body.theme-custom .mermaid-preview svg .node path {
+  stroke: var(--mermaid-node-stroke);
+  stroke-width: var(--mermaid-node-stroke-width);
+  fill: var(--mermaid-node-fill) !important;
+}
+
+/* ── Typora 兼容 ── */
+.md-diagram-panel.md-mermaid .node rect,
+.md-diagram-panel.md-mermaid .node circle,
+.md-diagram-panel.md-mermaid .node ellipse,
+.md-diagram-panel.md-mermaid .node polygon {
+  fill: var(--mermaid-node-fill) !important;
+  stroke: var(--mermaid-node-stroke) !important;
+  stroke-width: var(--mermaid-node-stroke-width) !important;
+}
+
+/* ================================================================
+   4. 连线 (Edge / Path)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .edgePath .path {
+  stroke: var(--mermaid-edge-stroke);
+  stroke-width: var(--mermaid-edge-stroke-width);
+}
+
+.md-diagram-panel.md-mermaid .edgePath .path {
+  stroke: var(--mermaid-edge-stroke) !important;
+  stroke-width: var(--mermaid-edge-stroke-width) !important;
+}
+
+/* ── 箭头标记 ── */
+body.theme-custom .mermaid-preview svg defs marker path {
+  fill: var(--mermaid-edge-stroke);
+  stroke: var(--mermaid-edge-stroke);
+}
+
+/* ================================================================
+   5. 聚类 (Cluster / Subgraph)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .cluster rect,
+body.theme-custom .mermaid-preview svg .cluster path {
+  stroke: var(--mermaid-cluster-stroke);
+  fill: var(--mermaid-cluster-fill) !important;
+}
+
+.md-diagram-panel.md-mermaid .cluster rect {
+  fill: var(--mermaid-cluster-fill) !important;
+  stroke: var(--mermaid-cluster-stroke) !important;
+}
+
+/* ================================================================
+   6. 标签 (Labels)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .label text,
+body.theme-custom .mermaid-preview svg .nodeLabel text {
+  fill: var(--mermaid-label-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel span {
+  color: var(--mermaid-label-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel text {
+  fill: var(--mermaid-edge-label-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel rect {
+  fill: var(--mermaid-edge-label-bg) !important;
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+  color: var(--mermaid-edge-label-text) !important;
+}
+
+.md-diagram-panel.md-mermaid .edgeLabel {
+  background-color: var(--mermaid-edge-label-bg) !important;
+  color: var(--mermaid-edge-label-text) !important;
+}
+
+/* ================================================================
+   7. 硬编码色值覆盖 (覆盖 Mermaid 默认的 #444 / #000)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg rect[stroke="#444444"],
+body.theme-custom .mermaid-preview svg path[stroke="#444444"],
+body.theme-custom .mermaid-preview svg line[stroke="#444444"],
+body.theme-custom .mermaid-preview svg rect[stroke="#000000"],
+body.theme-custom .mermaid-preview svg path[stroke="#000000"],
+body.theme-custom .mermaid-preview svg line[stroke="#000000"] {
+  stroke: var(--mermaid-node-stroke) !important;
+}
+
+.md-diagram-panel.md-mermaid svg rect[stroke="#444444"],
+.md-diagram-panel.md-mermaid svg rect[stroke="#000000"],
+.md-diagram-panel.md-mermaid svg path[stroke="#444444"],
+.md-diagram-panel.md-mermaid svg path[stroke="#000000"],
+.md-diagram-panel.md-mermaid svg line[stroke="#444444"],
+.md-diagram-panel.md-mermaid svg line[stroke="#000000"] {
+  stroke: var(--mermaid-node-stroke) !important;
+}
+
+/* ================================================================
+   8. 文本偏移 (跨图表类型通用)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .label text,
+body.theme-custom .mermaid-preview svg .nodeLabel text {
+  transform: translateY(var(--mermaid-label-offset-y)) !important;
+}
+
+body.theme-custom .mermaid-preview svg .titleText {
+  transform: translateY(-1px) !important;
+}
+
+body.theme-custom .mermaid-preview svg .xychart .axis text {
+  transform: translateY(0) !important;
+}
+
+body.theme-custom .mermaid-preview svg .nodeLabel,
+body.theme-custom .mermaid-preview svg .edgeLabel {
+  display: inline-block !important;
+  position: relative !important;
+  top: var(--mermaid-label-offset-y) !important;
+}
+
+/* ================================================================
+   9. 流程图 / ER 图 / Block 图 (基础节点)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .node.default rect,
+body.theme-custom .mermaid-preview svg .node rect[fill] {
+  fill: var(--mermaid-node-fill) !important;
+  stroke: var(--mermaid-node-stroke) !important;
+}
+
+body.theme-custom .mermaid-preview svg .node.alt rect {
+  fill: var(--mermaid-cluster-fill) !important;
+  stroke: var(--mermaid-cluster-stroke) !important;
+}
+
+/* ================================================================
+   10. 饼图 (Pie)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .pieCircle,
+body.theme-custom .mermaid-preview svg .slice {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .pieTitleText,
+body.theme-custom .mermaid-preview svg .legend text {
+  fill: var(--mermaid-title-text) !important;
+}
+
+/* ================================================================
+   11. 时序图 (Sequence)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .actor rect,
+body.theme-custom .mermaid-preview svg .actor path {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg text.actor {
+  fill: var(--mermaid-node-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .messageLine0,
+body.theme-custom .mermaid-preview svg .messageLine1 {
+  stroke: var(--mermaid-edge-stroke) !important;
+}
+
+body.theme-custom .mermaid-preview svg .messageText {
+  fill: var(--mermaid-label-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .loopText,
+body.theme-custom .mermaid-preview svg .altText,
+body.theme-custom .mermaid-preview svg .optText {
+  fill: var(--mermaid-axis-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .loopLine,
+body.theme-custom .mermaid-preview svg .altLine,
+body.theme-custom .mermaid-preview svg .optLine {
+  stroke: var(--mermaid-edge-stroke) !important;
+}
+
+body.theme-custom .mermaid-preview svg .labelBox {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .labelText,
+body.theme-custom .mermaid-preview svg .loopText tspan,
+body.theme-custom .mermaid-preview svg .altText tspan,
+body.theme-custom .mermaid-preview svg .optText tspan {
+  fill: var(--mermaid-label-text) !important;
+}
+
+/* ── Typora 兼容 ── */
+.md-diagram-panel.md-mermaid .actor {
+  fill: var(--mermaid-node-fill) !important;
+  stroke: var(--mermaid-node-stroke) !important;
+}
+
+.md-diagram-panel.md-mermaid text.actor {
+  fill: var(--mermaid-node-text) !important;
+}
+
+.md-diagram-panel.md-mermaid .messageLine0,
+.md-diagram-panel.md-mermaid .messageLine1 {
+  stroke: var(--mermaid-edge-stroke) !important;
+}
+
+.md-diagram-panel.md-mermaid .messageText {
+  fill: var(--mermaid-edge-label-text) !important;
+}
+
+/* ================================================================
+   12. 状态图 (State Diagram)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .statediagram-state rect,
+body.theme-custom .mermaid-preview svg .statediagram-state circle {
+  stroke: var(--mermaid-node-stroke);
+  fill: var(--mermaid-node-fill) !important;
+}
+
+body.theme-custom .mermaid-preview svg .statediagram-cluster rect {
+  stroke: var(--mermaid-cluster-stroke);
+  fill: var(--mermaid-cluster-fill) !important;
+}
+
+body.theme-custom .mermaid-preview svg .statediagram-state .nodeLabel text,
+body.theme-custom .mermaid-preview svg .statediagram-state .nodeLabel span,
+body.theme-custom .mermaid-preview svg .statediagram-cluster .outer-title text {
+  fill: var(--mermaid-label-text) !important;
+  color: var(--mermaid-label-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .transition {
+  stroke: var(--mermaid-edge-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .edgeLabel .label text {
+  fill: var(--mermaid-edge-label-text) !important;
+}
+
+/* ================================================================
+   13. 类图 (Class Diagram)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .classBox rect,
+body.theme-custom .mermaid-preview svg .classBox path {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .classTitle text,
+body.theme-custom .mermaid-preview svg .classTitle span {
+  fill: var(--mermaid-label-text) !important;
+  color: var(--mermaid-label-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .classText text,
+body.theme-custom .mermaid-preview svg .classText span {
+  fill: var(--mermaid-edge-label-text) !important;
+  color: var(--mermaid-edge-label-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .divider {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .relation {
+  stroke: var(--mermaid-edge-stroke);
+}
+
+/* ================================================================
+   14. 甘特图 (Gantt)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .task {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .taskText,
+body.theme-custom .mermaid-preview svg .taskTextOutsideRight,
+body.theme-custom .mermaid-preview svg .taskTextOutsideLeft {
+  fill: var(--mermaid-label-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .section rect {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .sectionText,
+body.theme-custom .mermaid-preview svg .sectionTitle {
+  fill: var(--mermaid-label-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .today {
+  stroke: var(--mermaid-highlight) !important;
+}
+
+body.theme-custom .mermaid-preview svg .grid .tick line {
+  stroke: var(--mermaid-edge-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .grid .domain {
+  stroke: var(--mermaid-edge-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .tick text {
+  fill: var(--mermaid-axis-text);
+}
+
+/* ── Typora 兼容 ── */
+.md-diagram-panel.md-mermaid .section0,
+.md-diagram-panel.md-mermaid .section1,
+.md-diagram-panel.md-mermaid .section2,
+.md-diagram-panel.md-mermaid .section3 {
+  fill: var(--mermaid-cluster-fill) !important;
+}
+
+.md-diagram-panel.md-mermaid .task0,
+.md-diagram-panel.md-mermaid .task1,
+.md-diagram-panel.md-mermaid .task2,
+.md-diagram-panel.md-mermaid .task3 {
+  fill: var(--mermaid-node-fill) !important;
+  stroke: var(--mermaid-node-stroke) !important;
+}
+
+.md-diagram-panel.md-mermaid .today {
+  stroke: var(--mermaid-highlight) !important;
+  stroke-width: 2px !important;
+}
+
+/* ================================================================
+   15. 思维导图 (Mindmap)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .mindmap-node rect,
+body.theme-custom .mermaid-preview svg .mindmap-node circle,
+body.theme-custom .mermaid-preview svg .mindmap-node ellipse,
+body.theme-custom .mermaid-preview svg .mindmap-node polygon,
+body.theme-custom .mermaid-preview svg .mindmap-node path {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .mindmap-node text,
+body.theme-custom .mermaid-preview svg .mindmap-node .nodeLabel text,
+body.theme-custom .mermaid-preview svg .mindmap-node .nodeLabel span {
+  fill: var(--mermaid-label-text) !important;
+  color: var(--mermaid-label-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .mindmap-edge {
+  stroke: var(--mermaid-edge-stroke);
+}
+
+/* ================================================================
+   16. Block 图
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .block rect,
+body.theme-custom .mermaid-preview svg .block path {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .block text,
+body.theme-custom .mermaid-preview svg .block .nodeLabel text,
+body.theme-custom .mermaid-preview svg .block .nodeLabel span {
+  fill: var(--mermaid-label-text) !important;
+  color: var(--mermaid-label-text) !important;
+}
+
+/* ================================================================
+   17. ER 图 (Entity Relationship)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .er .entityBox rect,
+body.theme-custom .mermaid-preview svg .er .entityBox path {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .er text,
+body.theme-custom .mermaid-preview svg .er .relationshipLabel {
+  fill: var(--mermaid-label-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .er .relationshipLine {
+  stroke: var(--mermaid-edge-stroke);
+}
+
+/* ================================================================
+   18. Git 图
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .git .commit rect,
+body.theme-custom .mermaid-preview svg .git .commit circle {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .git text,
+body.theme-custom .mermaid-preview svg .git .branchLabel text {
+  fill: var(--mermaid-label-text) !important;
+}
+
+/* ================================================================
+   19. 用户旅程图 (User Journey)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .journey .task rect {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .journey text {
+  fill: var(--mermaid-label-text) !important;
+}
+
+/* ================================================================
+   20. 时间线 (Timeline)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .timeline rect {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .timeline text {
+  fill: var(--mermaid-label-text) !important;
+}
+
+/* ================================================================
+   21. C4 架构图
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .c4 .person rect,
+body.theme-custom .mermaid-preview svg .c4 .person path,
+body.theme-custom .mermaid-preview svg .c4 .system rect,
+body.theme-custom .mermaid-preview svg .c4 .system path,
+body.theme-custom .mermaid-preview svg .c4 .container rect,
+body.theme-custom .mermaid-preview svg .c4 .container path,
+body.theme-custom .mermaid-preview svg .c4 .boundary rect,
+body.theme-custom .mermaid-preview svg .c4 .boundary path {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .c4 text,
+body.theme-custom .mermaid-preview svg .c4 span {
+  fill: var(--mermaid-label-text) !important;
+  color: var(--mermaid-label-text) !important;
+}
+
+/* ── 人物节点 (Person) ── */
+body.theme-custom .mermaid-preview svg .person rect,
+body.theme-custom .mermaid-preview svg .person path {
+  stroke: var(--mermaid-person-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .person-man text {
+  fill: #FFFFFF !important;
+}
+
+body.theme-custom .mermaid-preview svg .person-man span {
+  color: #FFFFFF !important;
+}
+
+/* ================================================================
+   22. 四象限图 (Quadrant Chart)
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .quadrant rect {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .quadrant text,
+body.theme-custom .mermaid-preview svg .quadrant .titleText {
+  fill: var(--mermaid-title-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .quadrant .axis text {
+  fill: var(--mermaid-axis-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .quadrant .axis line,
+body.theme-custom .mermaid-preview svg .quadrant .axis path {
+  stroke: var(--mermaid-edge-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .quadrant .point {
+  fill: var(--mermaid-highlight);
+  stroke: var(--mermaid-node-stroke);
+}
+
+/* ================================================================
+   23. XY Chart / 柱状图
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .xychart .axis text {
+  fill: var(--mermaid-axis-text) !important;
+}
+
+body.theme-custom .mermaid-preview svg .xychart .axis line,
+body.theme-custom .mermaid-preview svg .xychart .axis path {
+  stroke: var(--mermaid-edge-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .xychart .plot rect {
+  stroke: var(--mermaid-node-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .xychart .plot line {
+  stroke: var(--mermaid-edge-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .xychart .titleText {
+  fill: var(--mermaid-title-text) !important;
+}
+
+/* ================================================================
+   24. Sankey 图
+   ================================================================ */
+body.theme-custom .mermaid-preview svg .sankey .link {
+  stroke: var(--mermaid-edge-stroke);
+}
+
+body.theme-custom .mermaid-preview svg .sankey text {
+  fill: var(--mermaid-label-text) !important;
+}
+
+/* ================================================================
+   25. 打印样式
+   ================================================================ */
+@media print {
+  body.theme-custom .mermaid-block,
+  body.theme-custom .mermaid-preview,
+  .md-diagram-panel.md-mermaid {
+    background: #fafafa !important;
+    border: 1px solid #ddd !important;
+  }
+
+  body.theme-custom .mermaid-preview svg * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

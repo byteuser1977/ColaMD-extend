@@ -194,7 +194,7 @@ const mathBlockView = $view(mathBlockSchema, (_ctx): NodeViewConstructor => {
     div.addEventListener('focusout', (e) => {
       const target = e.target as HTMLElement
       if (!target.classList.contains('math-block-raw')) return
-      const rawValue = (target as HTMLTextAreaElement).value
+      const rawValue = (e.target as HTMLTextAreaElement).value
       const newText = rawValue.replace(/^\$\$\s*\n?/, '').replace(/\n?\s*\$\$$/, '').trim()
       const pos = getPos()
       if (pos != null && node.attrs.text !== newText) {
@@ -272,6 +272,14 @@ export const mathPlugin: RendererPlugin = {
   enabled: true,
   remarkPlugin: { plugin: remarkMath, options: undefined },
   nodeTypes: ['math_inline', 'math_block'],
+  clipboardStyles: {
+    '.math-inline': 'display:inline;padding:2px 4px;border-radius:3px;background:rgba(175,184,193,0.2);',
+    '.math-block': 'display:block;padding:16px;margin:1em 0;border-radius:6px;background:#f6f8fa;text-align:center;overflow-x:auto;',
+  },
+  exportStyles: `.math-inline{display:inline;padding:2px 4px;border-radius:3px;background:var(--code-bg)}
+.math-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:var(--code-block-bg);text-align:center;overflow-x:auto}`,
+  rawSelectors: ['.math-inline-raw', '.math-block-raw'],
+  bgCaptureSelectors: ['.math-inline', '.math-block'],
   // TODO: KaTeX CSS 在 SVG foreignObject 中丢失，导致导出 PNG 二次内容/空白
   // 后续需解决样式注入问题后重新启用
   // exportCapabilities: [

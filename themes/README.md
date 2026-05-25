@@ -9,6 +9,25 @@ Download any `.css` file and place it in `~/.colamd/themes/`, or use **Theme > I
 | [elegant.css](elegant.css) | Warm serif theme with terracotta accents and dark code blocks |
 | [guizang.css](guizang.css) | 古雅沉稳的归藏风格，赭石强调色、松烟墨代码块、宣纸底色 |
 | [forest-ink.css](forest-ink.css) | 森林墨主题，宣纸暖白底、松烟墨绿文字、森林绿强调色（灵感来自 wanhua-ppt Forest Ink 设计规范） |
+| [academic-paper.css](academic-paper.css) | 📄 **学术论文主题** — 符合 GB/T 7713 中文学术论文排版规范，黑体（SimHei）标题 + 宋体（SimSun）正文及首行缩进，三线表格式（顶线 + 表头底线 + 底线），10.5pt 字号，打印优化的 Mermaid 图表（直角容器、灰度配色），脚注与参考文献样式，Typora 兼容选择器。完整示例见 [`docs/academic-demo.md`](../docs/academic-demo.md) |
+| [academic-paper-pt.css](academic-paper-pt.css) | 📄 **学术论文主题（PT 单位版）** — 与 academic-paper.css 相同的 GB/T 7713 规范设计，但使用 pt 单位以适配特定打印场景需求 |
+| [pixso-design.css](pixso-design.css) | 🎨 Pixso 设计主题，现代设计系统风格 |
+| [swiss-design.css](swiss-design.css) | 🇨🇭 **瑞士国际主义风格主题** — 纯黑白红三色体系，几何无衬线字体（Helvetica / Inter），网格化排版与充足留白，功能至上设计哲学，极简克制美学，完整的 Mermaid 图表集成（单色调 + 强调红） |
+| [template.css](template.css) | 📝 **标准化模板** — 遵循 v3.0 主题开发范式的参考实现，包含完整的设计令牌、编辑器样式、代码块、引用块、表格、Mermaid 变量和打印样式，可作为创建自定义主题的起点 |
+
+> ⚠️ **Theme Migration Notice**
+>
+> Starting from this version, **theme updates and maintenance have been migrated to the dedicated repository**:
+>
+> 🔗 **[https://github.com/byteuser1977/ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes)**
+>
+> Future theme enhancements, bug fixes, and new theme submissions will be handled in the ColaMD-themes repository. This allows for:
+> - Faster iteration and release cycles for theme-specific changes
+> - Community contributions and theme submissions
+> - Independent versioning from the core ColaMD application
+> - Focused issue tracking for theme-related problems
+>
+> The themes included in this release will remain available for backward compatibility, but we recommend checking the dedicated repository for the latest versions and new themes.
 
 ## Creating Your Own Theme
 

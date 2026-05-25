@@ -1,0 +1,43 @@
+/*
+ * ColaMD 主题系统：Mermaid Academic 配色方案 (莫兰迪灰系)
+ * 依赖：foundation.css → mermaid/variables.css
+ * 适用场景：学术论文打印，浅灰度色块 + 深灰边框
+ */
+[data-mermaid-theme="academic"],
+body.theme-custom[data-mermaid-theme="academic"] {
+  --mermaid-font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --mermaid-font-size: 9pt;
+  --mermaid-node-stroke: #333333;
+  --mermaid-node-fill: #E3E3E3;
+  --mermaid-node-text: #1a1a1a;
+  --mermaid-node-stroke-width: 1px;
+  --mermaid-edge-stroke: #333333;
+  --mermaid-edge-stroke-width: 1px;
+  --mermaid-cluster-stroke: #4a4a4a;
+  --mermaid-cluster-fill: #F0F0F0;
+  --mermaid-cluster-dasharray: none;
+  --mermaid-label-text: #1a1a1a;
+  --mermaid-edge-label-bg: #ffffff;
+  --mermaid-edge-label-text: #1a1a1a;
+  --mermaid-title-text: #1a1a1a;
+  --mermaid-axis-text: #555555;
+  --mermaid-highlight: #333333;
+  --mermaid-background: #ffffff;
+  --mermaid-border-color: #cccccc;
+  --mermaid-border-radius: 0px;
+  --mermaid-label-offset-y: 0px;
+
+  /* 色板：莫兰迪灰色阶 */
+  --mermaid-cscale0: #A8A8A8;
+  --mermaid-cscale1: #8C8E90;
+  --mermaid-cscale2: #B0B0B0;
+  --mermaid-cscale3: #787878;
+  --mermaid-cscale4: #9E9E9E;
+  --mermaid-cscale5: #949698;
+  --mermaid-cscale6: #6E6E6E;
+  --mermaid-cscale7: #A0A0A0;
+  --mermaid-cscale8: #848688;
+  --mermaid-cscale9: #AAAAAA;
+  --mermaid-cscale10: #7A7A7C;
+  --mermaid-cscale11: #929294;
+}

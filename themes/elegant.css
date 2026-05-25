@@ -74,6 +74,7 @@ body.theme-custom {
     --mermaid-arrowhead-color: #999;
     --mermaid-person-border: #2c2c2c;
     --mermaid-person-bkg: #eae6e1;
+    --mermaid-label-offset-y: 0px;
 }
 
 pre { --select-text-bg-color: #36284e; --select-text-font-color: #fff; }
@@ -311,16 +312,22 @@ body.theme-custom .math-block .katex .minner { color: #2c2c2c !important; }
 
 /* ── 14. Mermaid ── */
 
-/* 容器 */
+/* 容器 — 只在外层加边框，避免内外双重边框 */
 .md-diagram-panel { margin: 1.5em 0; }
 .md-diagram-panel.md-mermaid,
-body.theme-custom .mermaid-block,
-body.theme-custom .mermaid-preview {
+body.theme-custom .mermaid-block {
     background: #f7f5f2;
     border: 1px solid #d8d3ce;
     border-radius: 6px;
     padding: 20px;
     margin: 1.5em 0;
+}
+body.theme-custom .mermaid-preview {
+    background: #f7f5f2;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
 }
 .md-diagram-panel.md-mermaid svg,
 body.theme-custom .mermaid-preview svg { max-width: 100%; height: auto; }
@@ -401,12 +408,12 @@ body.theme-custom .mermaid-preview svg .edgeLabel span { color: #2c2c2c !importa
 
 /* 文本偏移 */
 body.theme-custom .mermaid-preview svg .label text,
-body.theme-custom .mermaid-preview svg .nodeLabel text { transform: translateY(-3px) !important; }
-body.theme-custom .mermaid-preview svg .titleText { transform: translateY(-1px) !important; }
+body.theme-custom .mermaid-preview svg .nodeLabel text { transform: translateY(0) !important; }
+body.theme-custom .mermaid-preview svg .titleText { transform: translateY(0) !important; }
 body.theme-custom .mermaid-preview svg .xychart .axis text { transform: translateY(0) !important; }
 body.theme-custom .mermaid-preview svg .nodeLabel,
 body.theme-custom .mermaid-preview svg .edgeLabel {
-    display: inline-block !important;
+    display: block !important;
     position: relative !important;
     top: -3px !important;
 }
@@ -639,8 +646,8 @@ body.theme-custom ::-webkit-scrollbar-track { background: transparent; }
     }
     body.theme-custom .math-block { background: #fafafa !important; border: 1px solid #ddd !important; }
     body.theme-custom .mermaid-block,
-    body.theme-custom .mermaid-preview,
     .md-diagram-panel.md-mermaid { background: #fafafa !important; border: 1px solid #ddd !important; }
+    body.theme-custom .mermaid-preview { background: #fafafa !important; border: none !important; }
 }
 
 /* ── 26. 移动端适配 ── */

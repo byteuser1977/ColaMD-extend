@@ -9,7 +9,7 @@ import { listener, listenerCtx } from '@milkdown/kit/plugin/listener'
 import { clipboard } from '@milkdown/kit/plugin/clipboard'
 import { replaceAll } from '@milkdown/kit/utils'
 import { htmlView } from './html-view'
-import { getAllPluginModules } from './plugins'
+import { getAllPluginModules, getAllPlugins } from './plugins'
 
 import '@milkdown/kit/prose/view/style/prosemirror.css'
 
@@ -54,19 +54,14 @@ function enhanceClipboard(e: ClipboardEvent): void {
     ;(el as HTMLElement).setAttribute('style', 'background:none;padding:0;font-size:.875em;line-height:1.6;font-family:Menlo,Monaco,monospace;')
   })
 
-  doc.querySelectorAll('.math-inline').forEach((el) => {
-    ;(el as HTMLElement).setAttribute('style', 'display:inline;padding:2px 4px;border-radius:3px;background:rgba(175,184,193,0.2);')
-  })
-  doc.querySelectorAll('.math-block').forEach((el) => {
-    ;(el as HTMLElement).setAttribute('style', 'display:block;padding:16px;margin:1em 0;border-radius:6px;background:#f6f8fa;text-align:center;overflow-x:auto;')
-  })
-
-  doc.querySelectorAll('.mermaid-block').forEach((el) => {
-    ;(el as HTMLElement).setAttribute('style', 'display:block;padding:16px;margin:1em 0;border-radius:6px;background:#f6f8fa;border:1px solid #d0d7de;')
-  })
-  doc.querySelectorAll('.mermaid-preview svg').forEach((el) => {
-    ;(el as HTMLElement).setAttribute('style', 'max-width:100%;height:auto;')
-  })
+  for (const p of getAllPlugins()) {
+    if (!p.enabled || !p.clipboardStyles) continue
+    for (const [selector, style] of Object.entries(p.clipboardStyles)) {
+      doc.querySelectorAll(selector).forEach((el) => {
+        ;(el as HTMLElement).setAttribute('style', style)
+      })
+    }
+  }
 
   e.clipboardData?.setData('text/html', doc.body.innerHTML)
 }
@@ -89,7 +84,7 @@ export async function createEditor(
       ctx.set(remarkPluginsCtx, [
         ...pluginModules.map((m) => m.info.remarkPlugin),
         { plugin: remarkBreaks, options: undefined },
-      ])
+      ] as any)
       if (onChange) {
         ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => {
           onChange(markdown)
@@ -109,7 +104,41 @@ export async function createEditor(
     }
   }
 
-  editorInstance = await builder.create()
+  try {
+    editorInstance = await builder.create()
+  } catch (e: any) {
+    const offendingModule = pluginModules.find((m) =>
+      m.info.nodeTypes?.some((nt) => e?.message?.includes(nt))
+    )
+    if (offendingModule) {
+      console.warn('[editor] Milkdown context error, retrying without plugin:', offendingModule.info.id, e.message)
+      const filteredModules = pluginModules.filter((m) => m !== offendingModule)
+      builder = Editor.make()
+        .config((ctx) => {
+          ctx.set(rootCtx, root)
+          ctx.set(defaultValueCtx, defaultContent)
+          ctx.set(remarkPluginsCtx, [
+            ...filteredModules.map((m) => m.info.remarkPlugin),
+            { plugin: remarkBreaks, options: undefined },
+          ] as any)
+          if (onChange) ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => { onChange(markdown) })
+        })
+        .use(commonmark)
+        .use(gfm)
+        .use(history)
+        .use(listener)
+        .use(clipboard)
+        .use(htmlView)
+      for (const mod of filteredModules) {
+        for (const p of mod.milkdownPlugins) {
+          builder = builder.use(p)
+        }
+      }
+      editorInstance = await builder.create()
+    } else {
+      throw e
+    }
+  }
 
   editorInstance.action((ctx) => {
     const nvs = ctx.get(nodeViewCtx)
@@ -117,7 +146,7 @@ export async function createEditor(
     const fixed = nvs.map((nv: any, i: number) => {
       if (nv[0] != null) return nv
       const viewFn = nv[1]
-      const fallbackNames = ['math_inline', 'math_block', 'mermaid_block']
+      const fallbackNames = pluginModules.flatMap((m) => m.info.nodeTypes || [])
       const name = fallbackNames[i - 1]
       if (name && schema.nodes[name]) {
         return [name, viewFn]
@@ -127,8 +156,9 @@ export async function createEditor(
     ctx.set(nodeViewCtx, fixed)
 
     const oldView = ctx.get(editorViewCtx)
-    const rootEl = ctx.get(rootCtx)
+    const rootEl = ctx.get(rootCtx) as HTMLElement
     const nodeViews = Object.fromEntries(fixed)
+
     const newView = new EditorView(rootEl, {
       state: oldView.state,
       nodeViews,
@@ -142,6 +172,19 @@ export async function createEditor(
   root.addEventListener('copy', enhanceClipboard)
   root.addEventListener('cut', enhanceClipboard)
 
+  /*
+   * REMOVED: Custom IME composition handlers for mobile CJK input.
+   * ProseMirror handles IME composition natively via its DOM observer and input rules.
+   * These handlers dispatched synthetic input events that interfered with ProseMirror's
+   * internal state tracking, causing duplicated characters and broken undo history.
+   *
+   * Original code:
+   * if (/android|iphone|ipad/i.test(navigator.userAgent)) {
+   *     root.addEventListener('compositionstart', () => { ... })
+   *     root.addEventListener('compositionend', () => { ... })
+   * }
+   */
+
   root.addEventListener('click', (e) => {
     if (!(e.metaKey || e.ctrlKey)) return
     const link = (e.target as HTMLElement).closest('a')
@@ -150,6 +193,7 @@ export async function createEditor(
     if (href) {
       e.preventDefault()
       window.electronAPI?.openExternal(href)
+      window.capacitorAPI?.openExternal(href)
     }
   })
 
@@ -167,31 +211,43 @@ export function getMarkdown(): string {
   return markdown
 }
 
+/**
+ * Get HTML by cloning the live rendered DOM.
+ * Unlike {@link getHTML} which uses DOMSerializer (creating fresh nodes with
+ * "Rendering..." placeholders), this captures the actual rendered SVGs
+ * from mermaid, KaTeX math, etc. Used for PDF/HTML export.
+ */
 export function getLiveHTML(): string {
   const editorDom = document.querySelector('#editor .ProseMirror')
   if (!editorDom) return ''
   const clone = editorDom.cloneNode(true) as HTMLElement
 
-  const styleTargets: Array<{ selector: string; prop: string }> = [
-    { selector: '.math-inline', prop: 'backgroundColor' },
-    { selector: '.math-block', prop: 'backgroundColor' },
-    { selector: '.mermaid-block', prop: 'backgroundColor' },
-  ]
-  for (const { selector, prop } of styleTargets) {
-    const originals = editorDom.querySelectorAll(selector)
-    const clones = clone.querySelectorAll(selector)
-    originals.forEach((orig, i) => {
-      const computed = getComputedStyle(orig)
-      const val = computed.getPropertyValue(prop === 'backgroundColor' ? 'background-color' : prop)
-      if (val && clones[i]) (clones[i] as HTMLElement).style.setProperty(prop, val)
-    })
+  const plugins = getAllPlugins().filter((p) => p.enabled)
+
+  // Inline computed background colors from plugin-declared selectors
+  for (const p of plugins) {
+    if (!p.bgCaptureSelectors) continue
+    for (const selector of p.bgCaptureSelectors) {
+      const originals = editorDom.querySelectorAll(selector)
+      const clones = clone.querySelectorAll(selector)
+      originals.forEach((orig, i) => {
+        const val = getComputedStyle(orig).backgroundColor
+        if (val && clones[i]) (clones[i] as HTMLElement).style.backgroundColor = val
+      })
+    }
   }
 
-  clone.querySelectorAll('textarea.mermaid-source, .math-inline-raw, .math-block-raw')
-    .forEach(el => el.remove())
-  clone.querySelectorAll('.mermaid-loading, .mermaid-error')
-    .forEach(el => (el as HTMLElement).style.display = 'none')
-  return clone.innerHTML
+  // Remove raw-source textareas declared by plugins
+  const rawSelectors = plugins.flatMap((p) => p.rawSelectors || [])
+  if (rawSelectors.length) {
+    clone.querySelectorAll(rawSelectors.join(',')).forEach((el) => el.remove())
+  }
+  // Hide loading/error placeholders declared by plugins
+  const hideSelectors = plugins.flatMap((p) => p.hideSelectors || [])
+  if (hideSelectors.length) {
+    clone.querySelectorAll(hideSelectors.join(',')).forEach((el) => (el as HTMLElement).style.display = 'none')
+  }
+  return `<div id="write">${clone.innerHTML}</div>`
 }
 
 export function getHTML(): string {

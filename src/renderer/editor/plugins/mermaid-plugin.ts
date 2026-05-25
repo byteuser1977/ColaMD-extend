@@ -10,11 +10,17 @@ import './mermaid-plugin-dark.css'
 import './mermaid-plugin-elegant.css'
 import './mermaid-plugin-newsprint.css'
 import './mermaid-plugin-custom.css'
+// import './themes/components/mermaid/variables.css'
 
 ;(window as any).mermaid = mermaid
 
+// Track pending mermaid render promises for export synchronization
 const pendingRenders = new Set<Promise<void>>()
 
+/**
+ * Wait for all currently pending mermaid render() calls to settle.
+ * Called before PDF/HTML export to ensure all diagrams are rendered.
+ */
 export function awaitAllMermaidRenders(): Promise<void> {
   const promises = Array.from(pendingRenders)
   return Promise.allSettled(promises).then(() => {})
@@ -32,19 +38,23 @@ function getMermaidTheme(): string {
   return 'default'
 }
 
-function readCustomVar(name: string, fallback: string): string {
-  const style = getComputedStyle(document.body)
+function getCustomMermaidCSS(): CSSStyleDeclaration {
+  return getComputedStyle(document.body)
+}
+
+function readCustomVar(style: CSSStyleDeclaration, name: string, fallback: string): string {
   return style.getPropertyValue(name).trim() || fallback
 }
 
 function getCustomMermaidFontSize(): number {
-  const raw = readCustomVar('--mermaid-font-size', '')
+  const raw = getCustomMermaidCSS().getPropertyValue('--mermaid-font-size').trim()
   const n = parseInt(raw, 10)
   return Number.isFinite(n) && n > 0 ? n : 12
 }
 
 function getCustomMermaidThemeVariables(): Record<string, string> {
-  const v = (name: string, fallback: string) => readCustomVar(name, fallback)
+  const style = getCustomMermaidCSS()
+  const v = (name: string, fallback: string) => readCustomVar(style, name, fallback)
   const baseFont = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'
   const font = v('--mermaid-font-family', baseFont)
   const darkMode = v('--mermaid-dark-mode', 'false')
@@ -52,7 +62,7 @@ function getCustomMermaidThemeVariables(): Record<string, string> {
     darkMode,
     background: v('--mermaid-background', v('--bg-color', '#ffffff')),
     primaryColor: v('--mermaid-primary-color', v('--code-block-bg', '#f6f8fa')),
-    primaryBorderColor: v('--mermaid-primary-border-color', v('--border-color', '#d0d7de')),
+    primaryBorderColor: v('--mermaid-node-stroke', v('--border-color', '#d0d7de')),
     primaryTextColor: v('--mermaid-primary-text-color', v('--text-color', '#24292f')),
     secondaryColor: v('--mermaid-secondary-color', v('--code-bg', '#f6f8fa')),
     secondaryBorderColor: v('--mermaid-secondary-border-color', v('--border-color', '#d0d7de')),
@@ -60,21 +70,21 @@ function getCustomMermaidThemeVariables(): Record<string, string> {
     tertiaryColor: v('--mermaid-tertiary-color', v('--bg-color', '#ffffff')),
     tertiaryBorderColor: v('--mermaid-tertiary-border-color', v('--border-color', '#d0d7de')),
     tertiaryTextColor: v('--mermaid-tertiary-text-color', v('--text-color', '#24292f')),
-    lineColor: v('--mermaid-line-color', v('--border-color', '#d0d7de')),
-    textColor: v('--mermaid-text-color', v('--text-color', '#24292f')),
+    lineColor: v('--mermaid-edge-stroke', v('--border-color', '#d0d7de')),
+    textColor: v('--mermaid-label-text', v('--text-color', '#24292f')),
     mainBkg: v('--mermaid-main-bkg', v('--code-block-bg', '#f6f8fa')),
     secondBkg: v('--mermaid-second-bkg', v('--code-bg', '#f6f8fa')),
     mainContrastColor: v('--mermaid-primary-text-color', v('--text-color', '#24292f')),
     labelBackground: v('--mermaid-label-background', v('--code-block-bg', '#f6f8fa')),
     labelTextColor: v('--mermaid-label-text-color', v('--text-color', '#24292f')),
-    nodeBorder: v('--mermaid-node-border', v('--border-color', '#d0d7de')),
+    nodeBorder: v('--mermaid-node-stroke', v('--border-color', '#d0d7de')),
     nodeBkg: v('--mermaid-node-bkg', v('--code-block-bg', '#f6f8fa')),
     clusterBkg: v('--mermaid-cluster-bkg', v('--code-bg', '#f6f8fa')),
-    clusterBorder: v('--mermaid-cluster-border', v('--border-color', '#d0d7de')),
-    defaultLinkColor: v('--mermaid-line-color', v('--border-color', '#d0d7de')),
+    clusterBorder: v('--mermaid-cluster-stroke', v('--border-color', '#d0d7de')),
+    defaultLinkColor: v('--mermaid-edge-stroke', v('--border-color', '#d0d7de')),
     edgeLabelBackground: v('--mermaid-edge-label-background', v('--code-block-bg', '#f6f8fa')),
-    arrowheadColor: v('--mermaid-arrowhead-color', v('--mermaid-line-color', v('--border-color', '#d0d7de'))),
-    personBorder: v('--mermaid-person-border', v('--border-color', '#d0d7de')),
+    arrowheadColor: v('--mermaid-edge-stroke', v('--border-color', '#d0d7de')),
+    personBorder: v('--mermaid-person-stroke', v('--border-color', '#d0d7de')),
     personBkg: v('--mermaid-person-bkg', v('--code-block-bg', '#f6f8fa')),
     fontFamily: font,
     cScale0: v('--mermaid-cscale0', '#2d5f8a'),
@@ -94,7 +104,8 @@ function getCustomMermaidThemeVariables(): Record<string, string> {
 }
 
 function getCustomMermaidC4Config(): Record<string, string> {
-  const v = (name: string, fallback: string) => readCustomVar(name, fallback)
+  const style = getCustomMermaidCSS()
+  const v = (name: string, fallback: string) => readCustomVar(style, name, fallback)
   const baseFont = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'
   const font = v('--mermaid-font-family', baseFont)
   return {
@@ -105,45 +116,45 @@ function getCustomMermaidC4Config(): Record<string, string> {
     boundaryFontFamily: font,
     messageFontFamily: font,
     person_bg_color: v('--mermaid-c4-person-bg', '#2d5f8a'),
-    person_border_color: v('--mermaid-c4-person-border', '#4a7aaa'),
+    person_border_color: v('--mermaid-c4-person-stroke', '#4a7aaa'),
     external_person_bg_color: v('--mermaid-c4-ext-person-bg', '#4a5568'),
-    external_person_border_color: v('--mermaid-c4-ext-person-border', '#6b7a8a'),
+    external_person_border_color: v('--mermaid-c4-ext-person-stroke', '#6b7a8a'),
     system_bg_color: v('--mermaid-c4-system-bg', '#3d7a5a'),
-    system_border_color: v('--mermaid-c4-system-border', '#5a9a7a'),
+    system_border_color: v('--mermaid-c4-system-stroke', '#5a9a7a'),
     system_db_bg_color: v('--mermaid-c4-system-bg', '#3d7a5a'),
-    system_db_border_color: v('--mermaid-c4-system-border', '#5a9a7a'),
+    system_db_border_color: v('--mermaid-c4-system-stroke', '#5a9a7a'),
     system_queue_bg_color: v('--mermaid-c4-system-bg', '#3d7a5a'),
-    system_queue_border_color: v('--mermaid-c4-system-border', '#5a9a7a'),
+    system_queue_border_color: v('--mermaid-c4-system-stroke', '#5a9a7a'),
     external_system_bg_color: v('--mermaid-c4-ext-system-bg', '#6b4a7a'),
-    external_system_border_color: v('--mermaid-c4-ext-system-border', '#8a6a9a'),
+    external_system_border_color: v('--mermaid-c4-ext-system-stroke', '#8a6a9a'),
     external_system_db_bg_color: v('--mermaid-c4-ext-system-bg', '#6b4a7a'),
-    external_system_db_border_color: v('--mermaid-c4-ext-system-border', '#8a6a9a'),
+    external_system_db_border_color: v('--mermaid-c4-ext-system-stroke', '#8a6a9a'),
     external_system_queue_bg_color: v('--mermaid-c4-ext-system-bg', '#6b4a7a'),
-    external_system_queue_border_color: v('--mermaid-c4-ext-system-border', '#8a6a9a'),
+    external_system_queue_border_color: v('--mermaid-c4-ext-system-stroke', '#8a6a9a'),
     container_bg_color: v('--mermaid-c4-container-bg', '#8a6b3c'),
-    container_border_color: v('--mermaid-c4-container-border', '#aa8a5c'),
+    container_border_color: v('--mermaid-c4-container-stroke', '#aa8a5c'),
     container_db_bg_color: v('--mermaid-c4-container-bg', '#8a6b3c'),
-    container_db_border_color: v('--mermaid-c4-container-border', '#aa8a5c'),
+    container_db_border_color: v('--mermaid-c4-container-stroke', '#aa8a5c'),
     container_queue_bg_color: v('--mermaid-c4-container-bg', '#8a6b3c'),
-    container_queue_border_color: v('--mermaid-c4-container-border', '#aa8a5c'),
+    container_queue_border_color: v('--mermaid-c4-container-stroke', '#aa8a5c'),
     external_container_bg_color: v('--mermaid-c4-ext-container-bg', '#5a5a6a'),
-    external_container_border_color: v('--mermaid-c4-ext-container-border', '#7a7a8a'),
+    external_container_border_color: v('--mermaid-c4-ext-container-stroke', '#7a7a8a'),
     external_container_db_bg_color: v('--mermaid-c4-ext-container-bg', '#5a5a6a'),
-    external_container_db_border_color: v('--mermaid-c4-ext-container-border', '#7a7a8a'),
+    external_container_db_border_color: v('--mermaid-c4-ext-container-stroke', '#7a7a8a'),
     external_container_queue_bg_color: v('--mermaid-c4-ext-container-bg', '#5a5a6a'),
-    external_container_queue_border_color: v('--mermaid-c4-ext-container-border', '#7a7a8a'),
+    external_container_queue_border_color: v('--mermaid-c4-ext-container-stroke', '#7a7a8a'),
     component_bg_color: v('--mermaid-c4-component-bg', '#3c7a6b'),
-    component_border_color: v('--mermaid-c4-component-border', '#5c9a8b'),
+    component_border_color: v('--mermaid-c4-component-stroke', '#5c9a8b'),
     component_db_bg_color: v('--mermaid-c4-component-bg', '#3c7a6b'),
-    component_db_border_color: v('--mermaid-c4-component-border', '#5c9a8b'),
+    component_db_border_color: v('--mermaid-c4-component-stroke', '#5c9a8b'),
     component_queue_bg_color: v('--mermaid-c4-component-bg', '#3c7a6b'),
-    component_queue_border_color: v('--mermaid-c4-component-border', '#5c9a8b'),
+    component_queue_border_color: v('--mermaid-c4-component-stroke', '#5c9a8b'),
     external_component_bg_color: v('--mermaid-c4-ext-component-bg', '#6a6a6a'),
-    external_component_border_color: v('--mermaid-c4-ext-component-border', '#8a8a8a'),
+    external_component_border_color: v('--mermaid-c4-ext-component-stroke', '#8a8a8a'),
     external_component_db_bg_color: v('--mermaid-c4-ext-component-bg', '#6a6a6a'),
-    external_component_db_border_color: v('--mermaid-c4-ext-component-border', '#8a8a8a'),
+    external_component_db_border_color: v('--mermaid-c4-ext-component-stroke', '#8a8a8a'),
     external_component_queue_bg_color: v('--mermaid-c4-ext-component-bg', '#6a6a6a'),
-    external_component_queue_border_color: v('--mermaid-c4-ext-component-border', '#8a8a8a'),
+    external_component_queue_border_color: v('--mermaid-c4-ext-component-stroke', '#8a8a8a'),
   }
 }
 
@@ -439,9 +450,8 @@ const mermaidBlockSchema = $nodeSchema('mermaid_block', () => ({
   toDOM: (node) => {
     const container = document.createElement('div')
     container.className = 'mermaid-block'
-    container.dataset.mermaid = node.attrs.text as string
-
     const text = (node.attrs.text as string || '').trim()
+    container.dataset.mermaid = text
 
     if (node.attrs.mode === 'raw') {
       const el = document.createElement('pre')
@@ -451,40 +461,7 @@ const mermaidBlockSchema = $nodeSchema('mermaid_block', () => ({
       return { dom: el }
     }
 
-    if (!text) {
-      container.innerHTML = '<div class="mermaid-preview"><div class="mermaid-loading">Empty diagram</div></div>'
-      return { dom: container }
-    }
-
-    const mermaidLib = (window as any).mermaid
-    if (!mermaidLib || typeof mermaidLib.render !== 'function') {
-      container.innerHTML = '<div class="mermaid-preview"><div class="mermaid-error">Mermaid not loaded</div></div>'
-      return { dom: container }
-    }
-
     container.innerHTML = '<div class="mermaid-preview"><div class="mermaid-loading">Rendering...</div></div>'
-    const id = 'mermaid-' + (++renderCounter)
-    try {
-      const renderPromise = mermaidLib.render(id, text).then((result: { svg: string; bindFunctions?: (el: Element) => void }) => {
-        const preview = container.querySelector('.mermaid-preview')
-        if (preview) {
-          preview.innerHTML = result.svg
-          const svg = preview.querySelector('svg') as SVGSVGElement | null
-          if (svg) adjustNodeHeights(svg)
-          if (result.bindFunctions) result.bindFunctions(container)
-        }
-      }).catch((e: Error) => {
-        const preview = container.querySelector('.mermaid-preview')
-        if (preview) {
-          const msg = e.message.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-          preview.innerHTML = '<div class="mermaid-error">Error: ' + msg + '</div>'
-        }
-      }).finally(() => { pendingRenders.delete(renderPromise) })
-      pendingRenders.add(renderPromise)
-    } catch (e: any) {
-      container.innerHTML = '<div class="mermaid-preview"><div class="mermaid-error">' + String(e.message || e) + '</div></div>'
-    }
-
     return { dom: container }
   },
   parseMarkdown: {
@@ -640,6 +617,16 @@ export const mermaidPlugin: RendererPlugin = {
   enabled: true,
   remarkPlugin: { plugin: remarkMermaid, options: undefined },
   nodeTypes: ['mermaid_block'],
+  clipboardStyles: {
+    '.mermaid-block': 'display:block;padding:16px;margin:1em 0;border-radius:6px;background:#f6f8fa;border:1px solid #d0d7de;',
+    '.mermaid-preview svg': 'max-width:100%;height:auto;',
+  },
+  exportStyles: `.mermaid-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:var(--mermaid-background,var(--bg-color));border:1px solid var(--border-color)}
+.mermaid-preview{display:flex;justify-content:center;align-items:center}
+.mermaid-preview svg{max-width:100%;height:auto}`,
+  rawSelectors: ['textarea.mermaid-source'],
+  hideSelectors: ['.mermaid-loading', '.mermaid-error'],
+  bgCaptureSelectors: ['.mermaid-block'],
   exportCapabilities: [
     {
       label: 'Save Diagram as PNG',
@@ -658,7 +645,7 @@ export const mermaidPlugin: RendererPlugin = {
     const fontSize = isCustom ? getCustomMermaidFontSize() : 14
     mermaid.initialize({
       startOnLoad: false,
-      theme: getMermaidTheme(),
+      theme: getMermaidTheme() as any,
       themeVariables: getMermaidThemeVariables(),
       c4: getMermaidC4Config(),
       securityLevel: 'loose',
@@ -673,7 +660,7 @@ export const mermaidPlugin: RendererPlugin = {
     const fontSize = isCustom ? getCustomMermaidFontSize() : 16
     mermaid.initialize({
       startOnLoad: false,
-      theme: getMermaidTheme(),
+      theme: getMermaidTheme() as any,
       themeVariables: getMermaidThemeVariables(),
       c4: getMermaidC4Config(),
       securityLevel: 'loose',
@@ -682,6 +669,7 @@ export const mermaidPlugin: RendererPlugin = {
       fontSize,
     })
   },
+  ensureRendered: awaitAllMermaidRenders,
 }
 
 registerPluginModule({

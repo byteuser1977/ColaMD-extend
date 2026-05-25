@@ -1,0 +1,21 @@
+/*
+ * ColaMD 主题系统：Mermaid Light 配色方案
+ * 依赖：foundation.css → mermaid/variables.css
+ * 覆盖：仅覆盖 Mermaid 相关的颜色变量
+ */
+body.theme-light, body:not([class*="theme-"]) {
+  --mermaid-node-stroke: #6366f1;
+  --mermaid-node-fill: #e0e7ff;
+  --mermaid-node-text: #1e1b4b;
+  --mermaid-edge-stroke: #a78bfa;
+  --mermaid-cluster-stroke: #8b5cf6;
+  --mermaid-cluster-fill: rgba(99, 102, 241, 0.06);
+  --mermaid-label-text: #1e1b4b;
+  --mermaid-edge-label-bg: #f8f9fb;
+  --mermaid-edge-label-text: #374151;
+  --mermaid-title-text: #1e1b4b;
+  --mermaid-axis-text: #6b7280;
+  --mermaid-highlight: #6366f1;
+  --mermaid-background: #f8f9fb;
+  --mermaid-border-color: #e5e7eb;
+}

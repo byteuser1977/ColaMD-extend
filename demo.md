@@ -1,550 +1,193 @@
-# ColaMD 插件演示文档
+**图1　万华生态集团组织架构与业务层级**
 
-> 本文档用于演示 ColaMD 扩展版的 **Math 公式渲染** 与 **Mermaid 图表渲染** 能力。\
-> 每个插件均支持 **Rendered（渲染模式）** 和 **Raw（源码模式）** 一键切换。
+<div style="text-align: center;">
+
+<svg width="900" height="770" xmlns="http://www.w3.org/2000/svg" style="font-family: '宋体', 'SimSun', 'Georgia', 'Times New Roman', serif; display: block; margin: 0 auto;">
+
+  <!-- 背景：暖灰莫兰迪底 -->
+  <rect width="900" height="770" fill="#F5F0EB" rx="10" />
+
+  <!-- ===== 第一层：集团核心（起止节点 - 椭圆） ===== -->
+  <ellipse cx="450" cy="40" rx="130" ry="26" fill="#B7C3B3" />
+  <text x="450" y="38" fill="#2C2C2C" text-anchor="middle" font-size="16" font-weight="bold">万华生态集团（总部）</text>
+  <text x="450" y="54" fill="#4A4A4A" text-anchor="middle" font-size="10">信阳 · 2006年成立 · 创始人郭兴田</text>
+
+  <!-- 连线 -->
+  <line x1="450" y1="66" x2="450" y2="85" stroke="#9A8F85" stroke-width="2.5" />
+  <line x1="140" y1="85" x2="760" y2="85" stroke="#9A8F85" stroke-width="2.5" />
+
+  <line x1="140" y1="85" x2="140" y2="105" stroke="#9A8F85" stroke-width="2.5" />
+  <line x1="450" y1="85" x2="450" y2="105" stroke="#9A8F85" stroke-width="2.5" />
+  <line x1="760" y1="85" x2="760" y2="105" stroke="#9A8F85" stroke-width="2.5" />
+
+  <!-- ===== 第二层：三大核心平台（处理 - 矩形圆角） ===== -->
+  <!-- 万华禾香 -->
+  <rect x="40" y="105" width="200" height="55" rx="8" fill="#C5B8A8" />
+  <text x="140" y="128" fill="#2C2C2C" text-anchor="middle" font-size="14" font-weight="bold">万华禾香</text>
+  <text x="140" y="145" fill="#4A4A4A" text-anchor="middle" font-size="10">无醛板材 · 压舱石</text>
+
+  <!-- 万华新家装 -->
+  <rect x="350" y="105" width="200" height="55" rx="8" fill="#A8BCC0" />
+  <text x="450" y="128" fill="#2C2C2C" text-anchor="middle" font-size="14" font-weight="bold">万华新家装</text>
+  <text x="450" y="145" fill="#4A4A4A" text-anchor="middle" font-size="10">工业化整装 · 尖刀产品</text>
+
+  <!-- 司空网 -->
+  <rect x="660" y="105" width="200" height="55" rx="8" fill="#C5A8A5" />
+  <text x="760" y="128" fill="#2C2C2C" text-anchor="middle" font-size="14" font-weight="bold">司空网</text>
+  <text x="760" y="145" fill="#4A4A4A" text-anchor="middle" font-size="10">产业互联网平台 · 生态发动机</text>
+
+  <!-- 三级火箭标注（小标签矩形） -->
+  <rect x="390" y="170" width="120" height="20" rx="10" fill="#D6CFC7" />
+  <text x="450" y="184" fill="#2C2C2C" text-anchor="middle" font-size="11" font-weight="bold">三级火箭模型</text>
+
+  <!-- 向下连线 -->
+  <line x1="140" y1="160" x2="140" y2="200" stroke="#9A8F85" stroke-width="2" />
+  <line x1="450" y1="160" x2="450" y2="200" stroke="#9A8F85" stroke-width="2" />
+  <line x1="760" y1="160" x2="760" y2="200" stroke="#9A8F85" stroke-width="2" />
+
+  <!-- ===== 第三层：各平台核心能力（子流程 - 矩形虚线边框） ===== -->
+
+  <!-- 万华禾香模块 -->
+  <rect x="20" y="200" width="240" height="120" rx="8" fill="#EDE8E0" stroke="#C5B8A8" stroke-width="1.5" stroke-dasharray="6,3" />
+  <text x="140" y="222" fill="#2C2C2C" text-anchor="middle" font-size="12" font-weight="bold">核心能力</text>
+  <line x1="40" y1="230" x2="240" y2="230" stroke="#C5B8A8" stroke-width="0.5" />
+  <text x="40" y="248" fill="#3A3A3A" font-size="11">• MDI无醛胶技术（全球独家）</text>
+  <text x="40" y="266" fill="#3A3A3A" font-size="11">• 秸秆代木原料（成本低30%）</text>
+  <text x="40" y="284" fill="#3A3A3A" font-size="11">• 491万m³/年，14个产业集群</text>
+  <text x="40" y="302" fill="#3A3A3A" font-size="11">• 国家科技进步二等奖</text>
+
+  <!-- 万华新家装模块 -->
+  <rect x="330" y="200" width="240" height="120" rx="8" fill="#EDE8E0" stroke="#A8BCC0" stroke-width="1.5" stroke-dasharray="6,3" />
+  <text x="450" y="222" fill="#2C2C2C" text-anchor="middle" font-size="12" font-weight="bold">核心能力</text>
+  <line x1="350" y1="230" x2="550" y2="230" stroke="#A8BCC0" stroke-width="0.5" />
+  <text x="350" y="248" fill="#3A3A3A" font-size="11">• 45000+工业化部件拆解</text>
+  <text x="350" y="266" fill="#3A3A3A" font-size="11">• 7天全屋 / 36h厨卫焕新</text>
+  <text x="350" y="284" fill="#3A3A3A" font-size="11">• 毫米级交付精度（2-3mm）</text>
+  <text x="350" y="302" fill="#3A3A3A" font-size="11">• 7天培训：工匠→安装工</text>
+
+  <!-- 司空网模块 -->
+  <rect x="640" y="200" width="240" height="120" rx="8" fill="#EDE8E0" stroke="#C5A8A5" stroke-width="1.5" stroke-dasharray="6,3" />
+  <text x="760" y="222" fill="#2C2C2C" text-anchor="middle" font-size="12" font-weight="bold">核心能力</text>
+  <line x1="660" y1="230" x2="860" y2="230" stroke="#C5A8A5" stroke-width="0.5" />
+  <text x="660" y="248" fill="#3A3A3A" font-size="11">• 智能设计（20分钟出方案）</text>
+  <text x="660" y="266" fill="#3A3A3A" font-size="11">• 智造配送（柔性排产）</text>
+  <text x="660" y="284" fill="#3A3A3A" font-size="11">• 移动交付（LBS派工）</text>
+  <text x="660" y="302" fill="#3A3A3A" font-size="11">• 不直接做家装，赋能B端</text>
+
+  <!-- 横向协作连线 -->
+  <line x1="260" y1="260" x2="330" y2="260" stroke="#B5ABA1" stroke-width="1.5" stroke-dasharray="6,4" />
+  <text x="295" y="255" fill="#6B6259" text-anchor="middle" font-size="9">板材供应</text>
+
+  <line x1="570" y1="260" x2="640" y2="260" stroke="#B5ABA1" stroke-width="1.5" stroke-dasharray="6,4" />
+  <text x="605" y="255" fill="#6B6259" text-anchor="middle" font-size="9">系统赋能</text>
+
+  <!-- ===== 第四层：细分赛道（判定 - 菱形） ===== -->
+  <line x1="450" y1="320" x2="450" y2="348" stroke="#9A8F85" stroke-width="2.5" />
+
+  <!-- 菱形（判定框） -->
+  <polygon points="270,370 450,348 630,370 450,392" fill="#E0D2C8" stroke="#B5ABA1" stroke-width="1.5" />
+  <text x="450" y="375" fill="#2C2C2C" text-anchor="middle" font-size="13" font-weight="bold">七大细分赛道</text>
+  <text x="450" y="389" fill="#4A4A4A" text-anchor="middle" font-size="9">（生活场景解决方案）</text>
+
+  <!-- 向下分支 -->
+  <line x1="450" y1="392" x2="450" y2="420" stroke="#9A8F85" stroke-width="2" />
+  <line x1="80" y1="420" x2="820" y2="420" stroke="#9A8F85" stroke-width="2" />
+
+  <line x1="80" y1="420" x2="80" y2="435" stroke="#9A8F85" stroke-width="1.5" />
+  <line x1="203" y1="420" x2="203" y2="435" stroke="#9A8F85" stroke-width="1.5" />
+  <line x1="327" y1="420" x2="327" y2="435" stroke="#9A8F85" stroke-width="1.5" />
+  <line x1="450" y1="420" x2="450" y2="435" stroke="#9A8F85" stroke-width="1.5" />
+  <line x1="573" y1="420" x2="573" y2="435" stroke="#9A8F85" stroke-width="1.5" />
+  <line x1="697" y1="420" x2="697" y2="435" stroke="#9A8F85" stroke-width="1.5" />
+  <line x1="820" y1="420" x2="820" y2="435" stroke="#9A8F85" stroke-width="1.5" />
+
+  <!-- 七个赛道矩形（莫兰迪柔和色） -->
+  <rect x="30" y="435" width="100" height="80" rx="8" fill="#D4C5B5" />
+  <text x="80" y="460" fill="#2C2C2C" text-anchor="middle" font-size="13" font-weight="bold">🏠 安家</text>
+  <text x="80" y="480" fill="#4A4A4A" text-anchor="middle" font-size="9">适老化改造</text>
+  <text x="80" y="498" fill="#4A4A4A" text-anchor="middle" font-size="9">⭐ 核心赛道</text>
+
+  <rect x="153" y="435" width="100" height="80" rx="8" fill="#C5BEC7" />
+  <text x="203" y="460" fill="#2C2C2C" text-anchor="middle" font-size="13" font-weight="bold">🧒 童趣</text>
+  <text x="203" y="480" fill="#4A4A4A" text-anchor="middle" font-size="9">儿童成长</text>
+  <text x="203" y="498" fill="#4A4A4A" text-anchor="middle" font-size="9">无醛刚需</text>
+
+  <rect x="277" y="435" width="100" height="80" rx="8" fill="#BEC8C0" />
+  <text x="327" y="460" fill="#2C2C2C" text-anchor="middle" font-size="13" font-weight="bold">🤖 智慧家</text>
+  <text x="327" y="480" fill="#4A4A4A" text-anchor="middle" font-size="9">全屋智能</text>
+  <text x="327" y="498" fill="#4A4A4A" text-anchor="middle" font-size="9">预装基础设施</text>
+
+  <rect x="400" y="435" width="100" height="80" rx="8" fill="#D4C8B8" />
+  <text x="450" y="460" fill="#2C2C2C" text-anchor="middle" font-size="13" font-weight="bold">🐾 宠屿</text>
+  <text x="450" y="480" fill="#4A4A4A" text-anchor="middle" font-size="9">人宠共居</text>
+  <text x="450" y="498" fill="#4A4A4A" text-anchor="middle" font-size="9">小红书上搜增680%</text>
+
+  <rect x="523" y="435" width="100" height="80" rx="8" fill="#BCC8C5" />
+  <text x="573" y="460" fill="#2C2C2C" text-anchor="middle" font-size="13" font-weight="bold">👨‍👩‍👧‍👦 和居</text>
+  <text x="573" y="480" fill="#4A4A4A" text-anchor="middle" font-size="9">三代同堂</text>
+  <text x="573" y="498" fill="#4A4A4A" text-anchor="middle" font-size="9">可变模块空间</text>
+
+  <rect x="647" y="435" width="100" height="80" rx="8" fill="#C2C5CB" />
+  <text x="697" y="460" fill="#2C2C2C" text-anchor="middle" font-size="13" font-weight="bold">🎨 我宅</text>
+  <text x="697" y="480" fill="#4A4A4A" text-anchor="middle" font-size="9">青年创造力</text>
+  <text x="697" y="498" fill="#4A4A4A" text-anchor="middle" font-size="9">可拆卸租客版</text>
+
+  <rect x="770" y="435" width="100" height="80" rx="8" fill="#C8C5C0" />
+  <text x="820" y="460" fill="#2C2C2C" text-anchor="middle" font-size="13" font-weight="bold">💡 灵感舱</text>
+  <text x="820" y="480" fill="#4A4A4A" text-anchor="middle" font-size="9">居家办公</text>
+  <text x="820" y="498" fill="#4A4A4A" text-anchor="middle" font-size="9">工作室</text>
+
+  <!-- ===== 第五层：AI 战略（处理 - 圆角矩形） ===== -->
+  <line x1="450" y1="515" x2="450" y2="550" stroke="#9A8F85" stroke-width="2.5" />
+
+  <rect x="300" y="550" width="300" height="36" rx="18" fill="#C0B7B5" />
+  <text x="450" y="574" fill="#2C2C2C" text-anchor="middle" font-size="14" font-weight="bold">🤖 AI战略：司空网.skill 智能体</text>
+
+  <line x1="450" y1="586" x2="450" y2="606" stroke="#B5ABA1" stroke-width="1.5" />
+  <line x1="150" y1="606" x2="750" y2="606" stroke="#B5ABA1" stroke-width="1.5" />
+
+  <!-- ↓ 修正：连接线位置与下方模块中心对齐（150 / 350 / 550 / 750） -->
+  <line x1="150" y1="606" x2="150" y2="620" stroke="#B5ABA1" stroke-width="1.5" />
+  <line x1="350" y1="606" x2="350" y2="620" stroke="#B5ABA1" stroke-width="1.5" />
+  <line x1="550" y1="606" x2="550" y2="620" stroke="#B5ABA1" stroke-width="1.5" />
+  <line x1="750" y1="606" x2="750" y2="620" stroke="#B5ABA1" stroke-width="1.5" />
+
+  <!-- ↓ 修正：四个 AI 胶囊均匀分布，不再重叠 -->
+  <!-- 块1：中心150 -->
+  <rect x="75" y="620" width="150" height="55" rx="27" fill="#D9D2CE" stroke="#C0B7B5" stroke-width="1.2" />
+  <text x="150" y="642" fill="#2C2C2C" text-anchor="middle" font-size="12" font-weight="bold">孝心检测 🎯</text>
+  <text x="150" y="660" fill="#4A4A4A" text-anchor="middle" font-size="9">上传照片→识别安全隐患</text>
+
+  <!-- 块2：中心350（原x=325→改为275） -->
+  <rect x="275" y="620" width="150" height="55" rx="27" fill="#D9D2CE" stroke="#C0B7B5" stroke-width="1.2" />
+  <text x="350" y="642" fill="#2C2C2C" text-anchor="middle" font-size="12" font-weight="bold">毫秒方案 ⚡</text>
+  <text x="350" y="660" fill="#4A4A4A" text-anchor="middle" font-size="9">30秒生成2-3套方案</text>
+
+  <!-- 块3：中心550（原x=425→改为475） -->
+  <rect x="475" y="620" width="150" height="55" rx="27" fill="#D9D2CE" stroke="#C0B7B5" stroke-width="1.2" />
+  <text x="550" y="642" fill="#2C2C2C" text-anchor="middle" font-size="12" font-weight="bold">补贴助手 💰</text>
+  <text x="550" y="660" fill="#4A4A4A" text-anchor="middle" font-size="9">自动匹配地方政策</text>
+
+  <!-- 块4：中心750 -->
+  <rect x="675" y="620" width="150" height="55" rx="27" fill="#D9D2CE" stroke="#C0B7B5" stroke-width="1.2" />
+  <text x="750" y="642" fill="#2C2C2C" text-anchor="middle" font-size="12" font-weight="bold">成长设计 🌱</text>
+  <text x="750" y="660" fill="#4A4A4A" text-anchor="middle" font-size="9">3-18岁可成长空间</text>
+
+  <!-- ===== 数据飞轮（结束节点 - 胶囊） ===== -->
+  <line x1="450" y1="675" x2="450" y2="696" stroke="#9A8F85" stroke-width="2" />
+  <rect x="230" y="696" width="440" height="32" rx="16" fill="#B2B9B0" />
+  <text x="450" y="717" fill="#2C2C2C" text-anchor="middle" font-size="12" font-weight="bold">🔄 数据飞轮：工具获客 → 数据积累 → 方案推荐 → 交易转化</text>
+
+  <!-- ===== 底部战略总结（结束节点） ===== -->
+  <line x1="450" y1="728" x2="450" y2="744" stroke="#9A8F85" stroke-width="2" />
+
+  <rect x="120" y="744" width="660" height="10" rx="5" fill="#8C8A86" />
+  <text x="450" y="738" fill="#2C2C2C" text-anchor="middle" font-size="10" font-weight="bold">定位：大家居行业的「安卓 + 高通」· 愿景：让每个人都能享受无醛美好的居住生活</text>
+
+</svg>
+
+<p style="font-size: 10.5pt; color: #333; margin-top: 8px; text-align: center;">图1　万华生态集团组织架构与业务层级</p>
+
+</div>
 
 ***
-
-## 一、Math 数学公式
-
-### 1.1 行内公式（Inline Math）
-
-行内公式使用单个 `$` 包裹，可嵌入段落中：
-
-* 质能方程：$E = mc^2$
-
-* 欧拉公式：$e^{i\pi} + 1 = 0$
-
-* 勾股定理：$a^2 + b^2 = c^2$
-
-* 导数定义：$f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}$
-
-* 求和公式：$\sum_{i=1}^{n} x_i = x_1 + x_2 + \cdots + x_n$
-
-* 积分公式：$\int_a^b f(x)\,dx = F(b) - F(a)$
-
-### 1.2 块级公式（Block Math）
-
-块级公式使用 `$$` 包裹，居中显示：
-
-**二次方程求根公式：**
-
-$$
-x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
-$$
-
-**高斯积分：**
-
-$$
-\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
-$$
-
-**傅里叶变换：**
-
-$$
-\hat{f}(\xi) = \int_{-\infty}^{\infty} f(x)\, e^{-2\pi i x \xi}\, dx
-$$
-
-**麦克斯韦方程组（微分形式）：**
-
-$$
-\begin{cases}
-\nabla \cdot \mathbf{E} = \dfrac{\rho}{\varepsilon_0} \\[8pt]
-\nabla \cdot \mathbf{B} = 0 \\[8pt]
-\nabla \times \mathbf{E} = -\dfrac{\partial \mathbf{B}}{\partial t} \\[8pt]
-\nabla \times \mathbf{B} = \mu_0 \mathbf{J} + \mu_0 \varepsilon_0 \dfrac{\partial \mathbf{E}}{\partial t}
-\end{cases}
-$$
-
-**爱因斯坦场方程：**
-
-$$
-G_{\mu\nu} + \Lambda g_{\mu\nu} = \frac{8\pi G}{c^4} T_{\mu\nu}
-$$
-
-**矩阵形式：**
-
-$$
-\mathbf{A} = \begin{bmatrix}
-a_{11} & a_{12} & a_{13} \\
-a_{21} & a_{22} & a_{23} \\
-a_{31} & a_{32} & a_{33}
-\end{bmatrix},
-\quad
-\mathbf{A}^{-1} = \frac{1}{\det(\mathbf{A})} \begin{bmatrix}
-C_{11} & C_{21} & C_{31} \\
-C_{12} & C_{22} & C_{32} \\
-C_{13} & C_{23} & C_{33}
-\end{bmatrix}
-$$
-
-***
-
-## 二、Mermaid 图表
-
-### 2.1 流程图（Flowchart / Graph）
-
-```mermaid
-graph TD
-    A[开始] --> B{条件判断}
-    B -->|条件成立| C[执行操作1]
-    B -->|条件不成立| D[执行操作2]
-    C --> E[结束]
-    D --> E
-```
-
-### 2.2 时序图（Sequence Diagram）
-
-```mermaid
-sequenceDiagram
-    participant U as 用户
-    participant C as ColaMD
-    participant A as AI Agent
-    participant F as 文件系统
-
-    U->>C: 打开 .md 文件
-    C->>F: fs.watch 监听文件
-    A->>F: 修改文件内容
-    F-->>C: 触发变更事件
-    C-->>U: 实时刷新显示
-    U->>C: 切换 Rendered/Raw 模式
-    C-->>U: 渲染公式与图表
-```
-
-### 2.3 类图（Class Diagram）
-
-```mermaid
-classDiagram
-    class PluginManager {
-        +Map plugins
-        +register(plugin)
-        +get(id)
-        +toggle(id, mode)
-    }
-
-    class MathPlugin {
-        +String id = "math"
-        +render(node)
-        +toRaw(node)
-        +exportPNG(node)
-    }
-
-    class MermaidPlugin {
-        +String id = "mermaid"
-        +render(node)
-        +toRaw(node)
-        +exportPNG(node)
-    }
-
-    PluginManager --> MathPlugin : manages
-    PluginManager --> MermaidPlugin : manages
-```
-
-### 2.4 状态图（State Diagram）
-
-```mermaid
-stateDiagram-v2
-    [*] --> 编辑中
-    编辑中 --> 渲染中 : 输入完成
-    渲染中 --> 渲染成功 : KaTeX/Mermaid 渲染成功
-    渲染中 --> 渲染失败 : 语法错误
-    渲染失败 --> 编辑中 : 修正代码
-    渲染成功 --> 编辑中 : 点击 Raw 模式
-    渲染成功 --> [*] : 导出 PNG
-```
-
-### 2.5 ER 图（Entity Relationship）
-
-```mermaid
-erDiagram
-    USER ||--o{ DOCUMENT : creates
-    USER {
-        string id PK
-        string name
-        string email
-    }
-    DOCUMENT {
-        string id PK
-        string title
-        string content
-        datetime created_at
-        string user_id FK
-    }
-    DOCUMENT ||--o{ PLUGIN_NODE : contains
-    PLUGIN_NODE {
-        string id PK
-        string type
-        string raw_content
-        string document_id FK
-    }
-```
-
-### 2.6 甘特图（Gantt Chart）
-
-```mermaid
-gantt
-    title ColaMD 扩展版开发计划
-    dateFormat  YYYY-MM-DD
-
-    section 基础架构
-    插件系统设计           :a1, 2026-01-01, 14d
-    插件管理器实现         :a2, after a1, 10d
-
-    section Math 插件
-    KaTeX 集成             :b1, after a2, 7d
-    行内/块级公式渲染       :b2, after b1, 10d
-    PNG 导出功能           :b3, after b2, 5d
-
-    section Mermaid 插件
-    Mermaid.js 集成        :c1, after a2, 7d
-    多图表类型支持         :c2, after c1, 14d
-    主题适配               :c3, after c2, 7d
-
-    section 测试与发布
-    集成测试               :d1, after b3, 7d
-    文档编写               :d2, after c3, 5d
-    版本发布               :d3, after d1, 3d
-```
-
-### 2.7 饼图（Pie Chart）
-
-```mermaid
-pie title ColaMD 用户操作系统分布
-    "macOS" : 45
-    "Windows" : 35
-    "Linux" : 15
-    "其他" : 5
-```
-
-### 2.8 用户旅程图（User Journey）
-
-```mermaid
-journey
-    title 用户使用 ColaMD 的工作流
-    section 打开文件
-      启动应用: 5: 用户
-      打开 .md: 5: 用户
-    section 编辑内容
-      输入 Markdown: 4: 用户
-      插入公式: 4: 用户, AI
-      插入图表: 4: 用户, AI
-    section 查看效果
-      实时渲染: 5: 用户
-      切换模式: 4: 用户
-      导出 PNG: 3: 用户
-```
-
-### 2.9 Git 图（Git Graph）
-
-```mermaid
-gitGraph
-    commit id: "初始提交"
-    branch develop
-    checkout develop
-    commit id: "添加 Math 插件"
-    commit id: "添加 Mermaid 插件"
-    checkout main
-    merge develop id: "合并插件系统" tag: "v2.0.0"
-    branch hotfix
-    checkout hotfix
-    commit id: "修复渲染 bug"
-    checkout main
-    merge hotfix id: "应用热修复" tag: "v2.0.1"
-    checkout develop
-    commit id: "新增主题适配"
-```
-
-### 2.10 思维导图（Mindmap）
-
-```mermaid
-mindmap
-  root((ColaMD))
-    编辑器
-      所见即所得
-      实时同步
-      智能换行
-    插件系统
-      Math 公式
-        行内公式
-        块级公式
-        PNG 导出
-      Mermaid 图表
-        流程图
-        时序图
-        类图
-        甘特图
-    导出功能
-      PDF
-      HTML
-      幻灯片
-    主题系统
-      Light
-      Dark
-      Elegant
-      Newsprint
-```
-
-### 2.11 时间线（Timeline）
-
-```mermaid
-timeline
-    title ColaMD 版本演进
-    2024 Q1 : v1.0 发布
-            : 基础编辑器功能
-    2024 Q2 : v1.2 发布
-            : 实时文件热更新
-            : 主题系统
-    2024 Q3 : v1.4 发布
-            : 幻灯片系统
-    2025 Q1 : v1.5 发布
-            : 幻灯片导出
-    2026 Q1 : v2.0 发布
-            : 显示插件系统
-            : Math + Mermaid
-```
-
-### 2.12 四象限图（Quadrant Chart）
-
-```mermaid
-quadrantChart
-    title 编辑器功能优先级矩阵
-    x-axis 低影响 --> 高影响
-    y-axis 低紧迫性 --> 高紧迫性
-    quadrant-1 立即实施
-    quadrant-2 计划实施
-    quadrant-3 低优先级
-    quadrant-4 考虑放弃
-
-    "实时同步": [0.9, 0.95]
-    "Math 公式": [0.85, 0.8]
-    "Mermaid 图表": [0.8, 0.75]
-    "主题系统": [0.6, 0.5]
-    "云同步": [0.4, 0.3]
-    "协作编辑": [0.3, 0.2]
-```
-
-### 2.13 XY 图表 / 柱状图（XY Chart）
-
-```mermaid
-xychart-beta
-    title "ColaMD 月活跃用户增长"
-    x-axis ["1月", "2月", "3月", "4月", "5月", "6月"]
-    y-axis "用户数 (千)" 0 --> 50
-    bar [12, 18, 25, 32, 40, 48]
-    line [12, 18, 25, 32, 40, 48]
-```
-
-### 2.14 C4 架构图（C4Context）
-
-```mermaid
-C4Context
-    title ColaMD 系统上下文图
-
-    Person(user, "用户", "使用 ColaMD 编辑 Markdown 文件")
-    System(colamd, "ColaMD", "Agent Native Markdown 编辑器")
-    System_Ext(agent, "AI Agent", "Claude Code / Cursor / Copilot 等")
-    System_Ext(filesystem, "文件系统", "本地 .md 文件")
-
-    Rel(user, colamd, "打开、编辑、查看文件")
-    Rel(agent, filesystem, "读写 .md 文件")
-    Rel(colamd, filesystem, "fs.watch 监听变更")
-    Rel(filesystem, colamd, "推送文件变更事件")
-```
-
-### 2.15 Sankey 图（Sankey Diagram）
-
-（桑吉图目前支持 beta 版本）
-
-```mermaid
-    sankey-beta
-    Agricultural 'waste',Bio-conversion,124.729
-    Bio-conversion,Liquid,0.597
-    Bio-conversion,Losses,26.862
-    Bio-conversion,Solid,280.322
-    Bio-conversion,Gas,81.144
-    Biofuel imports,Liquid,35
-    Biomass imports,Solid,35
-    Coal imports,Coal,11.606
-    Coal reserves,Coal,63.965
-    Coal,Solid,75.571
-    District heating,Industry,10.639
-    District heating,Heating and cooling - commercial,22.505
-    District heating,Heating and cooling - homes,46.184
-    Electricity grid,Over generation / exports,104.453
-    Electricity grid,Heating and cooling - homes,113.726
-    Electricity grid,H2 conversion,27.14
-    Electricity grid,Industry,342.165
-    Electricity grid,Road transport,37.797
-    Electricity grid,Agriculture,4.412
-    Electricity grid,Heating and cooling - commercial,40.858
-    Electricity grid,Losses,56.691
-    Electricity grid,Rail transport,7.863
-    Electricity grid,Lighting & appliances - commercial,90.008
-    Electricity grid,Lighting & appliances - homes,93.494
-    Gas imports,NGas,40.719
-    Gas reserves,NGas,82.233
-    Gas,Heating and cooling - commercial,0.129
-    Gas,Losses,1.401
-    Gas,Thermal generation,151.891
-    Gas,Agriculture,2.096
-    Gas,Industry,48.58
-    Geothermal,Electricity grid,7.013
-    H2 conversion,H2,20.897
-    H2 conversion,Losses,6.242
-    H2,Road transport,20.897
-    Hydro,Electricity grid,6.995
-    Liquid,Industry,121.066
-    Liquid,International shipping,128.69
-    Liquid,Road transport,135.835
-    Liquid,Domestic aviation,14.458
-    Liquid,International aviation,206.267
-    Liquid,Agriculture,3.64
-    Liquid,National navigation,33.218
-    Liquid,Rail transport,4.413
-    Marine algae,Bio-conversion,4.375
-    NGas,Gas,122.952
-    Nuclear,Thermal generation,839.978
-    Oil imports,Oil,504.287
-    Oil reserves,Oil,107.703
-    Oil,Liquid,611.99
-    Other waste,Solid,56.587
-    Other waste,Bio-conversion,77.81
-    Pumped heat,Heating and cooling - homes,193.026
-    Pumped heat,Heating and cooling - commercial,70.672
-    Solar PV,Electricity grid,59.901
-    Solar Thermal,Heating and cooling - homes,19.263
-    Solar,Solar Thermal,19.263
-    Solar,Solar PV,59.901
-    Solid,Agriculture,0.882
-    Solid,Thermal generation,400.12
-    Solid,Industry,46.477
-    Thermal generation,Electricity grid,525.531
-    Thermal generation,Losses,787.129
-    Thermal generation,District heating,79.329
-    Tidal,Electricity grid,9.452
-    UK land based bioenergy,Bio-conversion,182.01
-    Wave,Electricity grid,19.013
-    Wind,Electricity grid,289.366
-```
-
-### 2.16 Block 图（Block Diagram）
-
-```mermaid
-block-beta
-    columns 3
-    space:2
-    block:plugin_group:1
-        columns 1
-        math["Math Plugin"]
-        mermaid["Mermaid Plugin"]
-    end
-    space:2
-    editor["ColaMD Editor"]
-    space:2
-    user["用户"]
-    space:2
-
-    editor --> plugin_group
-    user --> editor
-```
-
-### 2.17 复杂流程图（带聚群）
-
-```mermaid
-graph TB
-    subgraph 输入层
-        A1[键盘输入]
-        A2[文件拖拽]
-        A3[Agent 修改]
-    end
-
-    subgraph 处理层
-        B1[Markdown 解析]
-        B2[Plugin 识别]
-        B3[渲染引擎]
-    end
-
-    subgraph 输出层
-        C1[富文本显示]
-        C2[源码显示]
-        C3[PNG 导出]
-    end
-
-    A1 --> B1
-    A2 --> B1
-    A3 --> B1
-    B1 --> B2
-    B2 -->|Math| B3
-    B2 -->|Mermaid| B3
-    B3 --> C1
-    B3 --> C2
-    B3 --> C3
-```
-
-##
-
-***
-
-## 三、混合内容演示
-
-以下段落同时包含 **行内公式**、**块级公式** 和 **Mermaid 图表**，展示插件的协同工作能力：
-
-在机器学习领域，线性回归模型的损失函数定义为：
-
-$$
-J(\theta) = \frac{1}{2m} \sum_{i=1}^{m} \left( h_\theta(x^{(i)}) - y^{(i)} \right)^2
-$$
-
-其中 $h_\theta(x) = \theta^T x$ 是假设函数，$m$ 是样本数量。梯度下降算法的更新规则为：
-
-$$
-\theta_j := \theta_j - \alpha \frac{\partial}{\partial \theta_j} J(\theta)
-$$
-
-下面是一个机器学习工作流的流程图：
-
-```mermaid
-graph LR
-    A[原始数据] --> B[数据预处理]
-    B --> C[特征工程]
-    C --> D[模型训练]
-    D --> E{模型评估}
-    E -->|准确率达标| F[模型部署]
-    E -->|准确率不足| G[调参优化]
-    G --> D
-    F --> H[预测服务]
-```
-
-神经网络的反向传播可以用矩阵形式表示。设第 $l$ 层的误差为 $\delta^{(l)}$，则：
-
-$$
-\delta^{(l)} = \left( (W^{(l)})^T \delta^{(l+1)} \right) \odot \sigma'(z^{(l)})
-$$
-
-其中 $\odot$ 表示 Hadamard 积，$\sigma'$ 是激活函数的导数。
-
-***
-
-## 四、操作指南
-
-### 切换渲染模式
-
-1. 点击顶部菜单栏 **Plug**
-2. 选择 **Math** 或 **Mermaid**
-3. 点击 **Rendered** 查看渲染效果，或 **Raw** 查看/编辑源码
-
-### 导出为 PNG
-
-* **Math 公式**：右键点击公式 → **Save Equation as PNG**
-
-* **Mermaid 图表**：右键点击图表 → **Save Diagram as PNG**
-
-### 编辑源码
-
-1. 切换到 **Raw** 模式
-2. 在文本框中直接修改 LaTeX 或 Mermaid 代码
-3. 点击编辑器其他区域失焦，自动保存并重新渲染
-
-***
-
-> **提示**：本文档中的所有公式和图表均可在 **Rendered** 和 **Raw** 模式之间自由切换，体验 ColaMD 的插件渲染控制能力。
