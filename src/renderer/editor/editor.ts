@@ -247,7 +247,7 @@ export function getLiveHTML(): string {
   if (hideSelectors.length) {
     clone.querySelectorAll(hideSelectors.join(',')).forEach((el) => (el as HTMLElement).style.display = 'none')
   }
-  return clone.innerHTML
+  return `<div id="write">${clone.innerHTML}</div>`
 }
 
 export function getHTML(): string {

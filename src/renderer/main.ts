@@ -678,7 +678,7 @@ ${themeCSS}
 ${pluginCSS}
 /* === Base Element Styles === */
 body{max-width:780px;margin:40px auto;padding:20px;font-size:${bodyFontSize};font-family:${fontFamily};line-height:${bodyLineHeight};background:${bgColor};color:${textColor}}
-h1{font-size:${getElFontSize('h1', '2em')};font-weight:${getElFontWeight('h1', '700')};border-bottom:1px solid ${borderColor};padding-bottom:.3em}
+${isCustomTheme ? '' : `h1{font-size:${getElFontSize('h1', '2em')};font-weight:${getElFontWeight('h1', '700')};border-bottom:1px solid ${borderColor};padding-bottom:.3em}
 h2{font-size:${getElFontSize('h2', '1.5em')};font-weight:${getElFontWeight('h2', '600')};border-bottom:1px solid ${borderColor};padding-bottom:.25em}
 h3{font-size:${getElFontSize('h3', '1.25em')};font-weight:${getElFontWeight('h3', '600')}}
 h4{font-size:${getElFontSize('h4', '1.1em')};font-weight:${getElFontWeight('h4', '600')}}
@@ -693,7 +693,7 @@ blockquote{border-left:4px solid ${blockquoteBorder};background:${blockquoteBg};
 table{border-collapse:collapse;width:100%;margin:1em 0}
 th,td{border:1px solid ${borderColor};padding:8px 12px}
 th{background:${tableHeaderBg};font-weight:600}
-hr{border:none;border-top:2px solid ${borderColor};margin:2em 0}
+hr{border:none;border-top:2px solid ${borderColor};margin:2em 0}`}
 img{max-width:100%}
 ::selection{background:${selectionBg}}
 ${(() => {
