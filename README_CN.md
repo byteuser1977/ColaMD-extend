@@ -8,8 +8,47 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/marswaveai/colamd.svg)](https://github.com/marswaveai/colamd/releases)
+[![Version: 1.5.1](https://img.shields.io/badge/Version-1.5.1-blue.svg)](https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1)
 
 **本扩展版仓库**: [git@github.com:byteuser1977/ColaMD-extend.git](https://github.com/byteuser1977/ColaMD-extend)
+
+## 🎉 v1.5.1 正式版发布亮点（2026-05-23）
+
+### ✨ 新功能特性
+
+#### 🎨 增强主题系统
+- **学术论文主题** — 符合 GB/T 7713 国标规范，含三线表、宋体/黑体排版、打印优化的 Mermaid 图表
+- **瑞士国际主义风格主题** 🇨🇭 — 黑白红三色体系、几何无衬线字体、网格化排版
+- **Pixso 设计规范主题** — 现代设计系统风格
+- **森林墨水主题** — 宣纸暖白底色、森林绿强调色
+- **标准化模板** — 遵循 v3.0 范式的参考实现，便于快速创建自定义主题
+- **主题开发框架** — 完整的 CSS 主题开发规范 (v3.2)，包含 30+ 条可验证规则、WCAG 对比度公式和打印保真指南
+
+#### 📱 移动端平台支持
+- **Android (.apk)** — Capacitor 6 集成，原生文件选择器、IME 输入法优化、PDF 导出
+- **iOS (.ipa)** — 完整 iOS 支持，基于 Capacitor 6
+- **双平台桥接** — 运行时自动检测 Electron / Capacitor API
+- **移动端适配样式** — 优化的触控界面和响应式设计
+
+#### 🔧 发布后改进
+- **重构 PDF 导出流程** — 自动提取当前主题样式、支持自定义打印样式、插件注入样式
+- **统一插件样式管理** — 数学/Mermaid 插件动态配置（剪贴板、导出、渲染样式）
+- **增强错误恢复机制** — 动态跳过出错插件，替代硬编码排除逻辑
+- **自定义主题导出修复** — 解决 Chromium CSSOM 序列化问题
+- **渲染输出优化** — 改进 HTML 结构以提升兼容性
+
+### 🐛 关键修复
+- 修复全项目 15 处 TypeScript 类型错误
+- 修复 Mermaid 文字偏移和边框问题（elegant + academic-paper 主题）
+- 修复 Android 平台中文输入法问题
+- 修复 Android 平台 Intent 文件打开和 PDF 导出
+- 修复移动端媒体查询缺失 screen 类型
+- 修复主题打印保真（@media print 样式镜像）
+- 解耦插件系统，减少 main.ts 对具体插件的依赖
+
+> ⚠️ **主题迁移说明**：从 v1.5.1 开始，主题更新已迁移至 [ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes) 仓库，以实现更快速的迭代和社区贡献。
+
+---
 
 [功能特性](#功能特性) | [显示插件](#显示插件系统) | [Plug 菜单](#plug-菜单--插件渲染控制) | [快速开始](#快速开始) | [移动端构建](#移动端构建--capacitor-6) | [主题系统](#主题系统) | [技术架构](#技术架构) | [English](README.md)
 
@@ -140,7 +179,15 @@ page: YOUR NAME
 
 ### 📤 导出能力
 
-ColaMD 提供多种导出方式，满足不同场景需求：
+ColaMD 提供多种导出方式，满足不同场景需求（v1.5.1 增强）：
+
+#### PDF / HTML 导出（v1.5.1 重构）
+- **自动主题样式提取** — 自动提取并注入当前主题样式到导出文档中
+- **自定义打印样式支持** — 支持传入自定义打印 CSS 以满足高级需求
+- **插件注入样式** — 数学和 Mermaid 插件动态注入导出样式（不再使用硬编码样式处理）
+- **智能错误恢复** — 导出时动态跳过出错插件，替代硬编码排除逻辑
+- **A4 分页输出** — 15mm 边距规范分页，背景色保留，无 UI 元素的干净输出
+- **HTML 导出** — 独立 HTML 文件，内嵌样式，KaTeX CDN 渲染数学公式，Mermaid SVG 内联图表，零依赖分享
 
 #### 导出为 HTML
 
@@ -688,11 +735,39 @@ ColaMD 内置 **4 个主题**，所有显示插件均会跟随主题自动适配
 | [elegant.css](themes/elegant.css) | 典雅暖调，朱砂红强调色、霞鹜文楷衬线体 |
 | [guizang.css](themes/guizang.css) | 归藏古风，赭石强调色、松烟墨代码块 |
 | [forest-ink.css](themes/forest-ink.css) | 🌲 森林墨，宣纸暖白底 + 松烟墨绿文字 + 森林绿强调色 |
-| [academic-paper.css](themes/academic-paper.css) | 📄 **学术论文（增强版）** — 符合 GB/T 7713 规范，黑体标题 + 宋体正文，三线表格式，打印优化的 Mermaid 图表，脚注与参考文献样式。完整示例见 [`academic-demo.md`](docs/academic-demo.md) |
+| [academic-paper.css](themes/academic-paper.css) | 📄 **学术论文** — 符合 GB/T 7713 规范，黑体标题 + 宋体正文，三线表格式，打印优化的 Mermaid 图表（10.5pt 字号）。完整示例见 [`academic-demo.md`](docs/academic-demo.md) |
+| [academic-paper-pt.css](themes/academic-paper-pt.css) | 📄 **学术论文（PT 单位版）** — 与 academic-paper.css 相同的 GB/T 7713 规范设计，但使用 pt 单位以适配特定打印场景需求 |
 | [pixso-design.css](themes/pixso-design.css) | 🎨 Pixso 设计，现代设计系统风格 |
-| [swiss-design.css](themes/swiss-design.css) | 🇨🇭 **瑞士国际主义平面设计风格** — 纯粹的黑白红三色体系，几何无衬线字体（Helvetica/Inter），网格化排版与大量留白，形式服从功能。极简克制的审美，灵感源自 Swiss International Typographic Style |
+| [swiss-design.css](themes/swiss-design.css) | 🇨🇭 **瑞士国际主义平面设计风格** — 纯粹的黑白红三色体系，几何无衬线字体（Helvetica/Inter），网格化排版与大量留白，形式服从功能。完整的 Mermaid 图表集成（单色调 + 强调红） |
+| [template.css](themes/template.css) | 📝 **标准化模板** — 遵循 v3.0 范式的参考实现，包含完整的设计令牌、编辑器样式、代码块、引用块、表格、Mermaid 变量和打印样式。可作为创建自定义主题的起点 |
+
+> ⚠️ **主题迁移说明**
+>
+> 从 v1.5.1 开始，**主题更新和维护已迁移至专用仓库**：
+>
+> 🔗 **[https://github.com/byteuser1977/ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes)**
+>
+> 未来的主题增强、错误修复和新主题提交将在 ColaMD-themes 仓库中进行。这样做的好处包括：
+> - 更快的主题特定变更迭代和发布周期
+> - 社区贡献和主题提交
+> - 与核心 ColaMD 应用独立的版本控制
+> - 专注的主题问题追踪
+>
+> 本版本中包含的主题将保持可用以确保向后兼容性，但我们建议查看专用仓库以获取最新版本和新主题。
 
 自定义主题支持：将 CSS 文件放入 `~/.colamd/themes/` 目录，通过 **Theme > Import Theme** 导入。导入的主题会持久化保存，重启后仍然可用。
+
+### 主题开发
+
+对于希望创建自定义主题的开发者，请参考：
+
+- **主题范式文档**：[`docs/theme-paradigm.md`](docs/theme-paradigm.md) — 完整的 CSS 主题开发规范 (v3.2)
+  - 设计原则：变量驱动、模块化、语义命名、AI Agent 可推导
+  - 30+ 条可验证规则（MUST / MUST NOT / SHOULD），包含 WCAG 对比度公式
+  - 打印保真要求：变量重声明、必覆盖元素清单（12 类）
+  - px 单位统一规范：禁止 pt/rem 混用以确保 PDF 导出字号一致
+- **主题模板**：[`themes/template.css`](themes/template.css) — 复制此文件作为自定义主题的起点
+- **Mermaid 变量参考**：参见 [`themes/README.md`](themes/README.md) 获取完整的 Mermaid CSS 变量文档
 
 ---
 

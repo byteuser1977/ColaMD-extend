@@ -1,0 +1,1321 @@
+/*
+ * ColaMD 主题：Academic Paper (学术论文打印)
+ * 配色：纯白底 + 纯黑正文 + 归藏暖色系 Mermaid
+ * 格式：遵循中文学术论文排版规范（GB/T 7713）
+ * 兼容：ColaMD (body.theme-custom) / Typora
+ * 导入：Theme > Import Theme
+ * @template: light
+ */
+
+/* ── 1. 根变量 & 主题变量 ── */
+:root {
+    --side-bar-bg-color: #f5f5f5;
+    --control-text-color: #333;
+    --active-file-bg-color: #e8e8e8;
+    --active-file-text-color: #000;
+    --active-file-border-color: #000;
+
+    /* ═══════════════════════════════════════════
+       印刷友好灰度色板（GB/T 7713 学术论文规范）
+       基于10级亮度感知，确保打印/屏幕一致性
+       ═══════════════════════════════════════════ */
+    --gray-0:   #ffffff;   /* 纯白 - 页面背景 */
+    --gray-1:   #fafafa;   /* 极浅灰 - 次要表面 */
+    --gray-2:   #f5f5f5;   /* 浅灰 - 代码/区块背景 */
+    --gray-3:   #eeeeee;   /* 中浅灰 - 表头底色 */
+    --gray-4:   #e0e0e0;   /* 浅中灰 - 高亮标记 */
+    --gray-5:   #cccccc;   /* 中灰 - 边框/分割线 */
+    --gray-6:   #999999;   /* 中深灰 - 次要文字 */
+    --gray-7:   #666666;   /* 深灰 - 弱化文字 */
+    --gray-8:   #333333;   /* 近黑 - 强调边框 */
+    --gray-9:   #000000;   /* 纯黑 - 正文/标题 */
+
+    /* 核心语义变量（基于灰度色板） */
+    --bg-color: var(--gray-0);
+    --text-color: var(--gray-9);
+    --select-text-bg-color: rgba(0, 0, 0, 0.12);
+    --select-text-font-color: var(--gray-9);
+    --rawblock-edit-panel-bd: var(--gray-5);
+}
+
+body.theme-custom {
+    /* ═══ 核心语义变量（GB/T 7713 印刷优化） ═══ */
+    --bg-color: var(--gray-0);
+    --text-color: var(--gray-9);
+    --heading-color: var(--gray-9);
+    --border-color: var(--gray-9);
+
+    /* 背景层次（从浅到深） */
+    --code-bg: var(--gray-2);
+    --code-color: var(--gray-9);
+    --code-block-bg: var(--gray-2);
+    --code-block-text: var(--gray-9);
+    --code-block-color: var(--gray-9);
+    --blockquote-bg: var(--gray-1);
+    --blockquote-border: var(--gray-9);
+    --surface-color: var(--gray-2);
+    --surface-alt: var(--gray-1);
+
+    /* 文字层次（从深到浅，按重要性降序） */
+    --link-color: var(--gray-9);
+    --accent-color: var(--gray-9);
+    --accent-dark: var(--gray-9);
+    --accent-light: var(--gray-4);
+    --text-muted: var(--gray-8);
+    --text-dim: var(--gray-7);
+
+    /* 交互状态 */
+    --selection-bg: rgba(0, 0, 0, 0.12);
+
+    /* 表格系统（三线表规范 GB/T 7713） */
+    --table-header-bg: transparent;  /* 三线表：表头无底色或极浅 */
+    --table-stripe: rgba(0, 0, 0, 0.02);  /* 长表格斑马纹（可选） */
+
+    /* 滚动条 */
+    --scrollbar-thumb: var(--gray-5);
+    --scrollbar-thumb-hover: var(--gray-6);
+
+    /* 分割线 */
+    --hr-color: var(--gray-9);
+    /* Mermaid 全局字体：黑体 小五号 9pt（GB/T 7713 图表字），独立于正文 */
+    --mermaid-font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    --mermaid-font-size: 9pt;
+    --mermaid-dark-mode: false;
+    /* ═══ Mermaid 图表系统（印刷友好灰度） ═══ */
+    /* 背景与边框 */
+    --mermaid-background: var(--gray-0);
+    --mermaid-border-color: var(--gray-5);
+    --mermaid-border-radius: 0;
+    --mermaid-padding: 20px;
+
+    /* 节点色块：莫兰迪浅灰（确保打印可辨） */
+    --mermaid-primary-color: var(--gray-3);
+    --mermaid-primary-border-color: var(--gray-8);
+    --mermaid-primary-text-color: var(--gray-9);
+    --mermaid-secondary-color: var(--gray-2);
+    --mermaid-secondary-border-color: var(--gray-7);
+    --mermaid-secondary-text-color: var(--gray-9);
+    --mermaid-tertiary-color: var(--gray-4);
+    --mermaid-tertiary-border-color: var(--gray-6);
+    --mermaid-tertiary-text-color: var(--gray-9);
+    --mermaid-node-fill: var(--gray-3);
+    --mermaid-node-bkg: var(--gray-2);
+    --mermaid-node-stroke: var(--gray-8);
+    --mermaid-node-stroke-width: 1px;
+    --mermaid-node-text: var(--gray-9);
+
+    /* 聚类 */
+    --mermaid-cluster-fill: var(--gray-1);
+    --mermaid-cluster-bkg: var(--gray-1);
+    --mermaid-cluster-stroke: var(--gray-7);
+    --mermaid-cluster-dasharray: none;
+
+    /* 边线/连线：深灰黑色便于打印 */
+    --mermaid-edge-stroke: var(--gray-8);
+    --mermaid-edge-stroke-width: 1px;
+
+    /* 标签 */
+    --mermaid-label-text: var(--gray-9);
+    --mermaid-label-text-color: var(--gray-9);
+    --mermaid-label-background: var(--gray-0);
+    --mermaid-label-offset-y: 0px;
+
+    /* 边标签 */
+    --mermaid-edge-label-text: var(--gray-9);
+    --mermaid-edge-label-bg: var(--gray-0);
+    --mermaid-edge-label-background: var(--gray-0);
+
+    /* 主色/对比色 */
+    --mermaid-main-bkg: var(--gray-3);
+    --mermaid-second-bkg: var(--gray-2);
+    --mermaid-main-contrast-color: var(--gray-9);
+    --mermaid-title-text: var(--gray-9);
+    --mermaid-axis-text: var(--gray-7);
+    --mermaid-highlight: var(--gray-8);
+    --mermaid-line-color: var(--gray-6);
+
+    /* 人物/角色 */
+    --mermaid-person-stroke: var(--gray-8);
+    --mermaid-person-bkg: var(--gray-2);
+    /* 莫兰迪灰色阶色板（Graph/Chart 多系列区分，基于灰度色板） */
+    --mermaid-cscale0: var(--gray-6);   /* #999999 → gray-6 */
+    --mermaid-cscale1: var(--gray-7);   /* #8C8E90 ≈ gray-7 */
+    --mermaid-cscale2: var(--gray-6);   /* #B0B0B0 ≈ gray-6 */
+    --mermaid-cscale3: var(--gray-8);   /* #787878 → gray-8 */
+    --mermaid-cscale4: var(--gray-6);   /* #9E9E9E ≈ gray-6 */
+    --mermaid-cscale5: var(--gray-7);   /* #949698 ≈ gray-7 */
+    --mermaid-cscale6: var(--gray-8);   /* #6E6E6E → gray-8 */
+    --mermaid-cscale7: var(--gray-6);   /* #A0A0A0 ≈ gray-6 */
+    --mermaid-cscale8: var(--gray-7);   /* #848688 ≈ gray-7 */
+    --mermaid-cscale9: var(--gray-6);   /* #AAAAAA ≈ gray-6 */
+    --mermaid-cscale10: var(--gray-8);  /* #7A7A7C ≈ gray-8 */
+    --mermaid-cscale11: var(--gray-7);  /* #929294 ≈ gray-7 */
+}
+
+pre { --select-text-bg-color: rgba(0, 0, 0, 0.12); --select-text-font-color: var(--gray-9); }
+
+/* ── 2. 全局 ── */
+html { font-size: 12pt; -webkit-font-smoothing: antialiased; }
+
+body.theme-custom, html, body {
+    background-color: var(--gray-0);
+    color: var(--gray-9);
+    font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    line-height: 1.5;
+    font-size: 12pt;
+}
+
+body.theme-custom { -webkit-font-smoothing: antialiased; }
+
+body.theme-custom #editor { max-width: 210mm; margin: 0 auto; padding: 25mm 25mm 25mm 30mm; }
+#write { max-width: 210mm; margin: 0 auto; padding: 0; }
+#write > ul:first-child, #write > ol:first-child { margin-top: 30px; }
+
+@media only screen and (min-width: 1400px) { #write { max-width: 210mm; } }
+@media only screen and (max-width: 768px) {
+    #write { padding: 15mm 12mm 15mm 12mm; }
+    body.theme-custom .mermaid-block,
+    body.theme-custom .mermaid-preview,
+    .md-diagram-panel.md-mermaid { padding: 12px; margin: 1em 0; }
+    body.theme-custom .mermaid-preview svg { max-width: 100% !important; height: auto !important; }
+    body.theme-custom .mermaid-preview svg text { font-size: 9pt !important; }
+    .md-diagram-panel.md-mermaid svg text { font-size: 9pt !important; }
+    body.theme-custom .mermaid-preview svg .titleText { font-size: 10.5pt !important; }
+    .md-diagram-panel.md-mermaid svg .titleText { font-size: 10.5pt !important; }
+}
+
+/* ── 3. 标题（GB/T 7713 学术论文规范） ── */
+h1, h2, h3, h4, h5, h6,
+body.theme-custom h1, body.theme-custom h2, body.theme-custom h3,
+body.theme-custom h4, body.theme-custom h5, body.theme-custom h6 {
+    position: relative;
+    color: var(--gray-9);
+    font-weight: 700;
+    line-height: 1.35;
+    text-indent: 0;
+    font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", "Arial", sans-serif;
+}
+
+/* 一级标题（论文题目）：黑体 三号 (16pt)，居中，段前后各 1 行 */
+h1, body.theme-custom h1 {
+    font-size: 16pt;
+    text-align: center;
+    margin-top: 24pt;
+    margin-bottom: 18pt;
+    cursor: text;
+}
+
+/* 二级标题（一级节）：黑体 四号 (14pt)，左对齐，段前 1 行，段后 0.5 行 */
+h2, body.theme-custom h2 {
+    font-size: 14pt;
+    margin-top: 20pt;
+    margin-bottom: 10pt;
+    cursor: text;
+}
+
+/* 三级标题（二级节）：黑体 小四号 (12pt)，左对齐，段前 0.5 行，段后 0.5 行 */
+h3, body.theme-custom h3 {
+    font-size: 12pt;
+    margin-top: 14pt;
+    margin-bottom: 7pt;
+    cursor: text;
+}
+
+/* 四级标题（三级节）：黑体 小四号 (12pt)，左对齐，段前 0.5 行 */
+h4, body.theme-custom h4 {
+    font-size: 12pt;
+    margin-top: 14pt;
+    margin-bottom: 6pt;
+    cursor: text;
+}
+
+/* 五级标题 */
+h5, body.theme-custom h5 {
+    font-size: 11pt;
+    margin-top: 12pt;
+    margin-bottom: 5pt;
+    cursor: text;
+}
+
+/* 六级标题：黑体 五号 10.5pt */
+h6, body.theme-custom h6 {
+    font-size: 10.5pt;
+    color: var(--gray-9);
+    margin-top: 10pt;
+    margin-bottom: 4pt;
+    cursor: text;
+}
+
+h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor,
+h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor { text-decoration: none; }
+
+/* ── 4. 内联元素 ── */
+/* 正文：宋体 小四号 (12pt)，行距 1.5 倍，首行缩进 2 字符 */
+body.theme-custom p, body.theme-custom #write > p {
+    margin: 0;
+    line-height: 1.5;
+    text-align: justify;
+    text-indent: 2em;
+    font-size: 12pt;
+}
+body.theme-custom p + p { margin-top: 0; }
+
+strong, body.theme-custom strong { color: var(--gray-9); font-weight: 700; }
+em, body.theme-custom em { font-style: italic; color: var(--gray-9); }
+em strong, strong em, body.theme-custom em strong, body.theme-custom strong em { color: var(--gray-9); font-weight: 700; }
+
+a, body.theme-custom a { color: var(--gray-9); text-decoration: none; border-bottom: 1px solid var(--gray-9); }
+a:hover, body.theme-custom a:hover { text-decoration: none; }
+
+u, body.theme-custom u {
+    text-decoration: none;
+    border-bottom: 1px solid var(--gray-9);
+    padding-bottom: 1px;
+}
+
+mark, body.theme-custom mark {
+    background: var(--gray-4);
+    color: var(--gray-9);
+    padding: 1px 4px;
+    border-radius: 0;
+}
+
+del, s { color: var(--gray-7); }
+
+/* ── 5. 引用块（左缩进对齐正文，段前段后 0.5 行） ── */
+blockquote, body.theme-custom blockquote {
+    margin: 8pt 0;
+    padding: 10px 16px 10px 20px;
+    border-left: 3px solid var(--gray-9);
+    background: var(--gray-1);
+    color: var(--gray-9);
+    font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    font-size: 10.5pt;
+}
+blockquote p, body.theme-custom blockquote p { margin: 3pt 0; text-indent: 0; }
+
+/* ── 6. 分割线 ── */
+hr, body.theme-custom hr { border: none; border-top: 1px solid var(--gray-9); margin: 24pt 0; height: 0; }
+
+/* ── 7. 列表（GB/T 7713 学术论文规范） ── */
+
+/* ── 7.0 重置 ── */
+body.theme-custom ul,
+body.theme-custom ol,
+body.theme-custom li {
+    margin: 0;
+    padding: 0;
+}
+
+/* ── 7.1 容器 ── */
+body.theme-custom #editor .ProseMirror > ul,
+body.theme-custom #editor .ProseMirror > ol,
+body.theme-custom #write > ul:first-of-type,
+body.theme-custom #write > ol:first-of-type {
+    margin: 4pt 0 4pt 2em;
+    padding-left: 1.5em;
+    list-style: none;
+    counter-reset: ol-lv1 ul-lv1;
+}
+body.theme-custom ul ul,
+body.theme-custom ul ol,
+body.theme-custom ol ul,
+body.theme-custom ol ol {
+    margin: 0;
+    padding-left: 1.5em;
+    list-style: none;
+}
+
+/* ── 7.2 列表项 ── */
+body.theme-custom li {
+    line-height: 1.6;
+    font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    font-size: 12pt;
+    font-weight: normal;
+    text-indent: 0;
+    list-style: none;
+    padding: 1pt 0;
+}
+
+/* ::before 符号区域：统一 inline 模式，与文字同行基线 */
+body.theme-custom li::before {
+    content: "";
+    display: inline;
+    margin-right: 0.35em;
+}
+
+/* ProseMirror li > p 内联化 */
+body.theme-custom #editor .ProseMirror li > p {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    text-indent: 0;
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+/* ── 7.3 有序列表编号体系 ── */
+
+/* 一级有序：1. 2. 3. */
+body.theme-custom ol > li {
+    counter-increment: ol-lv1;
+}
+body.theme-custom ol > li::before {
+    content: counter(ol-lv1) ".";
+    font-family: "SimSun", "Songti SC", Georgia, serif;
+}
+
+/* 二级有序：(1) (2) (3) */
+body.theme-custom ol > li > ol {
+    counter-reset: ol-lv2;
+}
+body.theme-custom ol > li > ol > li {
+    counter-increment: ol-lv2;
+}
+body.theme-custom ol > li > ol > li::before {
+    content: "(" counter(ol-lv2) ")";
+    font-family: "SimSun", "Songti SC", Georgia, serif;
+}
+
+/* 三级有序：① ② ③ */
+body.theme-custom ol > li > ol > li > ol {
+    counter-reset: ol-lv3;
+}
+body.theme-custom ol > li > ol > li > ol > li {
+    counter-increment: ol-lv3;
+}
+body.theme-custom ol > li > ol > li > ol > li::before {
+    content: counter(ol-lv3, cjk-ideographic) "";
+    font-family: "SimSun", "Songti SC", Georgia, serif;
+}
+
+/* 四级+有序：i. ii. iii. */
+body.theme-custom ol ol ol ol > li::before {
+    content: counter(list-item, lower-roman) ".";
+    font-family: "SimSun", "Songti SC", Georgia, serif;
+}
+
+/* ── 7.4 无序列表符号体系 ── */
+
+/* 一级无序：■ 实心方块 */
+body.theme-custom ul > li {
+    counter-increment: ul-lv1;
+}
+body.theme-custom ul > li::before {
+    content: "\25A0\00A0";
+}
+
+/* 二级无序：● 实心圆点 */
+body.theme-custom ul > li > ul {
+    counter-reset: ul-lv2;
+}
+body.theme-custom ul > li > ul > li {
+    counter-increment: ul-lv2;
+}
+body.theme-custom ul > li > ul > li::before {
+    content: "\25CF\00A0";
+}
+
+/* 三级无序：○ 空心圆圈 */
+body.theme-custom ul > li > ul > li > ul {
+    counter-reset: ul-lv3;
+}
+body.theme-custom ul > li > ul > li > ul > li {
+    counter-increment: ul-lv3;
+}
+body.theme-custom ul > li > ul > li > ul > li::before {
+    content: "\25CB\00A0";
+}
+
+/* 四级+无序：◆ 菱形 */
+body.theme-custom ul ul ul ul > li::before {
+    content: "\25C6\00A0";
+}
+
+/* ── 7.5 混合嵌套（有序↔无序交叉） ── */
+
+/* 无序 → 有序 */
+body.theme-custom ul > li > ol {
+    counter-reset: ol-mix2;
+}
+body.theme-custom ul > li > ol > li {
+    counter-increment: ol-mix2;
+}
+body.theme-custom ul > li > ol > li::before {
+    content: "(" counter(ol-mix2) ")";
+    font-family: "SimSun", "Songti SC", Georgia, serif;
+}
+body.theme-custom ul > li > ol > li > ol {
+    counter-reset: ol-mix3;
+}
+body.theme-custom ul > li > ol > li > ol > li {
+    counter-increment: ol-mix3;
+}
+body.theme-custom ul > li > ol > li > ol > li::before {
+    content: counter(ol-mix3, lower-roman) ".";
+    font-family: "SimSun", "Songti SC", Georgia, serif;
+}
+
+/* 有序 → 无序 */
+body.theme-custom ol > li > ul {
+    counter-reset: ul-mix2;
+}
+body.theme-custom ol > li > ul > li {
+    counter-increment: ul-mix2;
+}
+body.theme-custom ol > li > ul > li::before {
+    content: "\25CF\00A0";
+}
+body.theme-custom ol > li > ul > li > ul {
+    counter-reset: ul-mix3;
+}
+body.theme-custom ol > li > ul > li > ul > li {
+    counter-increment: ul-mix3;
+}
+body.theme-custom ol > li > ul > li > ul > li::before {
+    content: "\25CB\00A0";
+}
+
+.md-task-list-item > input { margin-left: -1.3em; margin-top: 0.3em; }
+
+/* ── 8. 内联代码 ── */
+code, tt,
+body.theme-custom code, body.theme-custom tt {
+    font-family: "Courier New", "Consolas", "Source Code Pro", monospace;
+    font-size: 0.88em;
+    padding: 1px 6px;
+    margin: 0 1px;
+    background: var(--gray-3);
+    border-radius: 0;
+    color: var(--gray-9);
+    border: none;
+}
+
+/* ── 9. 代码块 ── */
+pre.md-fences {
+    font-family: "Courier New", "Consolas", "Source Code Pro", monospace;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    background: var(--gray-2);
+    color: var(--gray-9);
+    padding: 14px 18px;
+    border-radius: 0;
+    margin: 12pt 0;
+    overflow-x: auto;
+    border: 1px solid var(--gray-9);
+}
+pre.md-fences code { background: transparent; color: inherit; padding: 0; margin: 0; border-radius: 0; border: none; }
+
+body.theme-custom #editor .ProseMirror pre {
+    font-family: "Courier New", "Consolas", "Source Code Pro", monospace;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    background: var(--gray-2) !important;
+    color: var(--gray-9) !important;
+    padding: 14px 18px;
+    border-radius: 0;
+    margin: 12pt 0;
+    overflow-x: auto;
+    border: 1px solid var(--gray-9);
+}
+body.theme-custom #editor .ProseMirror pre code {
+    background: transparent !important;
+    color: var(--gray-9) !important;
+    padding: 0; margin: 0; border-radius: 0; border: none;
+}
+
+/* ── 10. 代码语法高亮（黑白打印友好） ── */
+.cm-s-inner { font-family: "Courier New", "Consolas", "Source Code Pro", monospace; font-size: 10.5pt; line-height: 1.5; }
+
+body.theme-custom .token.comment, body.theme-custom .token.prolog,
+body.theme-custom .token.doctype, body.theme-custom .token.cdata,
+.cm-s-inner .cm-comment, .cm-s-inner .cm-quote, .cm-s-inner .cm-hr { color: var(--gray-7); font-style: italic; }
+
+body.theme-custom .token.punctuation, .cm-s-inner .cm-meta { color: var(--gray-8); }
+
+body.theme-custom .token.keyword, body.theme-custom .token.important,
+.cm-s-inner .cm-keyword { color: var(--gray-9); font-weight: 700; }
+
+body.theme-custom .token.boolean, body.theme-custom .token.builtin,
+body.theme-custom .token.tag, body.theme-custom .token.selector,
+body.theme-custom .token.constant, body.theme-custom .token.deleted,
+.cm-s-inner .cm-atom, .cm-s-inner .cm-builtin,
+.cm-s-inner .cm-tag, .cm-s-inner .cm-error { color: var(--gray-9); font-weight: 600; }
+
+body.theme-custom .token.string, body.theme-custom .token.attr-value,
+body.theme-custom .token.symbol, body.theme-custom .token.inserted,
+.cm-s-inner .cm-string { color: var(--gray-8); }
+
+body.theme-custom .token.number, .cm-s-inner .cm-number { color: var(--gray-9); }
+
+body.theme-custom .token.function, body.theme-custom .token.class-name,
+body.theme-custom .token.variable, body.theme-custom .token.attr-name,
+body.theme-custom .token.property, body.theme-custom .token.entity,
+.cm-s-inner .cm-def, .cm-s-inner .cm-variable-2,
+.cm-s-inner .cm-attribute, .cm-s-inner .cm-property,
+.cm-s-inner .cm-header { color: var(--gray-9); }
+
+.cm-s-inner .cm-header { font-weight: 700; }
+body.theme-custom .token.url, .cm-s-inner .cm-link { color: var(--gray-9); text-decoration: underline; }
+
+body.theme-custom .token.operator, .cm-s-inner .cm-operator { color: var(--gray-8); }
+
+body.theme-custom .token.regex { color: var(--gray-8); }
+.cm-s-inner .cm-variable { color: var(--gray-9); }
+
+/* ── 11. 表格（GB/T 7713 三线表规范） ── */
+
+/* 表格容器 */
+table, body.theme-custom table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14pt auto;
+    font-size: 10.5pt;
+    line-height: 1.5;
+}
+
+/* 表头单元格：黑体 五号 加粗 居中，浅灰底色（可选，三线表通常透明） */
+table th, body.theme-custom table th {
+    background: var(--table-header-bg);
+    font-weight: 700;
+    color: var(--gray-9);
+    padding: 6pt 8pt;
+    text-align: center;
+    text-indent: 0;
+    vertical-align: middle;
+    font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+/* 数据单元格：宋体 五号 左对齐 无首行缩进 */
+table td, body.theme-custom table td {
+    padding: 6pt 8pt;
+    text-align: left;
+    text-indent: 0;
+    vertical-align: top;
+    font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, serif;
+}
+
+/* 表格内段落：取消首行缩进，紧凑行距 */
+table p, body.theme-custom table p,
+table td p, body.theme-custom table td p {
+    margin: 0;
+    padding: 0;
+    text-indent: 0;
+    text-align: left;
+    line-height: 1.4;
+    font-size: inherit;
+}
+
+/* 表格内列表：继承全局 inline 符号模式，紧凑排列 */
+table ul, table ol,
+body.theme-custom table ul,
+body.theme-custom table ol {
+    margin: 2pt 0;
+    padding-left: 1.5em;
+}
+table li, body.theme-custom table li {
+    margin: 1pt 0;
+    padding-left: 0;
+    font-size: inherit;
+}
+table li::before, body.theme-custom table li::before {
+    display: inline;
+    margin-right: 0.35em;
+}
+
+/* 去掉 hover 效果 */
+table tr:hover td, body.theme-custom table tr:hover td {
+    background: transparent;
+}
+
+/* ── 11.1 三线表样式（学术论文标准） ── */
+/* 顶线 + 表头底线 + 底线，无竖线 */
+
+body.theme-custom table {
+    border-top: 1.5pt solid var(--gray-9);
+    border-bottom: 1.5pt solid var(--gray-9);
+    border-left: none;
+    border-right: none;
+}
+
+body.theme-custom table th {
+    border: none;
+    border-bottom: 0.75pt solid var(--gray-9);
+    background: transparent;  /* 三线表标准：表头透明或极浅 */
+}
+
+body.theme-custom table td {
+    border: none;
+    border-bottom: none;
+}
+
+/* ── 12. 图片（图题：宋体 五号 10.5pt，居中，位于图下方） ── */
+img, body.theme-custom img { max-width: 100%; }
+p > img:only-child, body.theme-custom p > img:only-child { display: block; margin: 12pt auto; }
+body.theme-custom figure { margin: 12pt 0; text-align: center; }
+body.theme-custom figcaption {
+    font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, serif;
+    font-size: 10.5pt;
+    color: var(--gray-9);
+    margin-top: 6pt;
+    text-align: center;
+}
+
+/* ── 13. 数学公式（纯黑白） ── */
+
+/* ColaMD */
+body.theme-custom .math-block {
+    background: var(--gray-0);
+    padding: 12px 0;
+    margin: 12pt 0;
+    border-radius: 0;
+    border: none;
+    text-align: center;
+    overflow-x: auto;
+}
+body.theme-custom .math-block .katex,
+body.theme-custom .math-block .katex *,
+body.theme-custom .math-block .MathJax,
+body.theme-custom .math-block .MathJax *,
+body.theme-custom .math-inline,
+body.theme-custom .math-inline .katex,
+body.theme-custom .math-inline .katex *,
+.md-inline-math script,
+.md-inline-math .MathJax {
+    color: var(--gray-9) !important;
+}
+
+/* ── 14. Mermaid 图表容器 ── */
+/* 配色全部引用前置变量，修改变量即可统一控制所有图表 */
+
+.md-diagram-panel { margin: 1.5em 0; }
+
+/* ── 14.0 图表备注（图题）：宋体 五号 10.5pt，居中，GB/T 7713 ── */
+body.theme-custom .mermaid-block + p {
+    font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, serif;
+    font-size: 10.5pt;
+    text-align: center;
+    color: var(--gray-9);
+    margin-top: 6pt;
+}
+
+body.theme-custom .mermaid-block {
+    background: var(--mermaid-background);
+    border: 1px solid var(--mermaid-border-color);
+    border-radius: var(--mermaid-border-radius);
+    padding: var(--mermaid-padding);
+    margin: 1.5em 0;
+    overflow-x: auto;
+}
+body.theme-custom .mermaid-preview { background: transparent; border: none; padding: 0; margin: 0; }
+.md-diagram-panel.md-mermaid {
+    background: var(--mermaid-background);
+    border: 1px solid var(--mermaid-border-color);
+    border-radius: var(--mermaid-border-radius);
+    padding: var(--mermaid-padding);
+    margin: 1.5em 0;
+    overflow-x: auto;
+}
+.md-diagram-panel.md-mermaid svg,
+body.theme-custom .mermaid-preview svg { max-width: 100%; height: auto; }
+
+/* ── 14.1 全局字体：黑体 小五号 9pt（GB/T 7713 图表字），独立于正文 ── */
+body.theme-custom .mermaid-preview svg text,
+body.theme-custom .mermaid-preview svg tspan {
+    font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
+    font-size: 9pt !important;
+    fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg foreignObject span,
+body.theme-custom .mermaid-preview svg foreignObject p,
+body.theme-custom .mermaid-preview svg foreignObject div,
+body.theme-custom .mermaid-preview svg .nodeLabel span,
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+    font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
+    font-size: 9pt !important;
+    color: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .titleText,
+body.theme-custom .mermaid-preview svg .pieTitleText {
+    font-size: 9pt !important;
+    fill: var(--mermaid-title-text) !important;
+}
+
+/* ── 14.2 通用节点色块：浅灰填色 + 深灰边框 ── */
+body.theme-custom .mermaid-preview svg .node rect,
+body.theme-custom .mermaid-preview svg .node circle,
+body.theme-custom .mermaid-preview svg .node ellipse,
+body.theme-custom .mermaid-preview svg .node polygon,
+body.theme-custom .mermaid-preview svg .node path {
+    fill: var(--mermaid-node-bkg) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+    stroke-width: var(--mermaid-node-stroke-width) !important;
+}
+body.theme-custom .mermaid-preview svg .node.default rect,
+body.theme-custom .mermaid-preview svg .node rect[fill] {
+    fill: var(--mermaid-node-bkg) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+}
+
+/* ── 14.3 连线/边线 ── */
+body.theme-custom .mermaid-preview svg .edgePath .path {
+    stroke: var(--mermaid-edge-stroke) !important;
+    stroke-width: var(--mermaid-edge-stroke-width) !important;
+}
+body.theme-custom .mermaid-preview svg defs marker path {
+    fill: var(--mermaid-edge-stroke) !important;
+    stroke: var(--mermaid-edge-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .relation {
+    stroke: var(--mermaid-edge-stroke) !important;
+}
+
+/* ── 14.4 聚类/子图 ── */
+body.theme-custom .mermaid-preview svg .cluster rect,
+body.theme-custom .mermaid-preview svg .cluster path {
+    fill: var(--mermaid-cluster-fill) !important;
+    stroke: var(--mermaid-cluster-stroke) !important;
+    stroke-width: 1px !important;
+}
+body.theme-custom .mermaid-preview svg .node.alt rect {
+    fill: var(--mermaid-cluster-fill) !important;
+    stroke: var(--mermaid-cluster-stroke) !important;
+}
+
+/* ── 14.5 标签文字（仅颜色，无偏移——参照 guizang 模式） ── */
+body.theme-custom .mermaid-preview svg .edgeLabel text,
+body.theme-custom .mermaid-preview svg .label text,
+body.theme-custom .mermaid-preview svg .nodeLabel text {
+    fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .nodeLabel span,
+body.theme-custom .mermaid-preview svg .edgeLabel span {
+    color: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .edgeLabel rect {
+    fill: var(--mermaid-label-background) !important;
+    stroke: none !important;
+}
+
+/* ── 14.6 流程图/Block 图 ── */
+body.theme-custom .mermaid-preview svg .block rect,
+body.theme-custom .mermaid-preview svg .block path {
+    stroke: var(--mermaid-node-stroke) !important;
+    fill: var(--mermaid-node-bkg) !important;
+}
+body.theme-custom .mermaid-preview svg .block text,
+body.theme-custom .mermaid-preview svg .block .nodeLabel text,
+body.theme-custom .mermaid-preview svg .block .nodeLabel span {
+    fill: var(--mermaid-node-text) !important;
+    color: var(--mermaid-node-text) !important;
+}
+
+/* ── 14.7 时序图 (Sequence) ── */
+body.theme-custom .mermaid-preview svg .actor rect,
+body.theme-custom .mermaid-preview svg .actor path {
+    fill: var(--mermaid-person-bkg) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg text.actor {
+    fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .actor-line {
+    stroke: var(--mermaid-line-color) !important;
+}
+body.theme-custom .mermaid-preview svg .messageLine0,
+body.theme-custom .mermaid-preview svg .messageLine1 {
+    stroke: var(--mermaid-node-stroke) !important;
+    stroke-width: 1px !important;
+}
+body.theme-custom .mermaid-preview svg .messageText {
+    fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .loopText,
+body.theme-custom .mermaid-preview svg .altText,
+body.theme-custom .mermaid-preview svg .optText,
+body.theme-custom .mermaid-preview svg .loopText tspan,
+body.theme-custom .mermaid-preview svg .altText tspan,
+body.theme-custom .mermaid-preview svg .optText tspan {
+    fill: var(--mermaid-axis-text) !important;
+}
+body.theme-custom .mermaid-preview svg .loopLine,
+body.theme-custom .mermaid-preview svg .altLine,
+body.theme-custom .mermaid-preview svg .optLine {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .labelBox {
+    stroke: var(--mermaid-node-stroke) !important;
+    fill: var(--mermaid-label-background) !important;
+}
+body.theme-custom .mermaid-preview svg .labelText {
+    fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .note {
+    fill: var(--surface-color) !important;
+    stroke: var(--mermaid-line-color) !important;
+}
+
+/* ── 14.8 类图 (Class Diagram) ── */
+body.theme-custom .mermaid-preview svg .classGroup rect,
+body.theme-custom .mermaid-preview svg .classBox rect,
+body.theme-custom .mermaid-preview svg .classBox path {
+    stroke: var(--mermaid-node-stroke) !important;
+    fill: var(--mermaid-node-bkg) !important;
+}
+body.theme-custom .mermaid-preview svg .classTitle text,
+body.theme-custom .mermaid-preview svg .classTitle span {
+    fill: var(--mermaid-node-text) !important;
+    color: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .classText text,
+body.theme-custom .mermaid-preview svg .classText span {
+    fill: var(--mermaid-node-text) !important;
+    color: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .divider {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+
+/* ── 14.9 状态图 (State Diagram) ── */
+body.theme-custom .mermaid-preview svg .statediagram-state rect,
+body.theme-custom .mermaid-preview svg .statediagram-state circle {
+    fill: var(--mermaid-node-bkg) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+    stroke-width: 1px !important;
+}
+body.theme-custom .mermaid-preview svg .statediagram-cluster rect {
+    fill: var(--mermaid-cluster-fill) !important;
+    stroke: var(--mermaid-cluster-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .statediagram-state .nodeLabel text,
+body.theme-custom .mermaid-preview svg .statediagram-state .nodeLabel span,
+body.theme-custom .mermaid-preview svg .statediagram-cluster .outer-title text {
+    fill: var(--mermaid-node-text) !important;
+    color: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .transition {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .edgeLabel .label text {
+    fill: var(--mermaid-node-text) !important;
+}
+
+/* ── 14.10 甘特图 (Gantt) ── */
+body.theme-custom .mermaid-preview svg .task {
+    fill: var(--mermaid-person-bkg) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+    stroke-width: 1px !important;
+}
+body.theme-custom .mermaid-preview svg .taskText,
+body.theme-custom .mermaid-preview svg .taskTextOutsideRight,
+body.theme-custom .mermaid-preview svg .taskTextOutsideLeft {
+    fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .section rect {
+    fill: var(--mermaid-tertiary-color) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .sectionText,
+body.theme-custom .mermaid-preview svg .sectionTitle {
+    fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .today {
+    stroke: var(--mermaid-node-stroke) !important;
+    stroke-width: 2px !important;
+}
+body.theme-custom .mermaid-preview svg .grid .tick line,
+body.theme-custom .mermaid-preview svg .grid .domain {
+    stroke: var(--mermaid-line-color) !important;
+}
+body.theme-custom .mermaid-preview svg .tick text {
+    fill: var(--mermaid-axis-text) !important;
+}
+
+/* ── 14.11 饼图 (Pie) ── */
+body.theme-custom .mermaid-preview svg .pieCircle,
+body.theme-custom .mermaid-preview svg .slice {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .legend text {
+    fill: var(--mermaid-node-text) !important;
+}
+
+/* ── 14.12 ER 图 (Entity Relationship) ── */
+body.theme-custom .mermaid-preview svg .er .entityBox rect,
+body.theme-custom .mermaid-preview svg .er .entityBox path {
+    fill: var(--mermaid-node-bkg) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .er text,
+body.theme-custom .mermaid-preview svg .er .relationshipLabel {
+    fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .er .relationshipLine {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+
+/* ── 14.13 Git 图 ── */
+body.theme-custom .mermaid-preview svg .git .commit rect,
+body.theme-custom .mermaid-preview svg .git .commit circle {
+    fill: var(--mermaid-cscale9) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .git text,
+body.theme-custom .mermaid-preview svg .git .branchLabel text {
+    fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .git .tag rect,
+body.theme-custom .mermaid-preview svg .git .tag circle {
+    fill: var(--mermaid-secondary-color) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .git .branch rect {
+    fill: var(--mermaid-tertiary-color) !important;
+    stroke: var(--mermaid-line-color) !important;
+}
+body.theme-custom .mermaid-preview svg .git .commit-line,
+body.theme-custom .mermaid-preview svg .git .branch-line {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+
+/* ── 14.14 用户旅程图 (User Journey) ── */
+body.theme-custom .mermaid-preview svg .journey .task rect {
+    fill: var(--mermaid-node-bkg) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .journey text {
+    fill: var(--mermaid-node-text) !important;
+}
+
+/* ── 14.15 时间线 (Timeline) ── */
+body.theme-custom .mermaid-preview svg .timeline rect {
+    fill: var(--mermaid-node-bkg) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .timeline text {
+    fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .timeline .period rect {
+    fill: var(--mermaid-cluster-fill) !important;
+    stroke: var(--mermaid-cluster-stroke) !important;
+}
+
+/* ── 14.16 思维导图 (Mindmap) ── */
+body.theme-custom .mermaid-preview svg .mindmap-node rect,
+body.theme-custom .mermaid-preview svg .mindmap-node circle,
+body.theme-custom .mermaid-preview svg .mindmap-node ellipse,
+body.theme-custom .mermaid-preview svg .mindmap-node polygon,
+body.theme-custom .mermaid-preview svg .mindmap-node path {
+    fill: var(--mermaid-node-bkg) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .mindmap-node text,
+body.theme-custom .mermaid-preview svg .mindmap-node .nodeLabel text,
+body.theme-custom .mermaid-preview svg .mindmap-node .nodeLabel span {
+    fill: var(--mermaid-node-text) !important;
+    color: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .mindmap-edge {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+
+/* ── 14.17 C4 架构图 ── */
+body.theme-custom .mermaid-preview svg .c4 .person rect,
+body.theme-custom .mermaid-preview svg .c4 .person path,
+body.theme-custom .mermaid-preview svg .c4 .system rect,
+body.theme-custom .mermaid-preview svg .c4 .system path,
+body.theme-custom .mermaid-preview svg .c4 .container rect,
+body.theme-custom .mermaid-preview svg .c4 .container path,
+body.theme-custom .mermaid-preview svg .c4 .boundary rect,
+body.theme-custom .mermaid-preview svg .c4 .boundary path {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .c4 text,
+body.theme-custom .mermaid-preview svg .c4 span {
+    fill: var(--mermaid-node-text) !important;
+    color: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .person rect,
+body.theme-custom .mermaid-preview svg .person path {
+    fill: var(--mermaid-person-bkg) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .person-man text {
+    fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .person-man span {
+    color: var(--mermaid-node-text) !important;
+}
+
+/* ── 14.18 XY Chart / 柱状图 ── */
+body.theme-custom .mermaid-preview svg .xychart .axis text {
+    fill: var(--mermaid-axis-text) !important;
+}
+body.theme-custom .mermaid-preview svg .xychart .axis line,
+body.theme-custom .mermaid-preview svg .xychart .axis path {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .xychart .plot rect,
+body.theme-custom .mermaid-preview svg .xychart .plot line {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .xychart .titleText {
+    fill: var(--mermaid-node-text) !important;
+}
+
+/* ── 14.19 四象限图 (Quadrant Chart) ── */
+body.theme-custom .mermaid-preview svg .quadrant rect {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .quadrant text,
+body.theme-custom .mermaid-preview svg .quadrant .titleText {
+    fill: var(--mermaid-node-text) !important;
+}
+body.theme-custom .mermaid-preview svg .quadrant .axis text {
+    fill: var(--mermaid-axis-text) !important;
+}
+body.theme-custom .mermaid-preview svg .quadrant .axis line,
+body.theme-custom .mermaid-preview svg .quadrant .axis path {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .quadrant .point {
+    fill: var(--mermaid-node-stroke) !important;
+    stroke: var(--mermaid-node-stroke) !important;
+}
+
+/* ── 14.20 Sankey 图 ── */
+body.theme-custom .mermaid-preview svg .sankey .link {
+    stroke: var(--mermaid-node-stroke) !important;
+}
+body.theme-custom .mermaid-preview svg .sankey text {
+    fill: var(--mermaid-node-text) !important;
+}
+
+/* ── 14.21 图表标题加粗（font-family/font-size 已在 14.1 统一定义） ── */
+body.theme-custom .mermaid-preview svg .pieTitleText,
+body.theme-custom .mermaid-preview svg .xychart .titleText,
+body.theme-custom .mermaid-preview svg .quadrant .titleText {
+    font-weight: 700 !important;
+}
+
+/* ── 14.22 Mermaid 源码编辑器 ── */
+body.theme-custom .mermaid-source {
+    width: 100%;
+    min-height: 100px;
+    border: 1px solid var(--mermaid-node-stroke);
+    border-radius: 0;
+    padding: 12px;
+    font-size: 10.5pt;
+    font-family: "Courier New", "Consolas", monospace;
+    color: var(--text-color);
+    background: var(--surface-color);
+    outline: none;
+    resize: vertical;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+body.theme-custom .mermaid-source:focus {
+    border-color: var(--mermaid-node-text);
+}
+
+/* ── 15. 脚注（小五号 9pt） ── */
+body.theme-custom .footnotes {
+    font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, serif;
+    font-size: 9pt;
+    color: var(--gray-9);
+    margin-top: 24pt;
+    border-top: 1px solid var(--gray-9);
+    padding-top: 12pt;
+}
+
+/* ── 15.1 摘要（黑体 五号，"摘要："加粗，内容宋体 五号） ── */
+body.theme-custom p:has(strong):first-of-type,
+body.theme-custom #write > p:first-child strong {
+    font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    font-size: 10.5pt;
+    font-weight: 700;
+}
+
+/* ── 15.2 关键词 / 15.3 参考文献（条目宋体 小五号，悬挂缩进） ── */
+body.theme-custom .references,
+body.theme-custom [class*="reference"] {
+    font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, serif;
+    font-size: 9pt;
+    line-height: 1.5;
+}
+body.theme-custom .references li,
+body.theme-custom [class*="reference"] li {
+    text-indent: -2em;
+    padding-left: 2em;
+    margin-bottom: 4pt;
+}
+
+/* ── 16. 打印优化（GB/T 7713 页面设置，力求与屏幕显示一致） ── */
+@media print {
+    @page {
+        size: A4;
+        margin: 25mm 25mm 25mm 30mm;
+
+        @bottom-center {
+            content: counter(page);
+            font-family: "SimSun", "Songti SC", serif;
+            font-size: 9pt;
+            color: var(--gray-9);
+        }
+    }
+
+    html, body {
+        background: var(--gray-0) !important;
+        color: var(--gray-9) !important;
+        font-size: 12pt !important;
+        line-height: 1.5 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    #titlebar, #slides-btn, #agent-dot {
+        display: none !important;
+    }
+
+    #editor {
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+    }
+
+    #write {
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* ── 标题保持黑体 ── */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
+        color: var(--gray-9) !important;
+    }
+
+    /* ── 正文保留宋体首行缩进 ── */
+    p {
+        font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif !important;
+        color: var(--gray-9) !important;
+    }
+
+    /* ── 链接 ── */
+    a {
+        color: var(--gray-9) !important;
+        text-decoration: none !important;
+        border-bottom: 1px solid var(--gray-9) !important;
+    }
+
+    /* ── 引用块 ── */
+    blockquote {
+        background: var(--gray-1) !important;
+        border-left: 3px solid var(--gray-9) !important;
+        color: var(--gray-9) !important;
+        font-size: 10.5pt !important;
+    }
+
+    /* ── 内联代码（无边框，浅灰底） ── */
+    code {
+        background: var(--gray-3) !important;
+        color: var(--gray-9) !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 1px 6px !important;
+        font-family: "Courier New", "Consolas", monospace !important;
+    }
+
+    /* ── 代码块（浅灰底，直角，无边框） ── */
+    pre {
+        background: var(--gray-2) !important;
+        color: var(--gray-9) !important;
+        border: none !important;
+        border-radius: 0 !important;
+        font-size: 10.5pt !important;
+        line-height: 1.5 !important;
+        font-family: "Courier New", "Consolas", monospace !important;
+    }
+    pre code {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    /* ── 表格：三线表（顶线 + 表头底线 + 底线），无竖线 ── */
+    table {
+        border-collapse: collapse !important;
+        border-top: 1.5pt solid var(--gray-9) !important;
+        border-bottom: 1.5pt solid var(--gray-9) !important;
+        border-left: none !important;
+        border-right: none !important;
+        font-size: 10.5pt !important;
+    }
+    table th {
+        border: none !important;
+        border-bottom: 0.75pt solid var(--gray-9) !important;
+        background: transparent !important;  /* 三线表标准：表头透明 */
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important;
+        font-weight: 700 !important;
+        color: var(--gray-9) !important;
+    }
+    table td {
+        border: none !important;
+        font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif !important;
+        color: var(--gray-9) !important;
+    }
+
+    /* ── 数学公式 ── */
+    .math-inline, .math-block {
+        color: var(--gray-9) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* ── Mermaid：保留屏幕配色，直角容器 ── */
+    body.theme-custom .mermaid-block,
+    body.theme-custom .mermaid-preview,
+    .md-diagram-panel.md-mermaid {
+        background: var(--gray-0) !important;
+        border: 1px solid var(--gray-5) !important;
+        border-radius: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    body.theme-custom .mermaid-preview svg,
+    body.theme-custom .mermaid-preview svg * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    body.theme-custom .mermaid-block + p {
+        font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", Georgia, serif !important;
+        font-size: 10.5pt !important;
+        text-align: center !important;
+        color: var(--gray-9) !important;
+    }
+
+    /* ── 脚注与参考文献 ── */
+    .footnotes {
+        border-top: 1px solid var(--gray-9) !important;
+        font-size: 9pt !important;
+    }
+
+    h1 { page-break-before: avoid; }
+    h2, h3, h4, h5, h6 { page-break-after: avoid; }
+    table, figure, img { page-break-inside: avoid; }
+    p { orphans: 3; widows: 3; }
+}
+
+/* ── 17. 滚动条（默认浏览器样式，置于屏幕最右侧）── */
+body.theme-custom { scrollbar-width: auto; scrollbar-color: var(--gray-8); }
+
+/* ── 18. 源码编辑模式 ── */
+body.theme-custom #source-editor {
+    font-family: "Courier New", "Consolas", "Source Code Pro", monospace;
+    font-size: 12pt;
+    line-height: 1.5;
+    background: var(--gray-0);
+    color: var(--gray-9);
+}

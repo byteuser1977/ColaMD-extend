@@ -8,8 +8,47 @@ Real-time collaboration between humans and AI agents — see your agent's change
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/marswaveai/colamd.svg)](https://github.com/marswaveai/colamd/releases)
+[![Version: 1.5.1](https://img.shields.io/badge/Version-1.5.1-blue.svg)](https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1)
 
 **This Extended Edition**: [git@github.com:byteuser1977/ColaMD-extend.git](https://github.com/byteuser1977/ColaMD-extend)
+
+## 🎉 v1.5.1 Release Highlights (2026-05-23)
+
+### ✨ New Features
+
+#### 🎨 Enhanced Theme System
+- **Academic Paper Theme** — GB/T 7713 compliant academic paper formatting with three-line tables, SimHei/SimSun typography, and print-optimized Mermaid diagrams
+- **Swiss Design Theme** 🇨🇭 — Swiss International Typographic Style with black-white-red color system, geometric sans-serif fonts, and grid-based layout
+- **Pixso Design Theme** — Modern design system styling
+- **Forest Ink Theme** — Forest ink aesthetic with warm paper base and forest green accents
+- **Standardized Template** — Reference implementation following v3.0 theme paradigm for easy custom theme creation
+- **Theme Development Framework** — Complete CSS theme development specification (v3.2) with 30+ verifiable rules, WCAG contrast formulas, and print fidelity guidelines
+
+#### 📱 Mobile Platform Support
+- **Android (.apk)** — Capacitor 6 integration with native file picker, IME optimization, and PDF export
+- **iOS (.ipa)** — Full iOS support with Capacitor 6
+- **Dual-platform bridge** — Runtime auto-detection of Electron/Capacitor APIs
+- **Mobile-adapted styles** — Optimized touch interface and responsive design
+
+#### 🔧 Post-release Improvements
+- **Refactored PDF Export Pipeline** — Auto-extraction of current theme styles, custom print style support, plugin-injected styles
+- **Unified Plugin Style Management** — Dynamic configuration for Math/Mermaid plugins (clipboard, export, rendering styles)
+- **Enhanced Error Recovery** — Dynamic plugin skipping instead of hard-coded exclusions
+- **Custom Theme Export Fix** — Resolved Chromium CSSOM serialization issues
+- **Rendering Output Optimization** — Improved HTML structure for better compatibility
+
+### 🐛 Key Fixes
+- Fixed 15 TypeScript type errors across the codebase
+- Fixed Mermaid text offset and border issues (elegant + academic-paper themes)
+- Fixed Chinese IME input on Android platform
+- Fixed Intent file opening and PDF export on Android
+- Fixed media query missing screen type for mobile
+- Fixed theme print fidelity (@media print mirrors)
+- Decoupled plugin system from main.ts dependencies
+
+> ⚠️ **Theme Migration Notice**: Starting from v1.5.1, theme updates have been migrated to [ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes) repository for faster iteration and community contributions.
+
+---
 
 [Features](#features) | [Renderer Plugins](#renderer-plugin-system) | [Plug Menu](#plug-menu--plugin-render-control) | [Quick Start](#quick-start) | [Mobile Build](#mobile-build--capacitor-6) | [Themes](#theme-system) | [Architecture](#technical-architecture) | [中文](README_CN.md)
 
@@ -131,9 +170,18 @@ No image? The cover falls back to a clean orange-on-white design — it just wor
 
 ### 📤 Export Capabilities
 
-- **PDF / HTML export**
+#### PDF / HTML Export (Enhanced in v1.5.1)
+- **Auto Theme Style Extraction** — Automatically extracts and injects current theme styles into exported documents
+- **Custom Print Style Support** — Supports passing custom print CSS for advanced use cases
+- **Plugin-Injected Styles** — Math and Mermaid plugins dynamically inject their export styles (no more hardcoded style handling)
+- **Smart Error Recovery** — Dynamically skips failing plugins during export instead of hard-coded exclusions
+- **A4 PDF Output** — Proper pagination with 15mm margins, background color preservation, clean output without UI elements
+- **HTML Export** — Standalone HTML with embedded styles, KaTeX CDN for math, inline SVG for Mermaid diagrams, zero-dependency sharing
+
 - **Slide export** — Single HTML file (images Base64-inlined) or folder format (with video resources)
 - **Equation / Diagram PNG export** — Right-click to export as high-definition PNG images (2x scaling)
+
+> 💡 **Mobile Export**: On Android/iOS, exported files trigger system share panel for direct sending to WeChat, email, etc.
 
 ### 🎨 Themes & Cross-Platform (Inherited from Original)
 
@@ -628,11 +676,39 @@ Downloadable external themes (located in [`themes/`](themes/) directory):
 | [elegant.css](themes/elegant.css) | Warm serif with terracotta accents, LXGW WenKai font |
 | [guizang.css](themes/guizang.css) | Ancient Guizang style, ochre accents, ink-black code blocks |
 | [forest-ink.css](themes/forest-ink.css) | 🌲 Forest Ink, warm paper base + forest green ink text + forest green accent |
-| [academic-paper.css](themes/academic-paper.css) | 📄 **Academic Paper (Enhanced)** — GB/T 7713 compliant, SimHei headings + SimSun body text, three-line tables, print-optimized Mermaid diagrams, footnotes & references styling. See [`academic-demo.md`](docs/academic-demo.md) for a complete example |
+| [academic-paper.css](themes/academic-paper.css) | 📄 **Academic Paper** — GB/T 7713 compliant, SimHei headings + SimSun body text, three-line tables, print-optimized Mermaid diagrams (10.5pt font). See [`academic-demo.md`](docs/academic-demo.md) for a complete example |
+| [academic-paper-pt.css](themes/academic-paper-pt.css) | 📄 **Academic Paper (PT units)** — Same GB/T 7713 design as academic-paper.css but using pt units for specific print scenarios |
 | [pixso-design.css](themes/pixso-design.css) | 🎨 Pixso Design, modern design system style |
-| [swiss-design.css](themes/swiss-design.css) | 🇨🇭 **Swiss Design (International Typographic Style)** — Pure black-white-red color system, geometric sans-serif fonts (Helvetica/Inter), grid-based layout with generous whitespace, form follows function. Minimalist and restrained aesthetic inspired by Swiss International Typographic Style |
+| [swiss-design.css](themes/swiss-design.css) | 🇨🇭 **Swiss Design (International Typographic Style)** — Pure black-white-red color system, geometric sans-serif fonts (Helvetica/Inter), grid-based layout with generous whitespace, form follows function. Complete Mermaid diagram integration with monochrome + accent red styling |
+| [template.css](themes/template.css) | 📝 **Standardized Template** — Reference implementation following v3.0 paradigm. Includes complete design tokens, editor styles, code blocks, blockquotes, tables, Mermaid variables, and print styles. Ready-to-use template for creating custom themes |
+
+> ⚠️ **Theme Migration Notice**
+>
+> Starting from v1.5.1, **theme updates and maintenance have been migrated to the dedicated repository**:
+>
+> 🔗 **[https://github.com/byteuser1977/ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes)**
+>
+> Future theme enhancements, bug fixes, and new theme submissions will be handled in the ColaMD-themes repository. This allows for:
+> - Faster iteration and release cycles for theme-specific changes
+> - Community contributions and theme submissions
+> - Independent versioning from the core ColaMD application
+> - Focused issue tracking for theme-related problems
+>
+> The themes included in this release will remain available for backward compatibility, but we recommend checking the dedicated repository for the latest versions and new themes.
 
 Custom theme support: Place CSS files in `~/.colamd/themes/` directory, then import via **Theme > Import Theme**. Imported themes persist across sessions.
+
+### Theme Development
+
+For developers who want to create custom themes, refer to:
+
+- **Theme Paradigm Document**: [`docs/theme-paradigm.md`](docs/theme-paradigm.md) — Complete CSS theme development specification (v3.2)
+  - Design principles: variable-driven, modular, semantic naming, AI-agent derivable
+  - 30+ verifiable rules (MUST / MUST NOT / SHOULD) including WCAG contrast formulas
+  - Print fidelity requirements: variable re-declaration, required element coverage (12 categories)
+  - px unit unification standard: prohibits pt/rem mixing for consistent PDF export
+- **Theme Template**: [`themes/template.css`](themes/template.css) — Copy this file as a starting point for your custom theme
+- **Mermaid Variable Reference**: See [`themes/README.md`](themes/README.md) for complete Mermaid CSS variable documentation
 
 ---
 

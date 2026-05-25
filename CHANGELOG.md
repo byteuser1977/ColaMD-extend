@@ -5,58 +5,161 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+#### PDF Export & Plugin System
+- **Refactored PDF export pipeline** ([`src/renderer/main.ts`](src/renderer/main.ts), [`src/main/index.ts`](src/main/index.ts)):
+  - Support for custom print styles with simplified base print CSS
+  - Refactored `buildExportHTML` function to auto-extract current theme styles
+  - Added auto-injection of custom theme print styles
+  - Streamlined export HTML template, removed hardcoded plugin styles in favor of plugin-injected styles
+
+#### Plugin Style Management
+- **Unified plugin style management** ([`src/renderer/editor/plugins/index.ts`](src/renderer/editor/plugins/index.ts), [`src/renderer/editor/plugins/math-plugin.ts`](src/renderer/editor/plugins/math-plugin.ts), [`src/renderer/editor/plugins/mermaid-plugin.ts`](src/renderer/editor/plugins/mermaid-plugin.ts)):
+  - Added unified configuration fields (clipboard styles, export styles) for Math and Mermaid plugins
+  - Replaced hardcoded style handling logic with dynamic retrieval from plugin configuration
+  - Optimized error recovery logic to dynamically skip failing plugins instead of hard-excluding math plugin
+
+#### Theme System
+- **Fixed custom theme export issues** ([`src/renderer/editor/plugins/themes/theme-manager.ts`](src/renderer/editor/plugins/themes/theme-manager.ts)):
+  - Fixed custom theme print CSS extraction logic to avoid Chromium CSSOM serialization issues
+- **Rendering output optimization** ([`src/renderer/editor/editor.ts`](src/renderer/editor/editor.ts), [`src/renderer/main.ts`](src/renderer/main.ts)):
+  - Wrapped `getLiveHTML` return content in a div with id "write"
+  - Only render base element styles when not using custom themes
+
+#### Mobile Platform
+- **Fixed mobile media query** ([`src/renderer/mobile.css`](src/renderer/mobile.css)):
+  - Fixed missing screen type in media queries
+
+### Removed
+- Removed outdated PDF font compensation document ([`docs/PDF_FONT_COMPENSATION.md`](docs/PDF_FONT_COMPENSATION.md))
+
+---
+
 ## [1.5.1] - 2026-05-23
 
 ### Added
 
 #### Themes
-- **Academic Paper theme** ([`themes/academic-paper.css`](themes/academic-paper.css)) — 严格遵循 GB/T 7713 国标规范的学术论文主题，含三线表、宋体/黑体排版、多级标题、图题/表题规范
-- **Swiss Design theme** ([`themes/swiss-design.css`](themes/swiss-design.css)) 🇨🇭 — 瑞士国际主义平面设计风格：黑白红三色体系、几何无衬线字体、网格化排版、黑底白字表头
-- **Pixso Design theme** ([`themes/pixso-design.css`](themes/pixso-design.css)) — Pixso 设计规范主题
-- **Forest Ink theme** ([`themes/forest-ink.css`](themes/forest-ink.css)) — 森林墨水风格主题
-- **Standardized template** ([`themes/template.css`](themes/template.css)) — 遵循 v3.0 范式的参考实现模板，变量化 + 模块化 + 打印保真
+- **Academic Paper theme** ([`themes/academic-paper.css`](themes/academic-paper.css)) — Academic paper theme strictly following GB/T 7713 national standard specifications, including three-line tables, SimHei/SimSun typography, multi-level headings, figure/table caption standards
+- **Swiss Design theme** ([`themes/swiss-design.css`](themes/swiss-design.css)) 🇨🇭 — Swiss International Typographic Style: black-white-red color system, geometric sans-serif fonts, grid-based layout, white-on-black table headers
+- **Pixso Design theme** ([`themes/pixso-design.css`](themes/pixso-design.css)) — Pixso design specification theme
+- **Forest Ink theme** ([`themes/forest-ink.css`](themes/forest-ink.css)) — Forest ink style theme
+- **Standardized template** ([`themes/template.css`](themes/template.css)) — Reference implementation template following v3.0 paradigm: variable-based + modular + print fidelity
 
 #### Theme Development Framework
-- **Theme paradigm document** ([`docs/theme-paradigm.md`](docs/theme-paradigm.md)) — 完整的 CSS 主题开发规范 (v3.2)：
-  - 设计原则：变量驱动、模块化、语义命名、AI Agent 可推导
-  - 设计规范：30+ 条可验证规则 (MUST / MUST NOT / SHOULD)，含 WCAG 对比度公式
-  - 打印保真规范：变量重声明、必覆盖元素清单 (12 类)、Chromium 打印约束
-  - px 单位统一规范 (9.x)：禁止 pt/rem 混用，确保 PDF 导出字号一致
+- **Theme paradigm document** ([`docs/theme-paradigm.md`](docs/theme-paradigm.md)) — Complete CSS theme development specification (v3.2):
+  - Design principles: variable-driven, modular, semantic naming, AI-agent derivable
+  - Design specifications: 30+ verifiable rules (MUST / MUST NOT / SHOULD) including WCAG contrast formula
+  - Print fidelity specifications: variable re-declaration, required element coverage list (12 categories), Chromium print constraints
+  - px unit unification standard (9.x): prohibits pt/rem mixing to ensure consistent PDF export font sizes
 
 #### Platform Support
-- **Android 平台**：Capacitor 6 集成，原生 APK 构建，文件选择器、移动端适配样式 ([`mobile.css`](src/renderer/mobile.css))
-- **iOS 平台**：Capacitor 6 集成，原生 IPA 构建
-- **双平台桥接**：运行时自动检测 Electron / Capacitor API (`capacitor-api.ts`)
+- **Android platform**: Capacitor 6 integration, native APK build, file picker, mobile-adapted styles ([`mobile.css`](src/renderer/mobile.css))
+- **iOS platform**: Capacitor 6 integration, native IPA build
+- **Dual-platform bridge**: Runtime auto-detection of Electron/Capacitor API (`capacitor-api.ts`)
 
 #### Documentation & Demo
-- **学术论文演示文档** ([`docs/academic-demo.md`](docs/academic-demo.md)) — 万华生态研究报告，含 8 组 Mermaid 图表
-- **PDF 字体补偿指南** ([`docs/PDF_FONT_COMPENSATION.md`](docs/PDF_FONT_COMPENSATION.md)) — Electron 打印字号缩放问题与补偿方案
-- **行内 SVG 指南** ([`docs/demo.html`](docs/demo.html)) — Markdown 嵌入 SVG 的最佳实践演示
-- **通用演示文档** ([`docs/demo.md`](docs/demo.md)) — 全功能特性演示
+- **Academic paper demo document** ([`docs/academic-demo.md`](docs/academic-demo.md)) — Wanhua ecosystem research report with 8 Mermaid diagram groups
+- **Inline SVG guide** ([`docs/demo.html`](docs/demo.html)) — Best practices demonstration for embedding SVG in Markdown
+- **General demo document** ([`docs/demo.md`](docs/demo.md)) — Full feature showcase
 
 ### Changed
 
 #### Theme System Architecture
-- **模块化重构**：主题系统拆分为 `foundation.css` + `base/` 内置主题 + `components/mermaid/` Mermaid 变量映射 + 用户主题目录
-- **Mermaid 变量体系**：20 个核心 CSS 变量 (`--mermaid-*`)，自动映射到 22 种图表类型 SVG 选择器
-- **学术论文主题重构**：Section 14 硬编码色值全部重构为 `var()` 变量引用；所有 `pt` 单位替换为 `px` 偶数整数
+- **Modular refactoring**: Theme system split into `foundation.css` + `base/` built-in themes + `components/mermaid/` Mermaid variable mapping + user theme directory
+- **Mermaid variable system**: 20 core CSS variables (`--mermaid-*`) auto-mapped to 22 chart type SVG selectors
+- **Academic paper theme refactoring**: Section 14 hardcoded color values all refactored to `var()` variable references; all `pt` units replaced with `px` even integers
 
-#### Editor Core
-- 移除调试用开发者工具自动打开代码
-- 优化学术论文主题样式
+#### PDF Export & Plugin System (Post-release)
+- **Refactored PDF export pipeline** ([`src/renderer/main.ts`](src/renderer/main.ts), [`src/main/index.ts`](src/main/index.ts)):
+  - Support for custom print styles with simplified base print CSS
+  - Refactored `buildExportHTML` function to auto-extract current theme styles and inject into export HTML
+  - Streamlined export HTML template, removed hardcoded plugin styles in favor of plugin-injected styles
+- **Unified plugin style management** ([`src/renderer/editor/plugins/index.ts`](src/renderer/editor/plugins/index.ts), [`src/renderer/editor/plugins/math-plugin.ts`](src/renderer/editor/plugins/math-plugin.ts), [`src/renderer/editor/plugins/mermaid-plugin.ts`](src/renderer/editor/plugins/mermaid-plugin.ts)):
+  - Added unified configuration fields (clipboard styles, export styles) for Math and Mermaid plugins
+  - Replaced hardcoded style handling logic with dynamic retrieval from plugin configuration
+  - Optimized error recovery logic to dynamically skip failing plugins instead of hard-excluding math plugin
+
+#### Editor Core & Rendering
+- Removed debug auto-open developer tools code
+- Optimized academic paper theme styles
+- **Rendering output optimization** ([`src/renderer/editor/editor.ts`](src/renderer/editor/editor.ts), [`src/renderer/main.ts`](src/renderer/main.ts)):
+  - Wrapped `getLiveHTML` return content in a div with id "write"
+  - Only render base element styles when not using custom themes
 
 ### Fixed
-- 修复 Mermaid 文字偏移、变量名不匹配及双重边框问题 (elegant + academic-paper)
-- 修复 TypeScript 类型错误 15 处 (capacitor-api, editor, math-plugin, mermaid-plugin, main/index)
-- 修复模板 CSS 与 Swiss Design CSS 打印保真：`@media print` 补全所有屏幕属性镜像（字号、行高、字体、边框、间距、字距等）
-- 插件导入修复与包版本更新
 
-### Changed (since beta)
+#### TypeScript Type System (beta.2)
+- **Fixed 15 TypeScript type errors**:
+  - [`capacitor-api.ts`](src/renderer/capacitor-api.ts): Fixed `string | null` type assignment error
+  - [`editor.ts`](src/renderer/editor/editor.ts): Fixed `remarkPluginsCtx` type mismatch and `rootEl` null check
+  - [`math-plugin.ts`](src/renderer/editor/plugins/math-plugin.ts): Fixed `$NodeSchema` type compatibility with `$view` function
+  - [`mermaid-plugin.ts`](src/renderer/editor/plugins/mermaid-plugin.ts): Fixed Mermaid theme type and `$NodeSchema` type issues
+  - [`main.ts`](src/renderer/main.ts): Added Vite client types reference for `import.meta.glob`
+  - [`main/index.ts`](src/main/index.ts): Removed invalid `fs.createServer` import and `PrintToPDFOptions.marginType`
+- **TypeScript project configuration update**: Added `"composite": true` to all project configurations for proper project references
+  - [`tsconfig.main.json`](tsconfig.main.json)
+  - [`tsconfig.preload.json`](tsconfig.preload.json)
+  - [`tsconfig.renderer.json`](tsconfig.renderer.json)
 
-| Beta | Date | Key Changes |
-|------|------|-------------|
-| `1.5.1-beta.1` | 2026-05-22 | Android/iOS 平台、移动端样式、应用图标自动生成 |
-| `1.5.1-beta.2` | 2026-05-22 | TS 类型修复、Mermaid 主题重构、学术/Swiss/Pixso 主题、范式文档 |
+#### Mermaid Diagram Rendering
+- **Fixed text offset and border issues** (elegant + academic-paper themes):
+  - Fixed Mermaid text offset problem
+  - Fixed variable name mismatch issue
+  - Fixed double border display issue
+- **Mermaid theme system refactoring**:
+  - Adjusted to Guizang warm color palette (cream background + brown tones)
+  - Font size adjusted to 10.5pt for academic printing compatibility
+  - Added Typora compatible selectors (`.md-diagram-panel`)
+  - Added mobile responsive adaptation
+  - Unified text color and border styles
+
+#### Theme Print Fidelity
+- **Fixed missing print style mirrors**: Completed `@media print` screen attribute mirrors for template CSS and Swiss Design CSS
+  - Covered attributes include: font size, line height, font family, borders, spacing, letter spacing, etc.
+  - Ensured consistency between screen preview and PDF export
+- **Fixed custom theme export issues** ([`theme-manager.ts`](src/renderer/editor/plugins/themes/theme-manager.ts)):
+  - Fixed custom theme print CSS extraction logic to avoid Chromium CSSOM serialization issues
+  - Added auto-injection of custom theme print styles
+
+#### Android Platform (beta.1)
+- **Chinese IME (Input Method Editor) fix**:
+  - Removed `e.preventDefault()` in `beforeinput` event to resolve CJK input method issues
+  - Enhanced ProseMirror editor IME composition event handling
+  - Used `-webkit-user-modify: read-write-plaintext-only` to improve input experience
+- **Intent file open fix**:
+  - Added `Intent.ACTION_VIEW` handling in `MainActivity`
+  - Supported `onNewIntent` for opening new files when app is already running
+  - Passed file content to WebView via JavaScript events
+- **PDF export fix**:
+  - Replaced Capacitor Plugin bridge with `JavascriptInterface`
+  - Added `ColaMDNativeBridge` class to call Android native `PrintManager`
+  - Added "Save as PDF" option
+  - Fixed pagination, save button, Mermaid version, and layer residue issues
+
+#### Export Functionality Improvements
+- **PDF/HTML export optimization**:
+  - Refactored Mermaid rendering logic with export sync wait mechanism
+  - Supported real-time rendered content export
+  - Fixed default filename logic
+- **File manager open mechanism**:
+  - Adopted pull model: JS actively calls Java `checkPendingFile()` to query
+  - Eliminated JS event injection timing issues
+  - Added init detection + setInterval polling for dual guarantee
+
+#### Mobile Adaptation
+- **Fixed missing media query type** ([`mobile.css`](src/renderer/mobile.css)):
+  - Fixed missing screen type in media queries
+
+#### Plugin System
+- **Plugin import fixes and package version updates**
+- **Decoupled plugin system**: Reduced main.ts dependency on specific plugins
+
+### Removed
+- Removed outdated PDF font compensation document ([`docs/PDF_FONT_COMPENSATION.md`](docs/PDF_FONT_COMPENSATION.md))
 
 ---
 
@@ -215,81 +318,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Math Plugin (KaTeX Integration)
 - Add KaTeX rendering engine for LaTeX math equation support
-- **Inline equations** (`$...$`): embedded within paragraphs, e.g., $E = mc^2$
-- **Block equations** (`$$...$$`): centered display with support for complex expressions (equation systems, matrices, physics formulas)
-- **Dual-mode toggle**: switch between rendered preview and source editing with one click
-- Live editing: edit LaTeX source directly in raw mode; auto-save and re-render on blur
-- Graceful fallback: degrade to plain text on KaTeX parse failure without blocking workflow
-
-#### Mermaid Plugin (Diagram Rendering)
-- Add Mermaid.js v11.15 for 17+ diagram type visualization:
-
-| Category | Supported Diagrams |
-|----------|-------------------|
-| Flowchart | `graph` (TD/LR/RL/BT), `flowchart` |
-| Sequence | `sequenceDiagram` |
-| Class | `classDiagram` |
-| State | `stateDiagram-v2` |
-| ER | `erDiagram` |
-| User Journey | `journey` |
-| Pie | `pie` |
-| Gantt | `gantt` |
-| Git Graph | `gitGraph` |
-| Mind Map | `mindmap` |
-| Timeline | `timeline` |
-| Quadrant Chart | `quadrantChart` |
-| XY/Line/Bar Chart | `xyChart` |
-| C4 Architecture | `C4Context`, `C4Container`, `C4Component`, `C4Dynamic`, `C4Deployment` |
-| Sankey | `sankey-beta` |
-| Block | `block-beta` |
-| Architecture | `architecture-beta` |
-
-- Input shortcut: typing `` ```mermaid `` + Enter auto-converts to mermaid_block node
-- Async-safe rendering: render counter prevents race conditions
-- Multi-theme deep adaptation: each built-in theme has corresponding Mermaid color scheme
-- C4 architecture-specific semantic colors for persons/systems/containers/components
-- Auto node height adjustment after rendering (+6px padding) to prevent content overflow
-
-#### Theme Support
-- **Guizang theme**: new Chinese-style dark theme with traditional aesthetics
-- Custom Mermaid theme adaptation for Elegant, Newsprint, Dark, and Guizang themes:
-  - Light → Default Mermaid theme (clean & bright)
-  - Dark → GitHub Dark style (`#0d1117` background, `#8b949e` border/text)
-  - Elegant → Custom warm palette (`#e8e2db` background, LXGW WenKai font)
-  - Newsprint → Print style (PT Serif font, newsprint texture)
-
-#### Slides Feature — Markdown as Database
-- New concept: Markdown as content layer, HTML templates as view layer
-- Supported layouts: `cover` · `statement` · `section` · `video` · `thankyou`
-- Optional features: background image (`bg:`), video embed (`src:`), inline image preview (`preview:`)
-- Export formats: single-file HTML (Base64-inlined images) or folder (with video resources)
-- Tutorial template included at `resources/templates/slides/`
-
-### Fixed
-- Mermaid diagram color scheme issues in dark themes causing unreadable content
-- Mermaid diagram container offset/miscalculation leading to content overflow
-- Sankey diagram syntax parsing compatibility
-- Slides templates not properly bundled into extraResources during build
-
-### Dependencies
-
-| Package | Version | Purpose |
-|---------|---------|---------|
-| @milkdown/kit | ^7.19.2 | WYSIWYG editor core |
-| katex | ^0.16.46 | Math equation rendering engine |
-| mermaid | ^11.15.0 | Diagram rendering library |
-| electron | ^34.0.0 | Cross-platform desktop framework |
-
-## [1.4.0] - Previous Release
-
-### Added
-- Slides feature — Markdown as Database concept
-- Slide export capabilities (HTML single-file and folder formats)
-
----
-
-[1.5.1-beta.2]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1-beta.2
-[1.5.1-beta.1]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1-beta.1
-[1.5.1]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1
-[1.5.0]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.0
-[1.4.0]: https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.4.0
