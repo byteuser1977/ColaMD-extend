@@ -102,39 +102,32 @@ export function getActiveCustomThemeCSS(): string | null {
 }
 
 /**
- * 从已注入的自定义主题 <style> 元素的 CSSOM 中提取 @media print 规则内容。
- * 使用 CSSOM API 而非文本解析，避免嵌套 at-rule 导致的解析问题。
- * @returns 去除了 @media print 包装的纯 CSS 规则文本（保留 @page 规则），无自定义主题返回 null
+ * 从缓存的原始 CSS 文本中提取 @media print 规则块。
+ * 使用字符串括号计数而非 CSSOM 序列化，避免 Chromium 对嵌套 at-rule
+ *（如 @page 内的 @bottom-center）的序列化丢失问题。
+ * @returns 完整的 @media print { ... } 规则文本，无自定义主题或无 print 块返回 null
  */
 export function extractPrintCSSFromSheet(): string | null {
-  console.log('[extractPrintCSS] customStyleEl exists:', !!customStyleEl, 'sheet exists:', !!customStyleEl?.sheet)
-  if (!customStyleEl?.sheet) return null
-  const sheet = customStyleEl.sheet
+  const name = loadSavedTheme()
+  if (!name.startsWith('custom:')) return null
+  const key = name.slice(7)
+  const cached = customThemeCache.get(key)
+  if (!cached) return null
 
-  const rules: string[] = []
-  try {
-    console.log('[extractPrintCSS] total cssRules:', sheet.cssRules.length)
-    for (let i = 0; i < sheet.cssRules.length; i++) {
-      const rule = sheet.cssRules[i]
-      console.log(`[extractPrintCSS] rule[${i}]: type=${rule.constructor.name}`, rule instanceof CSSMediaRule ? `condition="${rule.conditionText}"` : rule.cssText?.slice(0, 80))
-      // 找到 @media print 规则
-      if (rule instanceof CSSMediaRule && rule.conditionText?.includes('print')) {
-        console.log(`[extractPrintCSS] found @media print with ${rule.cssRules.length} inner rules`)
-        for (let j = 0; j < rule.cssRules.length; j++) {
-          const inner = rule.cssRules[j]
-          console.log(`[extractPrintCSS]   inner[${j}]: type=${inner.constructor.name}`, inner instanceof CSSPageRule ? '@page (skipped)' : inner.cssText?.slice(0, 80))
-          // 跳过 @page 规则（页面尺寸由 printToPDF 参数控制）
-          if (inner instanceof CSSPageRule) continue
-          rules.push(inner.cssText)
-        }
-        break
-      }
-    }
-  } catch (e) {
-    console.error('[extractPrintCSS] error reading rules:', e)
-    return null
+  const css = cached.css
+  const startIdx = css.indexOf('@media print')
+  if (startIdx === -1) return null
+
+  const openBrace = css.indexOf('{', startIdx)
+  if (openBrace === -1) return null
+
+  let depth = 1
+  let i = openBrace + 1
+  while (i < css.length && depth > 0) {
+    if (css[i] === '{') depth++
+    else if (css[i] === '}') depth--
+    i++
   }
 
-  console.log(`[extractPrintCSS] extracted ${rules.length} rules`)
-  return rules.length > 0 ? rules.join('\n') : null
+  return css.substring(startIdx, i)
 }

@@ -617,6 +617,16 @@ export const mermaidPlugin: RendererPlugin = {
   enabled: true,
   remarkPlugin: { plugin: remarkMermaid, options: undefined },
   nodeTypes: ['mermaid_block'],
+  clipboardStyles: {
+    '.mermaid-block': 'display:block;padding:16px;margin:1em 0;border-radius:6px;background:#f6f8fa;border:1px solid #d0d7de;',
+    '.mermaid-preview svg': 'max-width:100%;height:auto;',
+  },
+  exportStyles: `.mermaid-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:var(--mermaid-background,var(--bg-color));border:1px solid var(--border-color)}
+.mermaid-preview{display:flex;justify-content:center;align-items:center}
+.mermaid-preview svg{max-width:100%;height:auto}`,
+  rawSelectors: ['textarea.mermaid-source'],
+  hideSelectors: ['.mermaid-loading', '.mermaid-error'],
+  bgCaptureSelectors: ['.mermaid-block'],
   exportCapabilities: [
     {
       label: 'Save Diagram as PNG',

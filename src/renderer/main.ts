@@ -1,6 +1,6 @@
 import { createEditor, getMarkdown, getHTML, getLiveHTML, setMarkdown, togglePluginMode } from './editor/editor'
 import { applyTheme, loadSavedTheme, setCachedCustomTheme, getActiveCustomThemeCSS, extractPrintCSSFromSheet } from './editor/plugins/themes/theme-manager'
-import { getAllPlugins, togglePlugin, findPluginBySelector, findExportCapabilities } from './editor/plugins'
+import { getAllPlugins, togglePlugin, findPluginBySelector, findExportCapabilities, getContextMenuSelector } from './editor/plugins'
 import './editor/plugins/math-plugin'
 import './editor/plugins/mermaid-plugin'
 import { createCapacitorAPI } from './capacitor-api'
@@ -120,9 +120,15 @@ function getContent(): string {
 }
 
 function syncRawEdits(): void {
-  document.querySelectorAll('.math-block-raw, .math-inline-raw, .mermaid-source').forEach((el) => {
-    if ((el as HTMLElement).matches(':focus')) (el as HTMLElement).blur()
-  })
+  const selectors = getAllPlugins()
+    .filter((p) => p.enabled)
+    .flatMap((p) => p.rawSelectors || [])
+    .join(',')
+  if (selectors) {
+    document.querySelectorAll(selectors).forEach((el) => {
+      if ((el as HTMLElement).matches(':focus')) (el as HTMLElement).blur()
+    })
+  }
 }
 
 function restoreRenderedMode(api: any): void {
@@ -238,31 +244,18 @@ async function init(): Promise<void> {
     restoreRenderedMode(api)
     await ensureAllPluginsRendered()
     await new Promise(r => setTimeout(r, 300))
-    // 注入自定义主题的 @media print 规则（printToPDF 不触发 @media print）
-    let printStyleEl: HTMLStyleElement | null = null
+    // 从自定义主题 CSSOM 提取 @media print 规则，注入 DOM 供 printToPDF 使用
     const printCSS = extractPrintCSSFromSheet()
+    let printStyleEl: HTMLStyleElement | null = null
     if (printCSS) {
       printStyleEl = document.createElement('style')
-      printStyleEl.setAttribute('id', 'pdf-print-style')
       printStyleEl.textContent = printCSS
       document.head.appendChild(printStyleEl)
-      // 兜底：确保三线表 + 列表关键样式生效（最高特异性覆盖）
-      const fallbackCSS = `
-        /* ── 表格：三线表强制覆盖 ── */
-        #editor .ProseMirror table { border-collapse: collapse !important; border-top: 2px solid var(--gray-9) !important; border-bottom: 2px solid var(--gray-9) !important; border-left: none !important; border-right: none !important; font-size: 14px !important; }
-        #editor .ProseMirror table th { border: none !important; border-bottom: 2px solid var(--gray-9) !important; background: transparent !important; font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important; font-size: 14px !important; font-weight: 700 !important; color: var(--gray-9) !important; padding: 8px 10px !important; text-align: center !important; text-indent: 0 !important; vertical-align: middle !important; }
-        #editor .ProseMirror table td { border: none !important; font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif !important; font-size: 14px !important; color: var(--gray-9) !important; padding: 8px 10px !important; text-align: left !important; text-indent: 0 !important; vertical-align: top !important; }
-        #editor .ProseMirror table p, #editor .ProseMirror table td p { font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif !important; font-size: 14px !important; margin: 0 !important; padding: 0 !important; text-align: left !important; text-indent: 0 !important; line-height: 1.4 !important; }
-        /* ── 列表：字体 + 粗体强制覆盖 ── */
-        #editor .ProseMirror li { font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif !important; font-size: 16px !important; line-height: 1.6 !important; color: var(--gray-9) !important; }
-        #editor .ProseMirror li strong { font-family: inherit !important; font-weight: 700 !important; }
-      `
-      printStyleEl.textContent += '\n' + fallbackCSS
-      showToast(`PDF: injecting ${printCSS.length} chars print CSS`, 1500)
-    } else {
-      showToast('PDF: no custom theme print CSS found', 1500)
+      // 等待样式生效再导出
+      await new Promise(r => requestAnimationFrame(r))
     }
-    await api.exportPDF(buildExportHTML())
+    // 传递 CSS 到主进程作为保险（insertCSS 双重注入）
+    await api.exportPDF(printCSS || undefined)
     if (printStyleEl) printStyleEl.remove()
     setTimeout(() => {
       document.querySelectorAll('.mermaid-loading, .mermaid-error')
@@ -369,7 +362,7 @@ async function init(): Promise<void> {
 
   document.addEventListener('contextmenu', (e) => {
     if ((e.target as Element).matches('textarea, input, [contenteditable="true"]')) return
-    const target = (e.target as Element).closest('.mermaid-block, .math-block') as HTMLElement | null
+    const target = (e.target as Element).closest(getContextMenuSelector()) as HTMLElement | null
     if (!target) return
     const capabilities = findExportCapabilities(target.className)
     if (!capabilities.length) return
@@ -536,30 +529,18 @@ function setupMobileMenu(api: any, currentTheme: string): void {
           restoreRenderedMode(api)
           await ensureAllPluginsRendered()
           await new Promise(r => setTimeout(r, 300))
-          // 注入自定义主题的 @media print 规则（printToPDF 不触发 @media print）
-          let printStyleEl: HTMLStyleElement | null = null
+          // 从自定义主题 CSSOM 提取 @media print 规则，注入 DOM 供 printToPDF 使用
           const printCSS = extractPrintCSSFromSheet()
+          let printStyleEl: HTMLStyleElement | null = null
           if (printCSS) {
             printStyleEl = document.createElement('style')
-            printStyleEl.setAttribute('id', 'pdf-print-style')
             printStyleEl.textContent = printCSS
             document.head.appendChild(printStyleEl)
-            // 兜底：确保三线表 + 列表关键样式生效（最高特异性覆盖）
-            const fallbackCSS = `
-              /* ── 表格：三线表强制覆盖 ── */
-              #editor .ProseMirror table { border-collapse: collapse !important; border-top: 2px solid var(--gray-9) !important; border-bottom: 2px solid var(--gray-9) !important; border-left: none !important; border-right: none !important; font-size: 14px !important; }
-              #editor .ProseMirror table th { border: none !important; border-bottom: 2px solid var(--gray-9) !important; background: transparent !important; font-family: "SimHei", "Heiti SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif !important; font-size: 14px !important; font-weight: 700 !important; color: var(--gray-9) !important; padding: 8px 10px !important; text-align: center !important; text-indent: 0 !important; vertical-align: middle !important; }
-              #editor .ProseMirror table td { border: none !important; font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif !important; font-size: 14px !important; color: var(--gray-9) !important; padding: 8px 10px !important; text-align: left !important; text-indent: 0 !important; vertical-align: top !important; }
-              #editor .ProseMirror table p, #editor .ProseMirror table td p { font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif !important; font-size: 14px !important; margin: 0 !important; padding: 0 !important; text-align: left !important; text-indent: 0 !important; line-height: 1.4 !important; }
-              /* ── 列表：字体 + 粗体强制覆盖 ── */
-              #editor .ProseMirror li { font-family: "SimSun", "Songti SC", "Source Han Serif SC", "Noto Serif SC", serif !important; font-size: 16px !important; line-height: 1.6 !important; color: var(--gray-9) !important; }
-              #editor .ProseMirror li strong { font-family: inherit !important; font-weight: 700 !important; }
-            `
-            printStyleEl.textContent += '\n' + fallbackCSS
-            showToast(`PDF: injecting ${printCSS.length} chars print CSS`, 1500)
-          } else {
+            // 等待样式生效再导出
+            await new Promise(r => requestAnimationFrame(r))
           }
-          await api.exportPDF(buildExportHTML())
+          // 传递 CSS 到主进程作为保险（insertCSS 双重注入）
+          await api.exportPDF(printCSS || undefined)
           if (printStyleEl) printStyleEl.remove()
           setTimeout(() => {
             document.querySelectorAll('.mermaid-loading, .mermaid-error')
@@ -625,7 +606,6 @@ function buildExportHTML(): string {
   const codeBg = v('--code-bg')
   const codeBlockBg = v('--code-block-bg')
   const codeBlockText = v('--code-block-text') || textColor
-  const mermaidBg = v('--mermaid-background') || bgColor
   const blockquoteBorder = v('--blockquote-border')
   const blockquoteBg = v('--blockquote-bg') || 'transparent'
   const tableHeaderBg = v('--table-header-bg')
@@ -655,6 +635,14 @@ function buildExportHTML(): string {
 
   // ── Collect CSS custom properties as :root block ──
   const cssVarLines = collectExportCSSVariables(v)
+
+  // ── Collect plugin export styles ──
+  let pluginCSS = ''
+  for (const p of getAllPlugins()) {
+    if (p.enabled && p.exportStyles) {
+      pluginCSS += `\n/* === ${p.name} === */\n${p.exportStyles}\n`
+    }
+  }
 
   // ── Collect active theme CSS ──
   let themeCSS = ''
@@ -687,6 +675,7 @@ function buildExportHTML(): string {
 ${cssVarLines}
 }
 ${themeCSS}
+${pluginCSS}
 /* === Base Element Styles === */
 body{max-width:780px;margin:40px auto;padding:20px;font-size:${bodyFontSize};font-family:${fontFamily};line-height:${bodyLineHeight};background:${bgColor};color:${textColor}}
 h1{font-size:${getElFontSize('h1', '2em')};font-weight:${getElFontWeight('h1', '700')};border-bottom:1px solid ${borderColor};padding-bottom:.3em}
@@ -707,11 +696,6 @@ th{background:${tableHeaderBg};font-weight:600}
 hr{border:none;border-top:2px solid ${borderColor};margin:2em 0}
 img{max-width:100%}
 ::selection{background:${selectionBg}}
-.math-inline{display:inline;padding:2px 4px;border-radius:3px;background:${codeBg}}
-.math-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${codeBlockBg};text-align:center;overflow-x:auto}
-.mermaid-block{display:block;padding:16px;margin:1em 0;border-radius:6px;background:${mermaidBg};border:1px solid ${borderColor}}
-.mermaid-preview{display:flex;justify-content:center;align-items:center}
-.mermaid-preview svg{max-width:100%;height:auto}
 ${(() => {
   if (isCustomTheme) {
     console.log('[buildExportHTML] Custom theme — skipping hardcoded @page/@media print, using theme CSS rules')

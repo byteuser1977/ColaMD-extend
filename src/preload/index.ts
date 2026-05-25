@@ -5,7 +5,7 @@ export interface ElectronAPI {
   openFilePath: (path: string) => Promise<{ path: string; content: string } | null>
   saveFile: (content: string) => Promise<boolean>
   saveFileAs: (content: string) => Promise<boolean>
-  exportPDF: () => Promise<boolean>
+  exportPDF: (printCSS?: string) => Promise<boolean>
   exportHTML: (html: string) => Promise<boolean>
   newSlides: () => Promise<string | null>
   openAsSlides: (content: string) => Promise<boolean>
@@ -41,7 +41,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openFilePath: (path: string) => ipcRenderer.invoke('open-file-path', path),
   saveFile: (content: string) => ipcRenderer.invoke('save-file', content),
   saveFileAs: (content: string) => ipcRenderer.invoke('save-file-as', content),
-  exportPDF: () => ipcRenderer.invoke('export-pdf'),
+  exportPDF: (printCSS?: string) => ipcRenderer.invoke('export-pdf', printCSS),
   exportHTML: (html: string) => ipcRenderer.invoke('export-html', html),
   exportSlides: (content: string) => ipcRenderer.invoke('export-slides', content),
   newSlides: () => ipcRenderer.invoke('new-slides'),

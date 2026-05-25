@@ -8,6 +8,17 @@ import { createServer as createHttpServer } from 'http'
 // Custom themes directory
 const themesDir = join(app.getPath('home'), '.colamd', 'themes')
 
+// PDF 导出时注入的布局 CSS（insertCSS 引擎级注入，仅负责页面结构调整）
+const BASE_PRINT_CSS = [
+  'html, body { height:auto !important; overflow:visible !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }',
+  '#titlebar, #slides-btn, #agent-dot { display:none !important; }',
+  '#editor { height:auto !important; overflow:visible !important; }',
+  '#editor .ProseMirror { min-height:auto !important; }',
+  '.mermaid-error, .mermaid-loading { display:none !important; }',
+  'svg .error-icon, svg .error-text { display:none !important; }',
+  '.math-inline-raw, .math-block-raw, textarea.mermaid-source { display:none !important; }',
+].join('\n')
+
 function ensureThemesDir(): void {
   if (!existsSync(themesDir)) {
     mkdir(themesDir, { recursive: true }).catch(() => {})
@@ -70,7 +81,7 @@ function createWindow(filePath?: string): BrowserWindow {
 
   win.webContents.on('did-finish-load', () => {
     // 开发环境自动打开 DevTools 方便调试
-    win.webContents.openDevTools({ mode: 'bottom' })
+   // win.webContents.openDevTools({ mode: 'bottom' })
     if (filePath) {
       loadFileInWindow(win, filePath)
     }
@@ -380,7 +391,7 @@ ipcMain.handle('save-export-file', async (event, dataUrl: string, defaultName: s
 })
 
 
-ipcMain.handle('export-pdf', async (event) => {
+ipcMain.handle('export-pdf', async (event, printCSS?: string) => {
   const win = getWinFromEvent(event)
   if (!win) return false
   const defaultName = (suggestFileName(win) || 'colamd-print') + '.pdf'
@@ -391,10 +402,9 @@ ipcMain.handle('export-pdf', async (event) => {
   if (result.canceled || !result.filePath) return false
 
   try {
-    console.log('[export-pdf] Starting PDF export, injecting CSS overrides')
-    const cssKey = await win.webContents.insertCSS(
-      'html, body { height: auto !important; overflow: visible !important; } #titlebar { display: none !important; } #editor { height: auto !important; overflow: visible !important; padding: 0 !important; } #editor .ProseMirror { min-height: auto !important; } .mermaid-error { display: none !important; } .mermaid-loading { display: none !important; } svg .error-icon, svg .error-text { display: none !important; } .math-inline-raw, .math-block-raw, textarea.mermaid-source { display: none !important; }'
-    )
+    const cssKey = await win.webContents.insertCSS(BASE_PRINT_CSS + '\n' + (printCSS || ''))
+    // 等待样式重排完成（Chromium 需要一帧来应用注入的 CSS）
+    await new Promise(r => setTimeout(r, 200))
     const pdfData = await Promise.race([
       win.webContents.printToPDF({
         printBackground: true,
@@ -403,7 +413,6 @@ ipcMain.handle('export-pdf', async (event) => {
       new Promise<Buffer>((_, reject) => setTimeout(() => reject(new Error('PDF timeout')), 30000))
     ])
     await win.webContents.removeInsertedCSS(cssKey)
-    console.log('[export-pdf] PDF generated successfully, writing to file')
     await writeFile(result.filePath, pdfData)
     return true
   } catch (e) {

@@ -420,10 +420,9 @@
     max-height: none !important;
   }
 
-  /* 默认的边界设定， 可以根据需要调整 
+  /* 默认的边界设定， 可以根据需要调整 */
   @page {
-    margin: 15mm;
+    margin: 10mm;
     size: A4;
   }
-  */
 }
