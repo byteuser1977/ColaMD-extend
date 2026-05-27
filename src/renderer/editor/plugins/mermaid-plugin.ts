@@ -516,6 +516,7 @@ function renderMermaidBlock(dom: HTMLElement, node: any, renderIdRef: { current:
 
   dom.innerHTML = '<div class="mermaid-preview"><div class="mermaid-loading">Rendering...</div></div>'
   const id = 'mermaid-' + (++renderCounter)
+  console.log('[ColaView] mermaid render id=', id, 'text=', JSON.stringify(text.substring(0, 200)))
 
   const renderPromise = mermaidLib.render(id, text).then((result: { svg: string; bindFunctions?: (el: Element) => void }) => {
     if (currentRenderId !== renderIdRef.current) return
@@ -530,8 +531,8 @@ function renderMermaidBlock(dom: HTMLElement, node: any, renderIdRef: { current:
     if (currentRenderId !== renderIdRef.current) return
     const preview = dom.querySelector('.mermaid-preview')
     if (preview) {
-      const msg = e.message.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      preview.innerHTML = '<div class="mermaid-error">Error: ' + msg + '</div>'
+      // Show raw source on error instead of prominent error message
+      preview.innerHTML = '<pre class="mermaid-error-source"><code>' + text.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</code></pre>'
     }
   }).finally(() => { pendingRenders.delete(renderPromise) })
   pendingRenders.add(renderPromise)

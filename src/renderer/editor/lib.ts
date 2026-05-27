@@ -23,6 +23,9 @@ import type { RendererPlugin } from './plugins'
 // Trigger side-effect registration of built-in plugins
 import './plugins/lib-entry'
 
+// Editor base styles (reset, typography, theme CSS variables)
+import './plugins/themes/base.css'
+
 export type { RendererPlugin }
 
 export interface ColaMDEditorOptions {

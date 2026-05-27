@@ -109,3 +109,15 @@
   font-size: 0.875em;
   white-space: pre-wrap;
 }
+
+.mermaid-error-source {
+  background: var(--code-block-bg, #f6f8fa);
+  color: var(--code-block-text, var(--text-color, #24292f));
+  padding: 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 1em 0;
+  font-size: 0.875em;
+  line-height: 1.6;
+  border-left: 3px solid var(--border-color, #d0d7de);
+}
