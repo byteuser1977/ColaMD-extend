@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Internationalization (i18n) System
+- **Complete i18n architecture** ([`src/renderer/i18n/index.ts`](src/renderer/i18n/index.ts), [`src/main/i18n.ts`](src/main/i18n.ts)):
+  - Added multi-language support for English (`en`) and Simplified Chinese (`zh-CN`)
+  - Auto-detect system language at startup (Electron `app.getLocale()` / browser `navigator.language`)
+  - Language preference persistence via `localStorage`
+  - Dynamic locale switching with real-time UI updates
+
+#### Desktop Menu Internationalization
+- **Electron menu i18n** ([`src/main/index.ts`](src/main/index.ts)):
+  - All menu items now use `i18n.t()` for dynamic translation (File, Edit, View, Theme, Help menus)
+  - Fixed `role`-based menu items to show localized labels by explicitly adding `label` property
+  - Supported menus: File, Edit (Undo/Redo/Cut/Copy/Paste/SelectAll), View (Zoom/Fullscreen), Theme, Help
+  - Custom theme names remain unchanged (no internationalization)
+  - IPC channel `set-locale` added for runtime menu language synchronization from renderer process
+
+#### Mobile Menu Internationalization
+- **Capacitor mobile menu i18n** ([`src/renderer/main.ts`](src/renderer/main.ts), [`src/renderer/index.html`](src/renderer/index.html)):
+  - Complete sidebar menu localization with `updateMobileMenuI18n()` function
+  - Added Language selector section with one-click switching between English and Chinese
+  - Toast messages localized (Saved, Save failed, etc.)
+  - Theme list and plugin list dynamically updated on language change
+  - Language change listener triggers full UI refresh without page reload
+
+#### IPC Bridge for Locale Sync
+- **Cross-process locale synchronization** ([`src/preload/index.ts`](src/preload/index.ts)):
+  - Exposed `setLocale()` API in ElectronAPI interface
+  - Main process handler rebuilds menu when locale changes
+  - Capacitor bridge includes compatible `setLocale()` method for mobile platform
+
 ### Changed
 
 #### PDF Export & Plugin System

@@ -34,6 +34,7 @@ export interface ElectronAPI {
   onMenuTogglePlugin: (callback: (id: string) => void) => void
   onMenuImportTheme: (callback: () => void) => void
   exportFile: (dataUrl: string, defaultName: string) => Promise<boolean>
+  setLocale: (locale: 'en' | 'zh-CN') => Promise<string>
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -107,4 +108,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   exportFile: (dataUrl: string, defaultName: string) =>
     ipcRenderer.invoke('save-export-file', dataUrl, defaultName),
+  setLocale: (locale: 'en' | 'zh-CN') =>
+    ipcRenderer.invoke('set-locale', locale),
 } satisfies ElectronAPI)

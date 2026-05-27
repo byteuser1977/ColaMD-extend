@@ -4,6 +4,7 @@ import { readFile, writeFile, readdir, copyFile, mkdir, stat } from 'fs/promises
 import { existsSync, readFileSync } from 'fs'
 import { IncomingMessage, ServerResponse } from 'http'
 import { createServer as createHttpServer } from 'http'
+import * as i18n from './i18n'
 
 // Custom themes directory
 const themesDir = join(app.getPath('home'), '.colamd', 'themes')
@@ -705,6 +706,12 @@ ipcMain.handle('sync-plugin-state', (_event, id: string, enabled: boolean) => {
   void buildMenu()
 })
 
+ipcMain.handle('set-locale', (_event, locale: 'en' | 'zh-CN') => {
+  const changed = i18n.setLocale(locale)
+  if (changed) void buildMenu()
+  return i18n.getCurrentLocale()
+})
+
 // Menu — targets the focused window
 
 let cachedThemeFiles: string[] = []
@@ -757,22 +764,22 @@ async function buildMenu(): Promise<void> {
   }
 
   const themeSubmenu: Electron.MenuItemConstructorOptions[] = [
-    { label: 'Light', click: () => sendToFocused('set-theme', 'light') },
-    { label: 'Dark', click: () => sendToFocused('set-theme', 'dark') },
-    { label: 'Elegant', click: () => sendToFocused('set-theme', 'elegant') },
-    { label: 'Newsprint', click: () => sendToFocused('set-theme', 'newsprint') },
+    { label: i18n.t('themeMenu.light'), click: () => sendToFocused('set-theme', 'light') },
+    { label: i18n.t('themeMenu.dark'), click: () => sendToFocused('set-theme', 'dark') },
+    { label: i18n.t('themeMenu.elegant'), click: () => sendToFocused('set-theme', 'elegant') },
+    { label: i18n.t('themeMenu.newsprint'), click: () => sendToFocused('set-theme', 'newsprint') },
   ]
   if (customThemeItems.length > 0) {
     themeSubmenu.push({ type: 'separator' }, ...customThemeItems)
   }
   themeSubmenu.push({ type: 'separator' }, {
-    label: 'Import Theme...',
+    label: i18n.t('themeMenu.importTheme'),
     click: () => sendToFocused('menu-import-theme')
   })
 
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(isMac ? [{
-      label: 'ColaMD',
+      label: i18n.t('app.name'),
       submenu: [
         { role: 'about' as const },
         { type: 'separator' as const },
@@ -784,49 +791,49 @@ async function buildMenu(): Promise<void> {
       ]
     }] : []),
     {
-      label: 'File',
+      label: i18n.t('menu.file'),
       submenu: [
         {
-          label: 'New',
+          label: i18n.t('fileMenu.new'),
           accelerator: 'CmdOrCtrl+N',
           click: () => createWindow()
         },
         {
-          label: 'New Slides...',
+          label: i18n.t('fileMenu.newSlides'),
           accelerator: 'CmdOrCtrl+Shift+N',
           click: () => sendToFocused('menu-new-slides')
         },
         {
-          label: 'Open...',
+          label: i18n.t('fileMenu.open'),
           accelerator: 'CmdOrCtrl+O',
           click: () => sendToFocused('menu-open')
         },
         { type: 'separator' },
         {
-          label: 'Save',
+          label: i18n.t('fileMenu.save'),
           accelerator: 'CmdOrCtrl+S',
           click: () => sendToFocused('menu-save')
         },
         {
-          label: 'Save As...',
+          label: i18n.t('fileMenu.saveAs'),
           accelerator: 'CmdOrCtrl+Shift+S',
           click: () => sendToFocused('menu-save-as')
         },
         { type: 'separator' },
         {
-          label: 'Export PDF...',
+          label: i18n.t('fileMenu.exportPDF'),
           click: () => sendToFocused('menu-export-pdf')
         },
         {
-          label: 'Export HTML...',
+          label: i18n.t('fileMenu.exportHTML'),
           click: () => sendToFocused('menu-export-html')
         },
         {
-          label: 'Export Slides...',
+          label: i18n.t('fileMenu.exportSlides'),
           click: () => sendToFocused('menu-export-slides')
         },
         {
-          label: 'Open as Slides',
+          label: i18n.t('fileMenu.openAsSlides'),
           accelerator: 'CmdOrCtrl+Shift+P',
           click: () => sendToFocused('menu-open-as-slides')
         },
@@ -835,39 +842,40 @@ async function buildMenu(): Promise<void> {
       ]
     },
     {
-      label: 'Edit',
+      label: i18n.t('menu.edit'),
       submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
+        { label: i18n.t('editMenu.undo'), role: 'undo' },
+        { label: i18n.t('editMenu.redo'), role: 'redo' },
         { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'selectAll' }
+        { label: i18n.t('editMenu.cut'), role: 'cut' },
+        { label: i18n.t('editMenu.copy'), role: 'copy' },
+        { label: i18n.t('editMenu.paste'), role: 'paste' },
+        { type: 'separator' },
+        { label: i18n.t('editMenu.selectAll'), role: 'selectAll' }
       ]
     },
     {
-      label: 'View',
+      label: i18n.t('menu.view'),
       submenu: [
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
+        { label: i18n.t('viewMenu.resetZoom'), role: 'resetZoom', accelerator: 'CmdOrCtrl+0' },
+        { label: i18n.t('viewMenu.zoomIn'), role: 'zoomIn', accelerator: 'CmdOrCtrl+Plus' },
+        { label: i18n.t('viewMenu.zoomOut'), role: 'zoomOut', accelerator: 'CmdOrCtrl+-' },
         { type: 'separator' },
-        { role: 'togglefullscreen' },
+        { label: i18n.t('viewMenu.toggleFullscreen'), role: 'togglefullscreen' },
         ...(pluginMenuItems.length > 0
-          ? [{ type: 'separator' as const }, { label: 'Plugins', submenu: pluginMenuItems }]
+          ? [{ type: 'separator' as const }, { label: i18n.t('menu.plugins'), submenu: pluginMenuItems }]
           : [])
       ]
     },
     {
-      label: 'Theme',
+      label: i18n.t('menu.theme'),
       submenu: themeSubmenu
     },
     {
-      label: 'Help',
+      label: i18n.t('menu.help'),
       submenu: [
         {
-          label: 'About ColaMD',
+          label: i18n.t('helpMenu.about'),
           click: () => shell.openExternal('https://github.com/marswaveai/colamd')
         }
       ]
@@ -880,6 +888,9 @@ async function buildMenu(): Promise<void> {
 // App lifecycle
 
 app.whenReady().then(async () => {
+  // 初始化国际化模块（必须在 buildMenu 之前）
+  i18n.initI18n()
+
   ensureThemesDir()
   await scanThemeFiles()
   await buildMenu()

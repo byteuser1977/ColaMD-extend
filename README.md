@@ -8,45 +8,37 @@ Real-time collaboration between humans and AI agents — see your agent's change
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/marswaveai/colamd.svg)](https://github.com/marswaveai/colamd/releases)
-[![Version: 1.5.1](https://img.shields.io/badge/Version-1.5.1-blue.svg)](https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1)
+[![Version: 1.5.2-beta.0](https://img.shields.io/badge/Version-1.5.2--beta.0-blue.svg)](https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.2-beta.0)
 
 **This Extended Edition**: [git@github.com:byteuser1977/ColaMD-extend.git](https://github.com/byteuser1977/ColaMD-extend)
 
-## 🎉 v1.5.1 Release Highlights (2026-05-23)
+## 🎉 v1.5.2-beta.0 Release Highlights (2026-05-27)
 
-### ✨ New Features
+### 🔧 Improvements
 
-#### 🎨 Enhanced Theme System
-- **Academic Paper Theme** — GB/T 7713 compliant academic paper formatting with three-line tables, SimHei/SimSun typography, and print-optimized Mermaid diagrams
-- **Swiss Design Theme** 🇨🇭 — Swiss International Typographic Style with black-white-red color system, geometric sans-serif fonts, and grid-based layout
-- **Pixso Design Theme** — Modern design system styling
-- **Forest Ink Theme** — Forest ink aesthetic with warm paper base and forest green accents
-- **Standardized Template** — Reference implementation following v3.0 theme paradigm for easy custom theme creation
-- **Theme Development Framework** — Complete CSS theme development specification (v3.2) with 30+ verifiable rules, WCAG contrast formulas, and print fidelity guidelines
+#### 📄 Enhanced PDF Export Pipeline
+- **Auto Theme Style Extraction** — Automatically extracts and injects current theme styles into exported documents
+- **Custom Print Style Support** — Supports passing custom print CSS with simplified base print styles
+- **Refactored Export HTML** — Streamlined `buildExportHTML` function, removed hardcoded plugin styles in favor of plugin-injected styles
+- **Clean Output** — Proper A4 pagination with 15mm margins, background color preservation
 
-#### 📱 Mobile Platform Support
-- **Android (.apk)** — Capacitor 6 integration with native file picker, IME optimization, and PDF export
-- **iOS (.ipa)** — Full iOS support with Capacitor 6
-- **Dual-platform bridge** — Runtime auto-detection of Electron/Capacitor APIs
-- **Mobile-adapted styles** — Optimized touch interface and responsive design
+#### � Unified Plugin Style Management
+- **Dynamic Configuration** — Math and Mermaid plugins now support unified configuration fields (clipboard styles, export styles)
+- **Dynamic Style Retrieval** — Replaced hardcoded style handling with dynamic retrieval from plugin configuration
+- **Smart Error Recovery** — Dynamically skips failing plugins during export instead of hard-coded exclusions
 
-#### 🔧 Post-release Improvements
-- **Refactored PDF Export Pipeline** — Auto-extraction of current theme styles, custom print style support, plugin-injected styles
-- **Unified Plugin Style Management** — Dynamic configuration for Math/Mermaid plugins (clipboard, export, rendering styles)
-- **Enhanced Error Recovery** — Dynamic plugin skipping instead of hard-coded exclusions
-- **Custom Theme Export Fix** — Resolved Chromium CSSOM serialization issues
-- **Rendering Output Optimization** — Improved HTML structure for better compatibility
+#### 🎨 Rendering & Theme Optimization
+- **Optimized HTML Structure** — Wrapped `getLiveHTML` return content in a div with id "write" for better compatibility
+- **Conditional Base Styles** — Only renders base element styles when not using custom themes
+- **Fixed Custom Theme Export** — Resolved Chromium CSSOM serialization issues for custom theme print CSS extraction
 
-### 🐛 Key Fixes
-- Fixed 15 TypeScript type errors across the codebase
-- Fixed Mermaid text offset and border issues (elegant + academic-paper themes)
-- Fixed Chinese IME input on Android platform
-- Fixed Intent file opening and PDF export on Android
-- Fixed media query missing screen type for mobile
-- Fixed theme print fidelity (@media print mirrors)
-- Decoupled plugin system from main.ts dependencies
+#### 📱 Mobile Platform Fixes
+- **Fixed Media Query** — Corrected missing screen type in mobile media queries for better responsive behavior
 
-> ⚠️ **Theme Migration Notice**: Starting from v1.5.1, theme updates have been migrated to [ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes) repository for faster iteration and community contributions.
+### 🗑️ Removed
+- Removed outdated PDF font compensation document ([`docs/PDF_FONT_COMPENSATION.md`](docs/PDF_FONT_COMPENSATION.md))
+
+> 💡 **Note**: This beta release focuses on export pipeline improvements and plugin system optimization. Theme updates continue in [ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes) repository.
 
 ---
 
@@ -182,6 +174,23 @@ No image? The cover falls back to a clean orange-on-white design — it just wor
 - **Equation / Diagram PNG export** — Right-click to export as high-definition PNG images (2x scaling)
 
 > 💡 **Mobile Export**: On Android/iOS, exported files trigger system share panel for direct sending to WeChat, email, etc.
+
+### 🌐 Internationalization (i18n)
+
+- **Multi-language Support** — Built-in English and Simplified Chinese with auto-detection based on system locale
+- **Desktop Menu Localization** — All Electron menus (File, Edit, View, Theme, Help) display in the selected language
+- **Mobile Menu Localization** — Complete sidebar menu with language switcher for on-the-fly switching
+- **Dynamic Switching** — Change language anytime without restart; UI updates instantly
+- **Persistent Preference** — Language choice saved to `localStorage` and remembered across sessions
+- **Custom Theme Names** — User-imported theme names remain unchanged (no forced translation)
+- **IPC Synchronization** — Renderer process can notify main process to rebuild menus when language changes
+
+#### Supported Languages
+
+| Code | Language | Auto-detection |
+|------|----------|----------------|
+| `en` | English | Default |
+| `zh-CN` | Simplified Chinese | System locale contains `zh` |
 
 ### 🎨 Themes & Cross-Platform (Inherited from Original)
 

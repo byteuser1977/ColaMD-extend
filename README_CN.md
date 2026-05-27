@@ -8,45 +8,37 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/marswaveai/colamd.svg)](https://github.com/marswaveai/colamd/releases)
-[![Version: 1.5.1](https://img.shields.io/badge/Version-1.5.1-blue.svg)](https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.1)
+[![Version: 1.5.2-beta.0](https://img.shields.io/badge/Version-1.5.2--beta.0-blue.svg)](https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.2-beta.0)
 
 **本扩展版仓库**: [git@github.com:byteuser1977/ColaMD-extend.git](https://github.com/byteuser1977/ColaMD-extend)
 
-## 🎉 v1.5.1 正式版发布亮点（2026-05-23）
+## 🎉 v1.5.2-beta.0 测试版发布亮点（2026-05-27）
 
-### ✨ 新功能特性
+### 🔧 改进优化
 
-#### 🎨 增强主题系统
-- **学术论文主题** — 符合 GB/T 7713 国标规范，含三线表、宋体/黑体排版、打印优化的 Mermaid 图表
-- **瑞士国际主义风格主题** 🇨🇭 — 黑白红三色体系、几何无衬线字体、网格化排版
-- **Pixso 设计规范主题** — 现代设计系统风格
-- **森林墨水主题** — 宣纸暖白底色、森林绿强调色
-- **标准化模板** — 遵循 v3.0 范式的参考实现，便于快速创建自定义主题
-- **主题开发框架** — 完整的 CSS 主题开发规范 (v3.2)，包含 30+ 条可验证规则、WCAG 对比度公式和打印保真指南
+#### 📄 增强 PDF 导出流程
+- **自动主题样式提取** — 自动提取并注入当前主题样式到导出文档中
+- **自定义打印样式支持** — 支持传入自定义打印 CSS，简化基础打印样式
+- **重构导出 HTML** — 优化 `buildExportHTML` 函数，移除硬编码插件样式，改用插件注入方式
+- **干净输出** — A4 标准分页（15mm 边距），背景色保留，无 UI 元素
 
-#### 📱 移动端平台支持
-- **Android (.apk)** — Capacitor 6 集成，原生文件选择器、IME 输入法优化、PDF 导出
-- **iOS (.ipa)** — 完整 iOS 支持，基于 Capacitor 6
-- **双平台桥接** — 运行时自动检测 Electron / Capacitor API
-- **移动端适配样式** — 优化的触控界面和响应式设计
+#### 🔌 统一插件样式管理
+- **动态配置** — Math 和 Mermaid 插件支持统一配置字段（剪贴板样式、导出样式）
+- **动态样式检索** — 替换硬编码样式处理逻辑，改为从插件配置动态获取
+- **智能错误恢复** — 导出时动态跳过失败插件，替代硬编码排除逻辑
 
-#### 🔧 发布后改进
-- **重构 PDF 导出流程** — 自动提取当前主题样式、支持自定义打印样式、插件注入样式
-- **统一插件样式管理** — 数学/Mermaid 插件动态配置（剪贴板、导出、渲染样式）
-- **增强错误恢复机制** — 动态跳过出错插件，替代硬编码排除逻辑
-- **自定义主题导出修复** — 解决 Chromium CSSOM 序列化问题
-- **渲染输出优化** — 改进 HTML 结构以提升兼容性
+#### 🎨 渲染与主题优化
+- **优化 HTML 结构** — 将 `getLiveHTML` 返回内容包装在 id 为 "write" 的 div 中，提升兼容性
+- **条件基础样式渲染** — 仅在使用非自定义主题时渲染基础元素样式
+- **修复自定义主题导出** — 解决 Chromium CSSOM 序列化问题，完善自定义主题打印 CSS 提取
 
-### 🐛 关键修复
-- 修复全项目 15 处 TypeScript 类型错误
-- 修复 Mermaid 文字偏移和边框问题（elegant + academic-paper 主题）
-- 修复 Android 平台中文输入法问题
-- 修复 Android 平台 Intent 文件打开和 PDF 导出
-- 修复移动端媒体查询缺失 screen 类型
-- 修复主题打印保真（@media print 样式镜像）
-- 解耦插件系统，减少 main.ts 对具体插件的依赖
+#### 📱 移动端平台修复
+- **修复媒体查询** — 修正移动端媒体查询缺失的 screen 类型，改善响应式表现
 
-> ⚠️ **主题迁移说明**：从 v1.5.1 开始，主题更新已迁移至 [ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes) 仓库，以实现更快速的迭代和社区贡献。
+### 🗑️ 移除内容
+- 移除过时的 PDF 字体补偿文档 ([`docs/PDF_FONT_COMPENSATION.md`](docs/PDF_FONT_COMPENSATION.md))
+
+> 💡 **说明**：本测试版专注于导出流程改进和插件系统优化。主题更新继续在 [ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes) 仓库进行。
 
 ---
 
@@ -235,6 +227,37 @@ ColaMD 提供多种导出方式，满足不同场景需求（v1.5.1 增强）：
 #### 公式 / 图表 PNG 导出
 
 - **右键菜单** — 右键点击公式或图表，选择"Save as PNG"一键导出为高清 PNG 图片（2x 缩放）
+
+### 🌐 国际化（i18n）
+
+- **多语言支持** — 内置英文和简体中文，根据系统语言自动检测
+- **桌面端菜单本地化** — 所有 Electron 菜单（文件、编辑、视图、主题、帮助）以选定语言显示
+- **移动端菜单本地化** — 完整的侧边栏菜单，带语言切换器，可随时切换
+- **动态切换** — 随时更改语言，无需重启；界面即时更新
+- **偏好持久化** — 语言选择保存至 `localStorage`，跨会话记住
+- **自定义主题名称不变** — 用户导入的主题名称保持原样（不强制翻译）
+- **IPC 同步** — 渲染进程可通知主进程在语言变更时重建菜单
+
+#### 支持的语言
+
+| 代码 | 语言 | 自动检测 |
+|------|------|---------|
+| `en` | English | 默认 |
+| `zh-CN` | 简体中文 | 系统语言包含 `zh` 时自动启用 |
+
+#### 技术架构
+
+```
+src/
+├── main/
+│   └── i18n.ts              # 主进程国际化模块（Electron 菜单专用）
+└── renderer/
+    └── i18n/                # 渲染进程国际化模块
+        ├── index.ts         # 核心 i18n 引擎
+        └── locales/
+            ├── en.ts        # 英文资源
+            └── zh-CN.ts     # 中文资源
+```
 
 ### 🎨 主题与跨平台（继承自原版）
 

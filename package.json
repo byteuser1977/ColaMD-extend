@@ -1,8 +1,19 @@
 {
   "name": "@bytechain.cn/colamd",
-  "version": "1.5.1",
+  "version": "1.5.2-beta.0",
   "description": "The Agent Native Markdown Editor — Extended with Math & Mermaid Plugin System",
   "main": "dist/main/index.js",
+  "exports": {
+    "./renderer": {
+      "import": "./dist/lib/colamd-renderer.js",
+      "types": "./dist/lib/colamd-renderer.d.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "renderer": ["dist/lib/colamd-renderer.d.ts"]
+    }
+  },
   "author": {
     "name": "byteuser1977",
     "email": "byteuser@qq.com"
@@ -14,6 +25,7 @@
     "url": "https://github.com/byteuser1977/ColaMD-extend.git"
   },
   "scripts": {
+    "build:lib": "vite build --config vite.config.lib.ts && tsc --project tsconfig.lib.json --emitDeclarationOnly",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",

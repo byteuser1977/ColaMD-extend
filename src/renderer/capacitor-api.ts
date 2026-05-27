@@ -74,6 +74,7 @@ export interface CapacitorBridgeAPI {
   onMenuTogglePlugin: (callback: (id: string) => void) => void
   onMenuImportTheme: (callback: () => void) => void
   exportFile: (dataUrl: string, defaultName: string) => Promise<boolean>
+  setLocale: (locale: 'en' | 'zh-CN') => Promise<string>
 }
 
 let currentFilePath: string | null = null
@@ -706,6 +707,17 @@ Edit this file in ColaMD and see your changes in real time.
       } catch {
         return false
       }
+    },
+
+    /**
+     * 设置语言（移动端仅本地存储，无 Electron 菜单需要更新）
+     */
+    async setLocale(locale: 'en' | 'zh-CN'): Promise<string> {
+      try {
+        localStorage.setItem('colamd-locale', locale)
+      } catch { /* ignore */ }
+
+      return locale
     },
   }
 

@@ -68,13 +68,20 @@ function enhanceClipboard(e: ClipboardEvent): void {
 
 const defaultContent = `# Welcome to ColaMD\n\nStart typing here...\n`
 
-export async function createEditor(
-  rootId: string,
+export interface CreateEditorOptions {
   onChange?: (markdown: string) => void
-): Promise<Editor> {
-  const root = document.getElementById(rootId)
-  if (!root) throw new Error(`Element #${rootId} not found`)
+  /** Callback for Ctrl/Cmd+click on links. If not provided, falls back to electronAPI/capacitorAPI. */
+  onExternalLink?: (href: string) => void
+}
 
+/**
+ * Create a Milkdown editor with all registered plugins.
+ * This is the pure editor creation logic, separated from host-app wiring.
+ */
+export async function createMilkdownEditor(
+  root: HTMLElement,
+  options: CreateEditorOptions = {}
+): Promise<Editor> {
   const pluginModules = getAllPluginModules()
 
   let builder = Editor.make()
@@ -85,9 +92,9 @@ export async function createEditor(
         ...pluginModules.map((m) => m.info.remarkPlugin),
         { plugin: remarkBreaks, options: undefined },
       ] as any)
-      if (onChange) {
+      if (options.onChange) {
         ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => {
-          onChange(markdown)
+          options.onChange!(markdown)
         })
       }
     })
@@ -121,7 +128,7 @@ export async function createEditor(
             ...filteredModules.map((m) => m.info.remarkPlugin),
             { plugin: remarkBreaks, options: undefined },
           ] as any)
-          if (onChange) ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => { onChange(markdown) })
+          if (options.onChange) ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => { options.onChange!(markdown) })
         })
         .use(commonmark)
         .use(gfm)
@@ -177,12 +184,6 @@ export async function createEditor(
    * ProseMirror handles IME composition natively via its DOM observer and input rules.
    * These handlers dispatched synthetic input events that interfered with ProseMirror's
    * internal state tracking, causing duplicated characters and broken undo history.
-   *
-   * Original code:
-   * if (/android|iphone|ipad/i.test(navigator.userAgent)) {
-   *     root.addEventListener('compositionstart', () => { ... })
-   *     root.addEventListener('compositionend', () => { ... })
-   * }
    */
 
   root.addEventListener('click', (e) => {
@@ -192,12 +193,28 @@ export async function createEditor(
     const href = link.getAttribute('href')
     if (href) {
       e.preventDefault()
-      window.electronAPI?.openExternal(href)
-      window.capacitorAPI?.openExternal(href)
+      if (options.onExternalLink) {
+        options.onExternalLink(href)
+      } else {
+        window.electronAPI?.openExternal(href)
+        window.capacitorAPI?.openExternal(href)
+      }
     }
   })
 
   return editorInstance
+}
+
+/**
+ * Create editor using element ID. Backward-compatible entry point for the Electron app.
+ */
+export async function createEditor(
+  rootId: string,
+  onChange?: (markdown: string) => void
+): Promise<Editor> {
+  const root = document.getElementById(rootId)
+  if (!root) throw new Error(`Element #${rootId} not found`)
+  return createMilkdownEditor(root, { onChange })
 }
 
 export function getMarkdown(): string {

@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.renderer.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist/lib",
+    "rootDir": "src/renderer"
+  },
+  "include": [
+    "src/renderer/editor/lib.ts",
+    "src/renderer/editor/editor.ts",
+    "src/renderer/editor/html-view.ts",
+    "src/renderer/editor/plugins/**/*",
+    "src/renderer/editor/plugins/themes/theme-manager.ts"
+  ]
+}

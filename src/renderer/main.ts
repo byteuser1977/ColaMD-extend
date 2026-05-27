@@ -6,6 +6,7 @@ import './editor/plugins/mermaid-plugin'
 import { createCapacitorAPI } from './capacitor-api'
 import './editor/plugins/themes/base.css'
 import './mobile.css'
+import * as i18n from './i18n'
 
 /**
  * Show a brief toast notification. Used for save/export feedback.
@@ -205,6 +206,11 @@ async function init(): Promise<void> {
 
   // ─── Mobile menu setup ───
   setupMobileMenu(api, savedTheme)
+
+  // ─── i18n language change listener ───
+  i18n.onLocaleChange(() => {
+    updateMobileMenuI18n()
+  })
 
   // Continuously check for Intent files (Android only, APP already running)
   if (!window.electronAPI) {
@@ -406,6 +412,105 @@ async function init(): Promise<void> {
 }
 
 /**
+ * 更新移动端菜单的国际化文本
+ * 当语言切换时调用此函数更新所有静态文本
+ */
+function updateMobileMenuI18n(): void {
+  const menuTitle = document.getElementById('menu-title')
+  if (menuTitle) menuTitle.textContent = i18n.t('mobile.menuTitle')
+
+  // 更新各分区的标题
+  const sectionTitles: Record<string, string> = {
+    'File': 'menu.file',
+    'Export': 'export.export',
+    'Slides': 'slides.slides',
+    'Theme': 'menu.theme',
+    'Plugins': 'menu.plugins',
+    'About': 'menu.about',
+    'Language': 'Language',
+  }
+
+  document.querySelectorAll('.menu-section-title').forEach((el) => {
+    const text = el.textContent?.trim()
+    if (text && sectionTitles[text]) {
+      el.textContent = i18n.t(sectionTitles[text])
+    }
+  })
+
+  // 更新按钮文本
+  const buttonLabels: Record<string, string> = {
+    'new': 'fileMenu.new',
+    'open': 'fileMenu.open',
+    'save': 'fileMenu.save',
+    'save-as': 'fileMenu.saveAs',
+    'export-pdf': 'export.exportPDF',
+    'export-html': 'export.exportHTML',
+    'export-slides': 'export.exportSlides',
+    'new-slides': 'slides.newSlides',
+    'open-as-slides': 'slides.openAsSlides',
+    'import-theme': 'themeMenu.importTheme',
+    'about': 'about.aboutApp',
+    'exit': 'about.exit',
+  }
+
+  document.querySelectorAll('.menu-item').forEach((el) => {
+    const action = (el as HTMLElement).dataset.action
+    if (action && buttonLabels[action]) {
+      el.textContent = i18n.t(buttonLabels[action])
+    }
+  })
+
+  // 更新主题列表
+  const themeListEl = document.getElementById('menu-theme-list')
+  if (themeListEl) {
+    const themes = [
+      { key: 'light', label: i18n.t('themeMenu.light') },
+      { key: 'dark', label: i18n.t('themeMenu.dark') },
+      { key: 'elegant', label: i18n.t('themeMenu.elegant') },
+      { key: 'newsprint', label: i18n.t('themeMenu.newsprint') },
+    ]
+
+    themeListEl.innerHTML = themes.map((t) =>
+      `<div class="menu-theme-item${t.key === loadSavedTheme() ? ' active' : ''}" data-theme="${t.key}">${t.label}</div>`
+    ).join('')
+
+    themeListEl.querySelectorAll('.menu-theme-item').forEach((el) => {
+      el.addEventListener('click', () => {
+        const theme = (el as HTMLElement).dataset.theme!
+        applyTheme(theme)
+        for (const p of getAllPlugins()) p.onThemeChange?.(theme)
+        refreshThemeSensitivePlugins()
+        themeListEl.querySelectorAll('.menu-theme-item').forEach((e) => e.classList.remove('active'))
+        el.classList.add('active')
+      })
+    })
+  }
+
+  // 更新语言列表
+  const languageListEl = document.getElementById('menu-language-list')
+  if (languageListEl) {
+    const locales = i18n.getSupportedLocales()
+    const currentLocale = i18n.getCurrentLocale()
+
+    languageListEl.innerHTML = locales.map((l) =>
+      `<div class="menu-theme-item${l.code === currentLocale ? ' active' : ''}" data-locale="${l.code}">${l.name}</div>`
+    ).join('')
+
+    languageListEl.querySelectorAll('.menu-theme-item').forEach((el) => {
+      el.addEventListener('click', () => {
+        const locale = (el as HTMLElement).dataset.locale as i18n.SupportedLocale
+        if (locale) {
+          i18n.setLocale(locale)
+          updateMobileMenuI18n()
+          languageListEl.querySelectorAll('.menu-theme-item').forEach((e) => e.classList.remove('active'))
+          el.classList.add('active')
+        }
+      })
+    })
+  }
+}
+
+/**
  * 初始化移动端侧边栏菜单的交互逻辑。
  * 包括菜单开关、主题切换、插件开关、文件操作等。
  * @param api 平台 API（Electron 或 Capacitor）
@@ -432,10 +537,10 @@ function setupMobileMenu(api: any, currentTheme: string): void {
 
   // 主题列表
   const themes = [
-    { key: 'light', label: 'Light' },
-    { key: 'dark', label: 'Dark' },
-    { key: 'elegant', label: 'Elegant' },
-    { key: 'newsprint', label: 'Newsprint' },
+    { key: 'light', label: i18n.t('themeMenu.light') },
+    { key: 'dark', label: i18n.t('themeMenu.dark') },
+    { key: 'elegant', label: i18n.t('themeMenu.elegant') },
+    { key: 'newsprint', label: i18n.t('themeMenu.newsprint') },
   ]
 
   const themeListEl = document.getElementById('menu-theme-list')
@@ -483,6 +588,30 @@ function setupMobileMenu(api: any, currentTheme: string): void {
     })
   }
 
+  // 语言列表
+  const languageListEl = document.getElementById('menu-language-list')
+  if (languageListEl) {
+    const locales = i18n.getSupportedLocales()
+    const currentLocale = i18n.getCurrentLocale()
+
+    languageListEl.innerHTML = locales.map((l) =>
+      `<div class="menu-theme-item${l.code === currentLocale ? ' active' : ''}" data-locale="${l.code}">${l.name}</div>`
+    ).join('')
+
+    languageListEl.querySelectorAll('.menu-theme-item').forEach((el) => {
+      el.addEventListener('click', () => {
+        const locale = (el as HTMLElement).dataset.locale as i18n.SupportedLocale
+        if (locale) {
+          i18n.setLocale(locale)
+          updateMobileMenuI18n()
+          languageListEl.querySelectorAll('.menu-theme-item').forEach((e) => e.classList.remove('active'))
+          el.classList.add('active')
+          closeMenu()
+        }
+      })
+    })
+  }
+
   // 菜单操作按钮
   menuEl.querySelectorAll('.menu-item').forEach((el) => {
     el.addEventListener('click', async () => {
@@ -505,10 +634,10 @@ function setupMobileMenu(api: any, currentTheme: string): void {
           {
             const ok = await api.saveFile(getContent())
             if (ok) {
-              showToast('Saved')
+              showToast(i18n.t('toast.saved'))
               restoreRenderedMode(api)
             } else {
-              showToast('Save failed')
+              showToast(i18n.t('toast.saveFailed'))
             }
           }
           break
@@ -517,10 +646,10 @@ function setupMobileMenu(api: any, currentTheme: string): void {
           {
             const ok = await api.saveFileAs(getContent())
             if (ok) {
-              showToast('Saved')
+              showToast(i18n.t('toast.saved'))
               restoreRenderedMode(api)
             } else {
-              showToast('Save cancelled or failed')
+              showToast(i18n.t('toast.saveCancelled'))
             }
           }
           break
