@@ -8,11 +8,18 @@ Real-time collaboration between humans and AI agents — see your agent's change
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/marswaveai/colamd.svg)](https://github.com/marswaveai/colamd/releases)
-[![Version: 1.5.2-beta.0](https://img.shields.io/badge/Version-1.5.2--beta.0-blue.svg)](https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.2-beta.0)
+[![Version: 1.5.2](https://img.shields.io/badge/Version-1.5.2-blue.svg)](https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.2)
 
 **This Extended Edition**: [git@github.com:byteuser1977/ColaMD-extend.git](https://github.com/byteuser1977/ColaMD-extend)
 
-## 🎉 v1.5.2-beta.0 Release Highlights (2026-05-27)
+## 🎉 v1.5.2 Release Highlights (2026-05-28)
+
+### 🌐 Complete Internationalization (i18n) System
+- **Multi-language Support** — Built-in English and Simplified Chinese with auto-detection based on system locale
+- **Desktop Menu Localization** — All Electron menus (File, Edit, View, Theme, Help) display in the selected language
+- **Mobile Menu Localization** — Complete sidebar menu with language switcher for on-the-fly switching
+- **Dynamic Switching** — Change language anytime without restart; UI updates instantly
+- **Persistent Preference** — Language choice saved to `localStorage` and remembered across sessions
 
 ### 🔧 Improvements
 
@@ -22,7 +29,7 @@ Real-time collaboration between humans and AI agents — see your agent's change
 - **Refactored Export HTML** — Streamlined `buildExportHTML` function, removed hardcoded plugin styles in favor of plugin-injected styles
 - **Clean Output** — Proper A4 pagination with 15mm margins, background color preservation
 
-#### � Unified Plugin Style Management
+#### 🔌 Unified Plugin Style Management
 - **Dynamic Configuration** — Math and Mermaid plugins now support unified configuration fields (clipboard styles, export styles)
 - **Dynamic Style Retrieval** — Replaced hardcoded style handling with dynamic retrieval from plugin configuration
 - **Smart Error Recovery** — Dynamically skips failing plugins during export instead of hard-coded exclusions
@@ -38,7 +45,33 @@ Real-time collaboration between humans and AI agents — see your agent's change
 ### 🗑️ Removed
 - Removed outdated PDF font compensation document ([`docs/PDF_FONT_COMPENSATION.md`](docs/PDF_FONT_COMPENSATION.md))
 
-> 💡 **Note**: This beta release focuses on export pipeline improvements and plugin system optimization. Theme updates continue in [ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes) repository.
+> 💡 **Note**: This release includes complete internationalization support and export pipeline improvements. Theme updates continue in [ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes) repository.
+
+---
+
+## 🚀 VSCode ColaView Extension
+
+Seamlessly integrate ColaMD with your VSCode workflow using our companion extension:
+
+### [vscode_colaview](https://github.com/byteuser1977/vscode_colaview) 🆕
+
+**The VSCode extension to view and edit ColaMD-rendered Markdown files**
+
+| Feature | Description |
+|---------|-------------|
+| **Real-time Preview** | View math equations and Mermaid diagrams rendered directly in VSCode |
+| **Seamless Integration** | Work with ColaMD content without leaving your code editor |
+| **Consistency** | Maintain visual consistency between ColaMD desktop and VSCode |
+| **Productivity** | Enhanced workflow for developers working with Markdown + rich content |
+
+**Why use vscode_colaview?**
+- Preview ColaMD-rendered content alongside your code
+- No need to switch between applications
+- Perfect for documentation-heavy projects
+- Supports the same Math and Mermaid rendering as ColaMD desktop
+
+🔗 **Install**: [vscode_colaview on GitHub](https://github.com/byteuser1977/vscode_colaview)
+📦 **VSCode Marketplace**: Search for "colaview" in VSCode extensions
 
 ---
 
@@ -269,7 +302,9 @@ $$
 
 #### Supported Diagram Types (17+)
 
-```markdown
+To create a Mermaid diagram, type the following in the editor:
+
+````markdown
 ```mermaid
 graph TD
     A[Markdown] --> B[ColaMD]
@@ -278,7 +313,7 @@ graph TD
     C --> E[Rich Content]
     D --> E
 ```
-```
+````
 
 | Category | Supported Diagrams |
 |----------|-------------------|
@@ -1015,6 +1050,29 @@ ColaMD will evolve alongside the agent ecosystem:
 - ~~v1.5~~ — ✅ Export Slides: single-file HTML with inlined images
 - **Current Version** — 🆕 Renderer Plugin System: Math equation rendering + Mermaid diagram rendering
 - **Future Plans** — More renderer plugins (syntax highlighting, enhanced flowcharts, etc.), bidirectional sync, multi-file watching
+
+---
+
+## 📬 Contact & Support
+
+Need help? Want to contribute? Have feedback?
+
+### 📱 Feishu (Lark) Contact
+
+Scan the QR code below to connect with the project maintainer:
+
+![Feishu QR Code](docs/feishu-contact.jpg)
+
+**Contact**: 比特大人 (Byte Chain)
+
+### 📧 Other Contact Methods
+
+| Method | Link |
+|--------|------|
+| 🐛 **Report Bugs** | [Open an Issue](https://github.com/byteuser1977/ColaMD-extend/issues/new?labels=bug) |
+| 💡 **Feature Requests** | [Open an Issue](https://github.com/byteuser1977/ColaMD-extend/issues/new?labels=enhancement) |
+| 💬 **Discussions** | [GitHub Discussions](https://github.com/byteuser1977/ColaMD-extend/discussions/new?category=q-a) |
+| 📧 **Email** | byteuser@qq.com |
 
 ---
 

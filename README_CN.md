@@ -8,11 +8,18 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub release](https://img.shields.io/github/release/marswaveai/colamd.svg)](https://github.com/marswaveai/colamd/releases)
-[![Version: 1.5.2-beta.0](https://img.shields.io/badge/Version-1.5.2--beta.0-blue.svg)](https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.2-beta.0)
+[![Version: 1.5.2](https://img.shields.io/badge/Version-1.5.2-blue.svg)](https://github.com/byteuser1977/ColaMD-extend/releases/tag/v1.5.2)
 
 **本扩展版仓库**: [git@github.com:byteuser1977/ColaMD-extend.git](https://github.com/byteuser1977/ColaMD-extend)
 
-## 🎉 v1.5.2-beta.0 测试版发布亮点（2026-05-27）
+## 🎉 v1.5.2 正式版发布亮点（2026-05-28）
+
+### 🌐 完整的国际化（i18n）系统
+- **多语言支持** — 内置英文和简体中文，根据系统语言自动检测
+- **桌面端菜单本地化** — 所有 Electron 菜单（文件、编辑、视图、主题、帮助）以选定语言显示
+- **移动端菜单本地化** — 完整的侧边栏菜单，带语言切换器，可随时切换
+- **动态切换** — 随时更改语言，无需重启；界面即时更新
+- **偏好持久化** — 语言选择保存至 `localStorage`，跨会话记住
 
 ### 🔧 改进优化
 
@@ -38,7 +45,33 @@
 ### 🗑️ 移除内容
 - 移除过时的 PDF 字体补偿文档 ([`docs/PDF_FONT_COMPENSATION.md`](docs/PDF_FONT_COMPENSATION.md))
 
-> 💡 **说明**：本测试版专注于导出流程改进和插件系统优化。主题更新继续在 [ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes) 仓库进行。
+> 💡 **说明**：本版本包含完整的国际化支持和导出流程改进。主题更新继续在 [ColaMD-themes](https://github.com/byteuser1977/ColaMD-themes) 仓库进行。
+
+---
+
+## 🚀 VSCode ColaView 扩展
+
+使用我们的配套扩展，将 ColaMD 无缝集成到你的 VSCode 工作流中：
+
+### [vscode_colaview](https://github.com/byteuser1977/vscode_colaview) 🆕
+
+**用于查看和编辑 ColaMD 渲染 Markdown 文件的 VSCode 扩展**
+
+| 功能 | 说明 |
+|------|------|
+| **实时预览** | 在 VSCode 中直接预览数学公式和 Mermaid 图表的渲染效果 |
+| **无缝集成** | 无需离开代码编辑器即可处理 ColaMD 内容 |
+| **一致性** | 保持 ColaMD 桌面端与 VSCode 之间的视觉一致性 |
+| **生产力提升** | 为处理 Markdown + 富内容的开发者增强工作流程 |
+
+**为什么使用 vscode_colaview？**
+- 在代码旁边预览 ColaMD 渲染的内容
+- 无需在多个应用之间切换
+- 非常适合文档密集型项目
+- 支持与 ColaMD 桌面端相同的数学公式和 Mermaid 图表渲染
+
+🔗 **安装**: [vscode_colaview GitHub 地址](https://github.com/byteuser1977/vscode_colaview)
+📦 **VSCode 应用市场**: 在 VSCode 扩展中搜索 "colaview"
 
 ---
 
@@ -346,8 +379,6 @@ graph TD
     D --> E
 ````
 
-```
-
 | 类别 | 支持的图表 |
 |------|-----------|
 | 流程图 | `graph` (TD/LR/RL/BT), `flowchart` |
@@ -431,16 +462,14 @@ ColaMD 在顶部菜单栏提供 **Plug** 菜单，用于控制显示插件的渲
 ### 菜单结构
 
 ```
-
 Plug
 ├── Math
 │   ├── Rendered      # 渲染模式：显示公式/图表的富文本效果
 │   └── Raw           # 源码模式：显示原始 Markdown 代码，支持直接编辑
 └── Mermaid
-├── Rendered      # 渲染模式：显示图表的 SVG 可视化效果
-└── Raw           # 源码模式：显示 Mermaid 代码，支持直接编辑
-
-`````
+    ├── Rendered      # 渲染模式：显示图表的 SVG 可视化效果
+    └── Raw           # 源码模式：显示 Mermaid 代码，支持直接编辑
+````
 
 ### 渲染模式（Rendered）
 
@@ -460,14 +489,15 @@ Plug
 ### 使用示例
 
 1. 输入一段 Mermaid 代码：
+
    ````markdown
    ```mermaid
    graph TD
        A[开始] --> B[处理]
        B --> C[结束]
-`````
+   ```
+   ````
 
-````
 2. 点击 **Plug → Mermaid → Rendered** 查看图表渲染效果
 3. 点击 **Plug → Mermaid → Raw** 切换到源码模式，直接修改节点和连线
 4. 点击编辑器其他区域失焦，自动保存并重新渲染
@@ -1088,6 +1118,28 @@ ColaMD 将随 Agent 生态一起演进：
 
 ---
 
+## 📬 联系与支持
+
+需要帮助？想要贡献？有反馈？
+
+### 📱 飞书联系方式
+
+扫描下方二维码，添加项目维护者：
+
+![飞书二维码](docs/feishu-contact.jpg)
+
+**联系人**: 比特大人 (Byte Chain)
+
+### 📧 其他联系方式
+
+| 方式 | 链接 |
+|------|------|
+| 🐛 **报告 Bug** | [提交 Issue](https://github.com/byteuser1977/ColaMD-extend/issues/new?labels=bug) |
+| 💡 **功能建议** | [提交 Issue](https://github.com/byteuser1977/ColaMD-extend/issues/new?labels=enhancement) |
+| 💬 **讨论交流** | [GitHub Discussions](https://github.com/byteuser1977/ColaMD-extend/discussions/new?category=q-a) |
+| 📧 **邮箱** | byteuser@qq.com |
+
+---
+
 *由 [marswaveai/ColaMD](https://github.com/marswaveai/colamd) 扩展而来，为 Agent Native 的未来而造。*
-````
 

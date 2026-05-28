@@ -1,3 +1,5 @@
 {
-    "colaview.theme": "elegant"
+    "colaview.theme": "elegant",
+    "colaview.autoPreview": true,
+    "colaview.customThemesPath": ".themes/"
 }
