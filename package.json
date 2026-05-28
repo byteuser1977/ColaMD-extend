@@ -19,6 +19,18 @@
     "email": "byteuser@qq.com"
   },
   "license": "MIT",
+  "files": [
+    "dist/",
+    "themes/",
+    "README.md",
+    "README_CN.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "homepage": "https://github.com/byteuser1977/ColaMD-extend",
   "repository": {
     "type": "git",

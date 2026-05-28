@@ -1,0 +1,68 @@
+# Source code (only distribute compiled files)
+src/
+tsconfig*.json
+vite.config.lib.ts
+
+# Dependencies (install via package.json)
+node_modules/
+
+# Development and build configs
+electron-builder.yml
+electron.vite.config.js
+electron.vite.config.ts
+capacitor.config.js
+capacitor.config.ts
+
+# Mobile platforms
+android/
+ios/
+
+# Desktop app resources and scripts
+resources/
+scripts/
+
+# IDE and editor configurations
+.vscode/
+.idea/
+.claude/
+.trae/
+
+# CI/CD configuration
+.github/
+
+# Documentation (keep essential docs)
+docs/
+CLAUDE.md
+
+# Build artifacts (should be in dist/)
+release/
+out/
+
+# Logs and temporary files
+*.log
+log.md
+*.tmp
+*.temp
+.cache/
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env*
+.gitignore
+.npmignore
+
+# Demo files
+demo.pdf
+demo.html
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Test files (if any)
+**/*.test.ts
+**/*.spec.ts
+__tests__/
+test/
+tests/
+coverage/

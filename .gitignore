@@ -1,8 +1,71 @@
+# Dependencies
 node_modules/
+
+# Build outputs
 dist/
 release/
+out/
+
+# Logs
 *.log
-.DS_Store
-.claude/
-*.env
 log.md
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
+.trae/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# TypeScript build info
+tsconfig.*.tsbuildinfo
+*.tsbuildinfo
+
+# Mobile platforms (Capacitor)
+android/
+ios/
+
+# Electron specific
+electron-builder.yml
+electron.vite.config.js
+electron.vite.config.ts
+
+# Capacitor specific
+capacitor.config.js
+capacitor.config.ts
+
+# Desktop app resources (not needed for npm package)
+resources/
+scripts/afterPack.js
+scripts/generate-icons.js
+
+# CI/CD
+.github/
+
+# Documentation (keep README, LICENSE, CHANGELOG)
+docs/
+CLAUDE.md
+
+# Demo and test files
+demo.pdf
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
