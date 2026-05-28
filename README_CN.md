@@ -1128,7 +1128,7 @@ ColaMD 将随 Agent 生态一起演进：
 
 ![飞书二维码](docs/feishu-contact.jpg)
 
-**联系人**: 比特大人 (Byte Chain)
+**联系人**: 比特 (byteuser
 
 ### 📧 其他联系方式
 

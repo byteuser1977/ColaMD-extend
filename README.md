@@ -1063,7 +1063,7 @@ Scan the QR code below to connect with the project maintainer:
 
 ![Feishu QR Code](docs/feishu-contact.jpg)
 
-**Contact**: 比特大人 (Byte Chain)
+**Contact**: Byteuser
 
 ### 📧 Other Contact Methods
 
