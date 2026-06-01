@@ -27,7 +27,7 @@ Desktop.ini
 *~
 .claude/
 .trae/
-
+.claude/
 # Environment variables
 .env
 .env.local
