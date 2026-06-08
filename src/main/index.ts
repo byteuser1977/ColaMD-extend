@@ -56,7 +56,7 @@ function getWinFromEvent(event: Electron.IpcMainInvokeEvent): BrowserWindow | nu
   return BrowserWindow.fromWebContents(event.sender)
 }
 
-function createWindow(filePath?: string): BrowserWindow {
+function createWindow(filePath?: string): Promise<BrowserWindow> {
   const win = new BrowserWindow({
     width: 960,
     height: 720,
@@ -74,27 +74,30 @@ function createWindow(filePath?: string): BrowserWindow {
 
   const state = getState(win)
 
-  if (process.env.ELECTRON_RENDERER_URL) {
-    win.loadURL(process.env.ELECTRON_RENDERER_URL)
-  } else {
-    win.loadFile(join(__dirname, '../renderer/index.html'))
-  }
+  // 返回 Promise，在渲染进程就绪后 resolve，避免多窗口同时竞争资源
+  return new Promise<BrowserWindow>((resolve) => {
+    win.webContents.on('did-finish-load', () => {
+      // 开发环境自动打开 DevTools 方便调试
+     // win.webContents.openDevTools({ mode: 'bottom' })
+      if (filePath) {
+        loadFileInWindow(win, filePath)
+      }
+      resolve(win)
+    })
 
-  win.webContents.on('did-finish-load', () => {
-    // 开发环境自动打开 DevTools 方便调试
-   // win.webContents.openDevTools({ mode: 'bottom' })
-    if (filePath) {
-      loadFileInWindow(win, filePath)
+    if (process.env.ELECTRON_RENDERER_URL) {
+      win.loadURL(process.env.ELECTRON_RENDERER_URL)
+    } else {
+      win.loadFile(join(__dirname, '../renderer/index.html'))
     }
-  })
 
-  win.on('closed', () => {
-    stopWatching(state)
-    windowStates.delete(win.id)
-  })
+    win.on('closed', () => {
+      stopWatching(state)
+      windowStates.delete(win.id)
+    })
 
-  updateTitle(win)
-  return win
+    updateTitle(win)
+  })
 }
 
 function updateTitle(win: BrowserWindow): void {
@@ -221,7 +224,7 @@ function findWindowForFile(filePath: string): BrowserWindow | null {
 }
 
 // Open file: reuse existing window or create new one
-function openFile(filePath: string): void {
+async function openFile(filePath: string): Promise<void> {
   // If already open, focus that window
   const existing = findWindowForFile(filePath)
   if (existing) {
@@ -237,8 +240,8 @@ function openFile(filePath: string): void {
     return
   }
 
-  // Create new window
-  const win = createWindow(filePath)
+  // Create new window — 等待渲染进程就绪后再聚焦，避免资源竞争
+  const win = await createWindow(filePath)
   win.focus()
 }
 
@@ -904,7 +907,7 @@ app.whenReady().then(async () => {
 
   if (pendingFilePaths.length > 0) {
     for (const fp of pendingFilePaths) {
-      createWindow(fp)
+      await createWindow(fp)
     }
     pendingFilePaths = []
   } else {
@@ -920,10 +923,10 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-app.on('open-file', (event, filePath) => {
+app.on('open-file', async (event, filePath) => {
   event.preventDefault()
   if (app.isReady()) {
-    openFile(filePath)
+    await openFile(filePath)
   } else {
     pendingFilePaths.push(filePath)
   }
