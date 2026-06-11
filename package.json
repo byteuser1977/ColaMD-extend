@@ -53,7 +53,8 @@
     "dist:android": "npm run build && npx cap sync android && cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ./gradlew assembleRelease && cd .. && mkdir -p release && cp android/app/build/outputs/apk/release/app-release.apk release/colamd-$(node -p \"require('./package.json').version\")-android.apk",
     "cap:build:android": "npm run build && npx cap sync android && cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ./gradlew assembleDebug",
     "cap:build:android:release": "npm run build && npx cap sync android && cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ./gradlew assembleRelease",
-    "cap:build:ios": "npm run build && npx cap sync ios"
+    "cap:build:ios": "npm run build && npx cap sync ios",
+    "dist:ios": "npm run build && npx cap sync ios && cd ios/App && xcodebuild -project App.xcodeproj -target App -configuration Release -sdk iphoneos CODE_SIGN_IDENTITY=\"\" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -5 && echo '=== BUILD COMPLETED ===' && cd ../.."
   },
   "dependencies": {
     "@milkdown/kit": "^7.19.2",
