@@ -39,6 +39,8 @@ function fixture() {
     '普通段落，含 **加粗**、*斜体*、~~删除线~~、`行内代码`、==高亮==、',
     '[链接文字](https://example.com/a) 和 [站内跳转](#一级标题)。',
     '',
+    '**00:00:17 开场**',
+    '',
     '![本地图片](pixel.png)',
     '',
     '## 二级标题',
@@ -162,6 +164,14 @@ const MEASURE = `(() => {
       code: q('.cm-md-inlinecode').length,
       highlight: q('.cm-md-highlight').length,
       raw: has(lineOf('普通段落'), '**') || has(lineOf('普通段落'), '==') || has(lineOf('普通段落'), '~~')
+    },
+    // 时间戳：一行粗体的 00:00:17 开场，必须整行同一个颜色。曾经中间那段被当成
+    // emoji 短代码（character 是 string 的子标签），被代码块的字符串色染绿。
+    timestamp: {
+      colors: [...new Set([...lineOf('00:00:17').querySelectorAll('span')]
+        .filter((el) => el.children.length === 0 && el.textContent.trim())
+        .map((el) => getComputedStyle(el).color))],
+      spans: [...lineOf('00:00:17').querySelectorAll('span')].filter((el) => el.textContent.trim()).map((el) => el.textContent)
     },
     link: {
       anchors: q('#editor [data-href]').length,
@@ -520,6 +530,8 @@ function main() {
         `strong=${m.inline.strong} em=${m.inline.em} strike=${m.inline.strike} code=${m.inline.code}`)
       check('行内格式标记隐藏', m.inline.raw === false, `还看得到原始标记: ${m.inline.raw}`)
       check('==高亮== 渲染', m.inline.highlight >= 1, `highlight=${m.inline.highlight}`)
+      check('时间戳不被当成 emoji 染色', m.timestamp.colors.length === 1,
+        `颜色=${JSON.stringify(m.timestamp.colors)} 片段=${JSON.stringify(m.timestamp.spans)}`)
       check('链接可点（带地址）', m.link.anchors >= 1, `带 data-href 的元素=${m.link.anchors}`)
       check('链接不露源码', m.link.brackets === false, `行内容: ${m.link.url}`)
       check('本地图片渲染', m.image.imgs >= 1 && m.image.naturalWidth > 0,
