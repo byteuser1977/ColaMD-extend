@@ -61,6 +61,7 @@ function fixture() {
     '',
     '```js',
     '// 注释一行',
+    '# 这一行在代码块里，不该进大纲',
     'const answer = 42',
     'function greet(name) {',
     "  return 'hi ' + name",
@@ -69,7 +70,8 @@ function fixture() {
     '',
     '| 列甲 | 列乙 |',
     '| --- | --- |',
-    '| 甲一 | 乙一 |',
+    '| 甲一 | 乙一<br/>乙二 |',
+    '| ![格子里的图](pixel.png) | 乙三 |',
     '',
     '行内公式 $a^2+b^2=c^2$ 与价格 $349。',
     '',
@@ -201,7 +203,10 @@ const MEASURE = `(() => {
       tables: q('.cm-md-table-widget').length,
       realTables: q('table.cm-md-table-widget').length,
       cells: q('.cm-md-table-widget td').length,
-      headers: q('.cm-md-table-widget th').length
+      headers: q('.cm-md-table-widget th').length,
+      // 格子里的 <br/> 要画成换行，格子里的图片要画出来
+      brs: q('.cm-md-table-widget td br').length,
+      imgs: q('.cm-md-table-widget td img').length
     },
     quote: { count: q('.cm-md-blockquote').length, raw: (text(lineOf('引用文字')) || '').startsWith('>') },
     hr: { count: q('.cm-md-hr').length },
@@ -228,6 +233,8 @@ const MEASURE = `(() => {
     })(),
     frontmatter: {
       count: q('.cm-md-frontmatter').length,
+      // 阅读时不应占位置：行元素还在，但不该有高度
+      visible: q('.cm-md-frontmatter').filter((el) => el.getBoundingClientRect().height > 0).length,
       color: colorOf(q('.cm-md-frontmatter')[0]),
       bodyColor: colorOf(document.querySelector('#editor .cm-content'))
     },
@@ -538,10 +545,11 @@ function main() {
       })
       // 等到**这份夹具**真的进了编辑器。只数行数不够：认错了文档时它照样满屏是行，
       // 后面会红一片看不懂的断言（2026-09-26 碰上过一次，18 条一起红）。
+      // 片段用正文里的字：属性区一旦按 #138 藏起来，"功能验收" 就不在 DOM 里了。
       let loaded = false
       for (let i = 0; i < 80; i++) {
         const ok = await evaluate(renderer,
-          `(() => { const el = document.querySelector('#editor .cm-content'); return el ? el.textContent.includes('功能验收') : false })()`)
+          `(() => { const el = document.querySelector('#editor .cm-content'); return el ? el.textContent.includes('一级标题') : false })()`)
         if (ok === true) { loaded = true; break }
         await sleep(250)
       }
@@ -571,6 +579,8 @@ function main() {
       check('待办复选框', m.list.tasks >= 2 && m.list.checked >= 1, `tasks=${m.list.tasks} checked=${m.list.checked}`)
       check('表格渲染', m.table.realTables >= 1 && m.table.cells >= 2,
         `表格=${m.table.tables} 真 table=${m.table.realTables} cells=${m.table.cells}`)
+      check('表格格子里的 <br/> 画成换行', m.table.brs >= 1, `<br> 个数=${m.table.brs}`)
+      check('表格格子里的图片画出来', m.table.imgs >= 1, `格子里 img 个数=${m.table.imgs}`)
       check('引用渲染', m.quote.count >= 1 && m.quote.raw === false, `count=${m.quote.count} 露 >: ${m.quote.raw}`)
       check('分隔线渲染', m.hr.count >= 1, `hr=${m.hr.count}`)
       check('公式渲染', m.math.katex >= 2, `katex=${m.math.katex} block=${m.math.block} error=${m.math.error}`)
@@ -582,8 +592,8 @@ function main() {
         `token=${m.code.tokens} 颜色种类=${m.code.colors} 样例 ${m.code.sample}`)
       check('语言名压淡', m.code.langLabel >= 1, `语言名标注=${m.code.langLabel}`)
       check('代码块复制按钮', m.code.copyButton >= 1, `按钮数=${m.code.copyButton}`)
-      check('属性区压淡', m.frontmatter.count >= 1 && m.frontmatter.color !== m.frontmatter.bodyColor,
-        `count=${m.frontmatter.count} 属性区色=${m.frontmatter.color} 正文色=${m.frontmatter.bodyColor}`)
+      check('属性区阅读时不占位置', m.frontmatter.visible === 0,
+        `属性区行数=${m.frontmatter.count} 有高度的=${m.frontmatter.visible}`)
       check('脚注渲染', m.footnote.refs >= 1, `refs=${m.footnote.refs} 露源码=${m.footnote.raw}`)
       check('脚注悬停预览', m.footnote.previewCard >= 1, `预览卡片=${m.footnote.previewCard}`)
       check('HTML 块渲染', m.html.rendered >= 1, `rendered=${m.html.rendered} 露源码=${m.html.raw}`)
@@ -595,6 +605,100 @@ function main() {
         m.exportHtml.cmClass === false && m.exportHtml.cmLine === false && m.exportHtml.frontmatter === false,
         `cm-md 类名残留=${m.exportHtml.cmClass}[${m.exportHtml.cmClassNames}] cm-line 残留=${m.exportHtml.cmLine} 属性区残留=${m.exportHtml.frontmatter}`)
       check('导出的 HTML 带图片', m.exportHtml.img === true, `img=${m.exportHtml.img} 长度=${m.exportHtml.size}`)
+
+      // ─── #138 那一批：阅读体验的退化 ─────────────────────────────────────────
+
+      // #138-4：被替换掉的块（表格、图、图片、公式、HTML）点一下要能进去改。
+      // 判据是点完那个替换块消失、源码露出来。
+      for (const [label, selector] of [['表格', '.cm-md-table-widget'], ['图', '.cm-md-mermaid'], ['图片', '.cm-md-image']]) {
+        const box = JSON.parse(await evaluate(renderer, `(() => {
+          const el = document.querySelector('${selector}')
+          if (!el) return JSON.stringify({ x: 0, y: 0, before: 0 })
+          const r = el.getBoundingClientRect()
+          return JSON.stringify({ x: Math.round(r.left + 12), y: Math.round(r.top + 8), before: 1 })
+        })()`))
+        for (const type of ['mousePressed', 'mouseReleased']) {
+          if (!box.x) break
+          await renderer.send('Input.dispatchMouseEvent', { type, x: box.x, y: box.y, button: 'left', clickCount: 1 })
+        }
+        await sleep(400)
+        const after = Number(await evaluate(renderer, `document.querySelectorAll('${selector}').length`))
+        check(`${label}点一下能进去改`, box.before === 1 && after === 0, `点之前=${box.before} 点之后=${after}`)
+      }
+
+      // #138-5：打开文件面板之后正文仍居中，不能往一边偏。
+      const contentGaps = async () => JSON.parse(await evaluate(renderer, `(() => {
+        const content = document.querySelector('#editor .cm-content').getBoundingClientRect()
+        const scroller = document.querySelector('#editor .cm-scroller').getBoundingClientRect()
+        return JSON.stringify({ left: Math.round(content.left - scroller.left), right: Math.round(scroller.right - content.right) })
+      })()`))
+      const gapsClosed = await contentGaps()
+      // 这里只切类名，不走菜单：要量的是「面板占位之后正文还居不居中」这一条 CSS，
+      // 面板本身的开合另有真机验收。
+      await evaluate(renderer, `document.body.classList.add('show-file-panel')`)
+      await sleep(400)
+      const gapsOpen = await contentGaps()
+      await evaluate(renderer, `document.body.classList.remove('show-file-panel')`)
+      await sleep(200)
+      check('打开文件面板后正文仍居中', Math.abs(gapsOpen.left - gapsOpen.right) <= 2,
+        `面板关 左=${gapsClosed.left} 右=${gapsClosed.right}；面板开 左=${gapsOpen.left} 右=${gapsOpen.right}`)
+
+      // #137：大纲不能把代码块里的 `#` 当成标题。
+      // 文件面板默认是收起的（manualHidden 默认真），先按它的开关把它打开。
+      await evaluate(renderer, `(() => {
+        if (document.getElementById('file-panel').hidden) document.getElementById('file-toggle-btn').click()
+        document.getElementById('file-panel-outline').click()
+        return true
+      })()`)
+      await sleep(500)
+      const outlineTexts = JSON.parse(await evaluate(renderer,
+        `JSON.stringify([...document.querySelectorAll('#outline-list button')].map((b) => b.textContent))`))
+      const outlineDiag = JSON.parse(await evaluate(renderer, `JSON.stringify({
+        panelHidden: document.getElementById('file-panel').hidden,
+        listHidden: document.getElementById('outline-list').hidden,
+        rows: document.getElementById('outline-list').children.length,
+        active: document.getElementById('file-panel-outline').className
+      })`))
+      check('大纲不吃代码块里的 #',
+        outlineTexts.includes('一级标题') && !outlineTexts.some((t) => t.includes('不该进大纲')),
+        `大纲条目=${JSON.stringify(outlineTexts)} 诊断=${JSON.stringify(outlineDiag)}`)
+      await evaluate(renderer, `document.getElementById('file-panel-files').click()`)
+      await sleep(200)
+
+      // #138-3：查找。按 ⌘F 应该弹出我们自己的面板，敲进去应该真的高亮到。
+      for (const type of ['rawKeyDown', 'keyUp']) {
+        await renderer.send('Input.dispatchKeyEvent', { type, key: 'f', code: 'KeyF', windowsVirtualKeyCode: 70, modifiers: 4 })
+      }
+      await sleep(500)
+      const searchPanelVisible = await evaluate(renderer,
+        `(() => { const p = document.querySelector('.search-panel'); return !!(p && p.getBoundingClientRect().height > 0) })()`)
+      await evaluate(renderer, `(() => {
+        const input = document.querySelector('.search-input')
+        if (!input) return false
+        input.value = '一级标题'
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+        return true
+      })()`)
+      await sleep(600)
+      const searchMatches = Number(await evaluate(renderer,
+        `document.querySelectorAll('#editor .search-match, #editor .search-match-current').length`))
+      const searchCount = await evaluate(renderer,
+        `(() => { const el = document.querySelector('.search-count'); return el ? el.textContent : null })()`)
+      check('查找能弹面板', searchPanelVisible === true, `面板可见=${searchPanelVisible}`)
+      check('查找能高亮到', searchMatches >= 1, `匹配数=${searchMatches} 面板计数=${searchCount}`)
+      await evaluate(renderer, `(() => { const p = document.querySelector('.search-panel'); if (p) p.remove() })()`)
+
+      // #136：光标停在待办那一行时，复选框不该变回 `- [ ]`。
+      await clickLine(renderer, '待办未完成')
+      const taskOnActive = JSON.parse(await evaluate(renderer, `(() => {
+        const line = [...document.querySelectorAll('#editor .cm-line')].find((l) => l.textContent.includes('待办未完成'))
+        return JSON.stringify({
+          checkbox: line ? line.querySelectorAll('.cm-md-task, input[type=checkbox]').length : -1,
+          text: line ? line.textContent : null
+        })
+      })()`))
+      check('光标停在待办行仍显示复选框', taskOnActive.checkbox >= 1,
+        `复选框=${taskOnActive.checkbox} 行=${JSON.stringify(taskOnActive.text)}`)
 
       // 点一下把光标放到那一行，再用键盘选中整行
       await clickLine(renderer, '普通段落')

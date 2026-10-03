@@ -17,6 +17,7 @@ import { indentOnInput, bracketMatching, syntaxHighlighting, Language } from '@c
 import { highlightSelectionMatches } from '@codemirror/search'
 import { keymap } from '@codemirror/view'
 import { markdownHighlightStyle } from './source-theme'
+import { frontmatterRange } from './math-scan'
 
 /** 可编辑性放在一个 compartment 里，方便运行时切换而不重建编辑器。 */
 export const editableCompartment = new Compartment()
@@ -70,5 +71,19 @@ export function stateExtensions(): Extension {
 
 /** 用一份文本建一个编辑器状态。换文件（flush）时用它，撤销栈随之清空。 */
 export function createState(doc: string): EditorState {
-  return EditorState.create({ doc, extensions: stateExtensions() })
+  return EditorState.create({ doc, selection: { anchor: bodyStart(doc) }, extensions: stateExtensions() })
+}
+
+/**
+ * 打开一份文件时光标应该落在哪。
+ *
+ * 属性区是收起来的（见 live-preview 的 collectFrontmatter）。光标停在收起来的那几行里，
+ * 敲下去的字会落进看不见的地方，所以有属性区时把光标放到它后面第一行。
+ * 反过来说，光标任何时候被移到里面去，那一块就会露出来。
+ */
+export function bodyStart(doc: string): number {
+  const front = frontmatterRange(doc)
+  if (!front) return 0
+  const lineBreak = doc.indexOf('\n', front.to)
+  return lineBreak === -1 ? doc.length : lineBreak + 1
 }

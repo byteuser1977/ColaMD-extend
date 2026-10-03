@@ -89,7 +89,7 @@
 
 ## 已知的坑
 
-六件都是**静默失效**：不报错，只是画得不对。写下来免得再烧一次。
+七件都是**静默失效**：不报错，只是画得不对。写下来免得再烧一次。
 
 - **装饰不许跨行替换**：用函数式 `EditorView.decorations.compute()` 提供的装饰命中跨行替换时会抛 `RangeError: Decorations that replace line breaks may not be specified via plugins`，整层装饰更新中断，表现是「整个界面错乱」。块公式、属性区、表格这类跨行替换必须由 `StateField` + `provide: (field) => EditorView.decorations.from(field)` 提供。
 - **不许在插件 `update` 里派发事务**：CM6 会报 `Calls to EditorView.update are not allowed while an update is in progress`，然后让那个插件直接崩掉，之后它不再更新。要派发就推到 `setTimeout` 里做。
@@ -97,6 +97,7 @@
 - **视口只渲染一屏**：CM6 只为视口附近的行建 DOM，其余用 `.cm-gap` 占位。任何把 DOM 当作「整篇文档」用的地方（导出、放映、复制）都必须先让整篇渲染出来（`ViewState.printing`），否则拿到的只有当前一屏。复制因此分两个口味：纯文本从文档本身取（`sliceDoc`，永远完整），HTML 只在选区确实落在已渲染范围里时才给；判「渲染出来了没有」看有没有 `.cm-gap`，不要看 `view.visibleRanges`，后者是「装饰没盖住的空隙」，不是「已经渲染的范围」。
 - **CM6 自带的复制处理器排在插件处理器之后**：它在自己的处理器里 `clearData()` 再写纯文本，我们写在插件链里的 `text/html` 会被它清掉，返回 `true` 也拦不住。自定义复制要挂在**祖先元素**（`#editor`）的冒泡阶段。
 - **语法着色的 tag 有继承关系，基准语法里多带的扩展会凭空染色**：`@codemirror/lang-markdown` 的 `markdownLanguage` 在 GFM 之外还带 Subscript、Superscript、Emoji 三个扩展，而这三个节点这个软件一个都不渲染。Emoji 尤其坑：它把「冒号 + 数字 + 冒号」也当 emoji 短代码（`@lezer/markdown` 的注释里明说不限字母、包括数字），于是时间轴里的 `00:00:17` 中间那段成了 `Emoji` 节点；而 `Emoji` 的 tag 是 `character`，`character` 又是 `string` 的**子标签**，正好命中代码块那条字符串着色规则，时间戳就绿了一段（2026-10-03 用户报的「时间轴出现绿字」）。判据是**只解析我们真的会渲染的东西**：基准语法用 CommonMark + GFM 自建，不要直接用 `markdownLanguage`。回归网：`npm run verify:features` 里的「时间戳不被当成 emoji 染色」。
+- **点击被替换掉的块：判据是「空光标」，不是「拉出选区」**：块级替换（表格、图、图片、公式、HTML）点一下要能回到源码里改，做法是在 widget 上带自己的源码区间，点击时把光标放进去（见 `live-preview.ts` 的 `withSourceRange` 与 `editor.ts` 的点击处理器）。但**选中整段是不行的**：`isActiveRange` 只认空选区（那正是「只有光标所在行露源码」这条规则），拉出选区反而让块继续藏着（2026-10-03 踩过）。另外每个 widget 的 `eq()` 必须把区间也算进去：不算的话，在上面插入一行后 widget 会被当成没变而复用，带着旧的区间，点下去光标落到别的地方。
 
 ## 与外壳的关系
 

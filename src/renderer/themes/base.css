@@ -838,23 +838,11 @@ body.panel-resizing {
   margin-bottom: 4px;
 }
 
-body.show-file-panel #editor,
-body.show-file-panel #source-editor {
-  margin-right: var(--file-panel-width, 220px);
-}
-
-/* The mirror of that margin, for the side the panel is on. */
-body.panel-left.show-file-panel #editor,
-body.panel-left.show-file-panel #source-editor {
-  margin-right: 0;
-  margin-left: var(--file-panel-width, 220px);
-}
-
-/* The source editor has an explicit width, so account for the panel margin
-   instead of extending past the viewport when both are visible. */
-body.show-file-panel #source-editor {
-  width: calc(100% - var(--file-panel-width, 220px));
-}
+/* The editor no longer claims the panel's room with its own margin. The panel is a
+   sibling in the shell row and takes its own space, so the margins that used to
+   mirror it here pushed the body sideways whenever the panel was open (#138-5).
+   The width that used to be subtracted from #source-editor went with them: the
+   shell already gives it what is left. */
 
 #editor.hidden {
   display: none;
