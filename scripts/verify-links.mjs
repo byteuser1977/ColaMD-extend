@@ -18,6 +18,9 @@ const WORK = mkdtempSync(join(tmpdir(), 'colamd-verify-links-'))
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 let passed = 0
 const check = (name, fn) => { fn(); passed++; console.log(`PASS ${name}`) }
+// macOS turns Ctrl+left-click into a right-click, so the modifier has to be Cmd there.
+const MOD = process.platform === 'darwin' ? 4 : 2
+const MOD_LABEL = process.platform === 'darwin' ? 'Cmd' : 'Ctrl'
 
 async function unitChecks() {
   for (const [name, entry] of [['paths', 'src/main/markdown-link.ts'], ['headings', 'src/renderer/editor/heading-anchor.ts']]) {
@@ -123,6 +126,8 @@ async function runtimeChecks() {
   // Stub only OS browser launching/error dialogs; real IPC, file IO and tab UI run.
   writeFileSync(harness, `const { app, shell, dialog } = require('electron');
     const fs = require('fs');
+    // Keep the test window off the screen: this runs on a developer's machine.
+    app.commandLine.appendSwitch('window-position', '-6000,-6000');
     app.setPath('home', ${JSON.stringify(home)}); app.setPath('userData', ${JSON.stringify(profile)});
     shell.openExternal = async url => fs.appendFileSync(${JSON.stringify(events)}, JSON.stringify({external:url})+'\\n');
     dialog.showMessageBox = async (...args) => { fs.appendFileSync(${JSON.stringify(events)}, JSON.stringify({error:args.at(-1).message})+'\\n'); return {response:0}; };
@@ -146,7 +151,7 @@ async function runtimeChecks() {
       await wait(`document.title==='source.md'`, 'return to source')
       await sleep(150)
     }
-    const click = async (label, modifiers = 2) => {
+    const click = async (label, modifiers = MOD) => {
       const point = await evaluate(`(() => {
         const a=[...document.querySelectorAll('#editor [data-href], #editor a[href]')].find(a=>a.textContent===${JSON.stringify(label)});
         if(!a)return null; a.scrollIntoView({block:'center',behavior:'instant'});
@@ -158,10 +163,10 @@ async function runtimeChecks() {
     }
     await click('标题')
     await wait(`document.title==='中文 空格.md' && [...document.querySelectorAll('.cm-line')].some(e=>e.textContent.includes('目标标题')&&e.getBoundingClientRect().y>=0&&e.getBoundingClientRect().bottom<innerHeight)`, 'heading in a newly opened document')
-    check('Ctrl+click opens a new file at an offscreen heading', () => {})
+    check(`${MOD_LABEL}+click opens a new file at an offscreen heading`, () => {})
     await openSource(); await click('相对链接')
-    await wait(`document.title==='中文 空格.md'`, 'Ctrl+click local link')
-    check('Ctrl+click opens a Chinese/space filename', () => {})
+    await wait(`document.title==='中文 空格.md'`, `${MOD_LABEL}+click local link`)
+    check(`${MOD_LABEL}+click opens a Chinese/space filename`, () => {})
     const count = await evaluate(`document.querySelectorAll('.tab-entry').length`)
     await openSource(); await click('相对链接', 4)
     await wait(`document.title==='中文 空格.md'`, 'Meta+click existing link')
