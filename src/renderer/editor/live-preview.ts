@@ -588,6 +588,10 @@ function collectFrontmatter(state: EditorState, ranges: DecorationRange[], front
     return
   }
   ranges.push({ from: front.from, to: front.to, deco: Decoration.replace({}) })
+  // 被替换掉的那几行会留下一行空行占着位置，顶上就会多出一条空白（2.6 没有）。
+  // 这一行本来就是个空壳，直接压成零高。
+  const firstLine = state.doc.lineAt(front.from)
+  ranges.push({ from: firstLine.from, to: firstLine.from, deco: Decoration.line({ class: 'cm-md-frontmatter-folded' }) })
 }
 
 // ─── 表格 ────────────────────────────────────────────────────────────────────
