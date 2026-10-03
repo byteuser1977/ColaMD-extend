@@ -300,6 +300,66 @@ const SEARCH_JUMP = `JSON.stringify((() => {
   }
 })())`
 
+/**
+ * 选中文字看得清吗。
+ *
+ * 只读变量值不够：CodeMirror 的 baseTheme 给选区钉的规则优先级更高，我们写的
+ * `var(--selection-bg)` 可能压根没生效，而它默认是一条不透明的浅紫 #d7d4f0。
+ * 所以这里量的是实际观感：把半透明的色带合成到底色上，再和文字色比对比度。
+ * 量完把主题类原样换回去，不影响后面的断言。
+ */
+const SELECTION_READABILITY = `JSON.stringify((() => {
+  const saved = document.body.className
+  ;[...document.body.classList].filter((c) => c.startsWith('theme-')).forEach((c) => document.body.classList.remove(c))
+  document.body.classList.add('theme-dark')
+
+  const parse = (value) => {
+    const m = /rgba?\\(\\s*([\\d.]+)[,\\s]+([\\d.]+)[,\\s]+([\\d.]+)(?:[,/]\\s*([\\d.]+))?\\s*\\)/.exec(value || '')
+    return m ? { r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : +m[4] } : null
+  }
+  const hex = (value) => {
+    const m = /^#([0-9a-f]{6})$/i.exec((value || '').trim())
+    if (!m) return parse(value)
+    const n = parseInt(m[1], 16)
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255, a: 1 }
+  }
+  const lum = (c) => {
+    const f = (u) => { u /= 255; return u <= 0.03928 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4) }
+    return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b)
+  }
+  const ratio = (a, b) => {
+    const la = lum(a), lb = lum(b)
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05)
+  }
+
+  const band = document.querySelector('#editor .cm-selectionLayer .cm-selectionBackground')
+  const line = [...document.querySelectorAll('#editor .cm-line')].find((l) => l.textContent.includes('待办未完成'))
+  const page = hex(getComputedStyle(document.body).getPropertyValue('--bg-color'))
+  const bandColor = band ? parse(getComputedStyle(band).backgroundColor) : null
+  const textColor = parse(line ? getComputedStyle(line).color : '')
+  let effective = null, contrast = null
+  if (bandColor && page && textColor) {
+    effective = {
+      r: Math.round(bandColor.r * bandColor.a + page.r * (1 - bandColor.a)),
+      g: Math.round(bandColor.g * bandColor.a + page.g * (1 - bandColor.a)),
+      b: Math.round(bandColor.b * bandColor.a + page.b * (1 - bandColor.a)),
+      a: 1
+    }
+    contrast = Math.round(ratio(textColor, effective) * 100) / 100
+  }
+  const result = {
+    themeClass: document.body.className,
+    band: band ? getComputedStyle(band).backgroundColor : null,
+    variable: getComputedStyle(document.body).getPropertyValue('--selection-bg').trim(),
+    page: page ? 'rgb(' + page.r + ', ' + page.g + ', ' + page.b + ')' : null,
+    effective: effective ? 'rgb(' + effective.r + ', ' + effective.g + ', ' + effective.b + ')' : null,
+    text: line ? getComputedStyle(line).color : null,
+    contrast
+  }
+  document.body.className = saved
+  return result
+})())`
+
 const COPY_PROBE = `(() => {
   const selection = window.getSelection()
   const data = new DataTransfer()
@@ -840,6 +900,17 @@ function main() {
       check('Shift+Tab 退回一级',
         backIndent === beforeIndent && !(backClass ?? '').includes('cm-md-li-1'),
         `退回后=${JSON.stringify(backIndent)} 类=${backClass}`)
+
+      // 深色主题下选中文字不能被选区色盖住（2026-10-04 报的）。
+      await clickLine(renderer, '待办未完成')
+      await pressKey(renderer, 'Home', 'Home', 36)
+      await pressKey(renderer, 'End', 'End', 35, 8)
+      await sleep(400)
+      const selection = JSON.parse(await evaluate(renderer, SELECTION_READABILITY))
+      check('深色主题下选中文字仍看得清',
+        selection.contrast !== null && selection.contrast >= 3 &&
+        selection.band === selection.variable,
+        `色带=${selection.band} 主题变量=${selection.variable} 底色=${selection.page} 合成后=${selection.effective} 文字=${selection.text} 对比度=${selection.contrast}`)
 
       const failed = checks.filter((c) => !c.ok)
       for (const c of checks) {
