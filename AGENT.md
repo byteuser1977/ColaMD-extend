@@ -77,7 +77,7 @@ Markdown 不只是文档，而是**结构化内容的数据源**。
 ## 技术栈
 
 - Electron（桌面跨平台）
-- Milkdown（基于 ProseMirror 的 WYSIWYG Markdown 框架）
+- CodeMirror 6（文本优先的编辑器内核：文件里存的是字节，渲染只是叠在字节上的一层装饰。纪律与坑见 [docs/editor-architecture.md](docs/editor-architecture.md)）
 - TypeScript 严格模式
 - electron-vite（构建）
 - electron-builder（打包）
@@ -93,7 +93,7 @@ src/
 └── renderer/       # 渲染进程
     ├── index.html
     ├── main.ts     # 入口，连接编辑器和 IPC
-    ├── editor/     # Milkdown 编辑器核心
+    ├── editor/     # CodeMirror 6 编辑器核心（文本优先）
     ├── themes/     # CSS 主题 + 主题管理器
     └── env.d.ts
 ```
