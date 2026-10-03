@@ -42,6 +42,8 @@ function fixture() {
     '普通段落，含 **加粗**、*斜体*、~~删除线~~、`行内代码`、==高亮==、',
     '[链接文字](https://example.com/a) 和 [站内跳转](#一级标题)。',
     '',
+    'NEEL 前半段的锚点。',
+    '',
     '**00:00:17 开场**',
     '',
     '![本地图片](pixel.png)',
@@ -92,6 +94,9 @@ function fixture() {
     '',
     '<div class="raw-html">HTML 块</div>',
     '',
+    // 查找跳转的靶子：这一条在文档最末尾，一屏高的视口里绝对看不见。
+    'NEEL 后半段的锚点。',
+    ''
   ].join('\n')
 }
 
@@ -277,6 +282,24 @@ const MEASURE = `(() => {
  * 选区走键盘（点一下定位光标，Home、Shift+End），不自己设 DOM 选区：
  * CodeMirror 会重渲染行元素，程序设的 DOM 选区可能被丢掉或映射错位置，实测时好时坏。
  */
+/**
+ * 查找跳转的现场量法。视口被压成一屏高，所以「当前匹配项在视野里」这件事
+ * 必须靠 getBoundingClientRect 判，不能像以前那样数 DOM 里的高亮元素个数：
+ * 远处的匹配项本来就不在 DOM 里，数不出来。
+ */
+const SEARCH_JUMP = `JSON.stringify((() => {
+  const sc = document.querySelector('#editor .cm-scroller')
+  const cur = document.querySelector('#editor .search-match-current')
+  const rect = cur ? cur.getBoundingClientRect() : null
+  return {
+    count: document.querySelector('.search-count') ? document.querySelector('.search-count').textContent : null,
+    scrollTop: sc ? Math.round(sc.scrollTop) : null,
+    currentInDom: !!cur,
+    currentVisible: !!(rect && rect.top >= 0 && rect.bottom <= window.innerHeight),
+    rect: rect ? { top: Math.round(rect.top), bottom: Math.round(rect.bottom) } : null
+  }
+})())`
+
 const COPY_PROBE = `(() => {
   const selection = window.getSelection()
   const data = new DataTransfer()
@@ -689,6 +712,37 @@ function main() {
         `(() => { const el = document.querySelector('.search-count'); return el ? el.textContent : null })()`)
       check('查找能弹面板', searchPanelVisible === true, `面板可见=${searchPanelVisible}`)
       check('查找能高亮到', searchMatches >= 1, `匹配数=${searchMatches} 面板计数=${searchCount}`)
+
+      // 按「下一个」正文要跟着跳（2026-10-03 报的：计数在走，界面不动）。
+      // 量这一条必须把视口压回一屏高：验收脚本平时把视口撑到 2600，整篇都渲染出来，
+      // 那种情况下每个匹配项都在视野里，滚动是空操作，断言永远不会红。
+      await renderer.send('Emulation.setDeviceMetricsOverride', {
+        width: 1200, height: 700, deviceScaleFactor: 1, mobile: false
+      })
+      await sleep(400)
+      await evaluate(renderer, `(() => {
+        const input = document.querySelector('.search-input')
+        input.value = 'NEEL'
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+      })()`)
+      await sleep(600)
+      await evaluate(renderer, `(() => {
+        const btns = [...document.querySelectorAll('.search-btn')]
+        const next = btns.find((b) => (b.title || '').includes('下') || (b.title || '').includes('N')) || btns[1]
+        next.click()
+      })()`)
+      let jump = null
+      for (let i = 0; i < 25; i++) {
+        jump = JSON.parse(await evaluate(renderer, SEARCH_JUMP))
+        if (jump.count === '2/2' && jump.scrollTop > 0 && jump.currentVisible === true) break
+        await sleep(200)
+      }
+      check('按「下一个」正文跟着跳', jump.count === '2/2' && jump.scrollTop > 0 && jump.currentVisible === true,
+        `计数=${jump.count} 滚动量=${jump.scrollTop} 当前项在DOM里=${jump.currentInDom} 在视野内=${jump.currentVisible} 位置=${JSON.stringify(jump.rect)}`)
+      await renderer.send('Emulation.setDeviceMetricsOverride', {
+        width: 1200, height: 2600, deviceScaleFactor: 1, mobile: false
+      })
+      await sleep(300)
       await evaluate(renderer, `(() => { const p = document.querySelector('.search-panel'); if (p) p.remove() })()`)
 
       // #136：光标停在待办那一行时，复选框不该变回 `- [ ]`。

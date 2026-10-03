@@ -9,7 +9,7 @@
 // core → search-panel → editor → core 的循环依赖。
 
 import { Decoration, EditorView, type DecorationSet } from '@codemirror/view'
-import { RangeSetBuilder } from '@codemirror/state'
+import { RangeSetBuilder, type StateEffect } from '@codemirror/state'
 import { getEditorView } from './editor'
 import { setSearchHighlight } from './search-highlight'
 import { getUiLanguage, type UiLanguage } from '../ui-language'
@@ -227,8 +227,7 @@ export class SearchPanel {
 
     if (this.matches.length > 0) {
       this.currentIndex = 0
-      this.highlight(view)
-      this.scrollToCurrent(view)
+      this.highlight(view, true)
     } else {
       this.clearDecorations()
     }
@@ -265,32 +264,30 @@ export class SearchPanel {
     this.updateCount()
   }
 
-  private highlight(view: NonNullable<ReturnType<typeof getEditorView>>): void {
+  /**
+   * 画高亮，顺便把当前匹配项滚进视野。
+   *
+   * 滚动交给 CM6 自己的 scrollIntoView，不要自己算：正文滚在 `.cm-scroller` 上，
+   * 而 `#editor` 早就不动了（换内核时漏改，2026-10-03 报的「按下一个不跳」）。
+   * 另外远处的匹配项还没渲染进 DOM，`coordsAtPos()` 会返回 null，自己算等于直接放弃；
+   * CM6 这条路会先把目标行纳入视口再滚，因此不受渲染范围限制。
+   */
+  private highlight(view: NonNullable<ReturnType<typeof getEditorView>>, scroll = false): void {
     const builder = new RangeSetBuilder<Decoration>()
     this.matches.forEach((match, index) => {
       const className = index === this.currentIndex ? 'search-match-current' : 'search-match'
       builder.add(match.from, match.to, Decoration.mark({ class: className }))
     })
-    view.dispatch({ effects: setSearchHighlight.of(builder.finish()) })
+    const effects: StateEffect<unknown>[] = [setSearchHighlight.of(builder.finish())]
+    const current = this.matches[this.currentIndex]
+    if (scroll && current) effects.push(EditorView.scrollIntoView(current.from, { y: 'center' }))
+    view.dispatch({ effects })
   }
 
   private clearDecorations(): void {
     const view = getEditorView()
     if (!view) return
     view.dispatch({ effects: setSearchHighlight.of(Decoration.none) })
-  }
-
-  private scrollToCurrent(view: NonNullable<ReturnType<typeof getEditorView>>): void {
-    if (this.currentIndex < 0 || this.currentIndex >= this.matches.length) return
-    const match = this.matches[this.currentIndex]
-    const coords = view.coordsAtPos(match.from)
-    if (!coords) return
-    const editorEl = document.getElementById('editor')
-    if (!editorEl) return
-
-    const rect = editorEl.getBoundingClientRect()
-    const targetTop = editorEl.scrollTop + coords.top - rect.top - rect.height / 3
-    editorEl.scrollTo({ top: targetTop, behavior: 'smooth' })
   }
 
   private next(): void {
@@ -304,10 +301,7 @@ export class SearchPanel {
     }
 
     const view = getEditorView()
-    if (view) {
-      this.highlight(view)
-      this.scrollToCurrent(view)
-    }
+    if (view) this.highlight(view, true)
     this.updateCount()
   }
 
@@ -322,10 +316,7 @@ export class SearchPanel {
     }
 
     const view = getEditorView()
-    if (view) {
-      this.highlight(view)
-      this.scrollToCurrent(view)
-    }
+    if (view) this.highlight(view, true)
     this.updateCount()
   }
 
