@@ -11,7 +11,7 @@
 // 注意：页面侧表达式写在模板字符串里，反斜杠会被模板字符串吃掉一次，
 // 所以那边一律用 includes() 而不是正则；非要匹配反引号时写 \x60。
 import { spawn } from 'node:child_process'
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
@@ -454,36 +454,63 @@ async function checkCheatsheet() {
         await renderer.send('Input.dispatchMouseEvent', { type, x: editorBox.x, y: editorBox.y, button: 'left', clickCount: 1 })
       }
       await sleep(400)
-      focused = (await evaluate(renderer, `document.hasFocus()`)) === true
+      // 只看 document.hasFocus() 不够：窗口拿到了焦点，编辑器本身不一定拿到了。
+      // 编辑器没拿到的话，浏览器会抢走 ⌘A 只选中已渲染的一段，读剪贴板也会被拒。
+      focused = (await evaluate(renderer, `(() => {
+        const el = document.activeElement
+        return !!(el && el.closest && el.closest('#editor .cm-content'))
+      })()`)) === true
       if (focused) break
     }
     const gaps = Number(await evaluate(renderer, `document.querySelectorAll('#editor .cm-gap').length`))
     await evaluate(renderer, `document.querySelector('#editor .cm-content').dispatchEvent(new KeyboardEvent('keydown', { key: 'a', code: 'KeyA', metaKey: true, bubbles: true, cancelable: true }))`)
-    await sleep(600)
-    const eventData = JSON.parse(await evaluate(renderer, `(() => {
-      const data = new DataTransfer()
-      const e = new ClipboardEvent('copy', { clipboardData: data, bubbles: true, cancelable: true })
-      document.querySelector('#editor .cm-content').dispatchEvent(e)
-      return JSON.stringify({ text: data.getData('text/plain').length, html: data.getData('text/html').length })
-    })()`))
-    await sleep(1800)
+    const docBytes = readFileSync(source, 'utf8').length
+    let eventData = { text: 0, html: 0 }
+    let copied = {}
     let clip = ''
-    for (let i = 0; i < 5; i++) {
-      clip = await evaluate(renderer, `(async () => {
-        try {
-          const items = await navigator.clipboard.read()
-          const types = items[0].types
-          const html = types.includes('text/html') ? await (await items[0].getType('text/html')).text() : ''
-          return JSON.stringify({ types, htmlLen: html.length, head: html.slice(0, 24) })
-        } catch (error) { return JSON.stringify({ error: String(error.message) }) }
-      })()`)
-      if (!clip.includes('error')) break
+    // 合成的 ⌘A 有时会被浏览器抢走，只选中已渲染的那一段，选区就伸不到没渲染的地方。
+    // 判据是复制出来的纯文本是不是整篇；不是就重新点回去、再来一遍。
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await evaluate(renderer, `document.querySelector('#editor .cm-content').dispatchEvent(new KeyboardEvent('keydown', { key: 'a', code: 'KeyA', keyCode: 65, which: 65, metaKey: true, bubbles: true, cancelable: true, composed: true }))`)
       await sleep(600)
+      eventData = JSON.parse(await evaluate(renderer, `(() => {
+        const data = new DataTransfer()
+        const e = new ClipboardEvent('copy', { clipboardData: data, bubbles: true, cancelable: true })
+        document.querySelector('#editor .cm-content').dispatchEvent(e)
+        return JSON.stringify({ text: data.getData('text/plain').length, html: data.getData('text/html').length })
+      })()`))
+      await sleep(1800)
+      clip = ''
+      for (let i = 0; i < 4; i++) {
+        clip = await evaluate(renderer, `(async () => {
+          try {
+            const items = await navigator.clipboard.read()
+            const types = items[0].types
+            const html = types.includes('text/html') ? await (await items[0].getType('text/html')).text() : ''
+            return JSON.stringify({ types, htmlLen: html.length, head: html.slice(0, 24) })
+          } catch (error) { return JSON.stringify({ error: String(error.message) }) }
+        })()`)
+        if (!clip.includes('error')) break
+        // 读系统剪贴板要求文档有焦点，焦点可能在等待里掉了。重新点一下再读，
+        // 剪贴板里的内容已经写好，重读不会把它弄掉。
+        await renderer.send('Page.bringToFront')
+        await sleep(300)
+        for (const type of ['mousePressed', 'mouseReleased']) {
+          await renderer.send('Input.dispatchMouseEvent', { type, x: editorBox.x, y: editorBox.y, button: 'left', clickCount: 1 })
+        }
+        await sleep(600)
+      }
+      copied = JSON.parse(clip)
+      if (eventData.text === docBytes && (copied.htmlLen ?? 0) > 2000) break
+      // 选区没盖到整篇，点回编辑器重来
+      for (const type of ['mousePressed', 'mouseReleased']) {
+        await renderer.send('Input.dispatchMouseEvent', { type, x: editorBox.x, y: editorBox.y, button: 'left', clickCount: 1 })
+      }
+      await sleep(400)
     }
-    const copied = JSON.parse(clip)
     check('大选区复制也带富文本口味',
       gaps > 0 && focused && eventData.html === 0 && (copied.types ?? []).includes('text/html') && copied.htmlLen > 2000,
-      `占位=${gaps} 有焦点=${focused} 事件里 html=${eventData.html} 纯文本=${eventData.text} 剪贴板=${clip}`)
+      `占位=${gaps} 有焦点=${focused} 全文=${docBytes} 字节 事件里 html=${eventData.html} 纯文本=${eventData.text} 剪贴板=${clip}`)
   } finally {
     try { process.kill(-child.pid) } catch { /* 已经退了 */ }
   }
