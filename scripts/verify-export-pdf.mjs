@@ -13,7 +13,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
+import { assertBuildFresh } from './build-freshness.mjs'
+
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+assertBuildFresh()
 const WORK = join(homedir(), 'Library', 'Caches', `colamd-verify-pdf-${Date.now()}`)
 
 /** 三百行正文：屏幕上一屏只装得下二十来行，所以「只有视口」和「整篇」的页数差得很远。 */
@@ -97,8 +100,8 @@ async function main() {
 
   const port = 9900 + Math.floor(Math.random() * 60)
   const inspect = port + 1000
-  const child = spawn('npx', ['electron', '.', source, `--user-data-dir=${join(WORK, 'udd')}`,
-    '--window-position=-4000,-4000', '--force-color-profile=srgb',
+  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${join(WORK, 'udd')}`,
+    '--force-color-profile=srgb',
     `--remote-debugging-port=${port}`, `--inspect=${inspect}`
   ], { cwd: APP, stdio: 'ignore', detached: true })
 

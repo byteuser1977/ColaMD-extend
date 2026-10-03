@@ -10,10 +10,13 @@ import { dirname, join, resolve } from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import vm from 'node:vm'
+import { assertBuildFresh } from './build-freshness.mjs'
 import { build, transform } from 'esbuild'
 
 const require = createRequire(import.meta.url)
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+if (!process.argv.includes('--unit')) assertBuildFresh()
+
 const WORK = mkdtempSync(join(tmpdir(), 'colamd-verify-links-'))
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 let passed = 0
@@ -126,13 +129,11 @@ async function runtimeChecks() {
   // Stub only OS browser launching/error dialogs; real IPC, file IO and tab UI run.
   writeFileSync(harness, `const { app, shell, dialog } = require('electron');
     const fs = require('fs');
-    // Keep the test window off the screen: this runs on a developer's machine.
-    app.commandLine.appendSwitch('window-position', '-6000,-6000');
     app.setPath('home', ${JSON.stringify(home)}); app.setPath('userData', ${JSON.stringify(profile)});
     shell.openExternal = async url => fs.appendFileSync(${JSON.stringify(events)}, JSON.stringify({external:url})+'\\n');
     dialog.showMessageBox = async (...args) => { fs.appendFileSync(${JSON.stringify(events)}, JSON.stringify({error:args.at(-1).message})+'\\n'); return {response:0}; };
     process.argv = [process.execPath, ${JSON.stringify(ROOT)}, ${JSON.stringify(source)}];
-    require(${JSON.stringify(join(ROOT, 'dist/main/index.js'))});`)
+    require(${JSON.stringify(join(ROOT, 'scripts/offscreen-window.cjs'))});`)
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE
   const proc = spawn(require('electron'), [harness, `--remote-debugging-port=${port}`], { cwd: ROOT, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] })
   let output = ''; proc.stdout.on('data', x => { output += x }); proc.stderr.on('data', x => { output += x })

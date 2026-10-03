@@ -108,3 +108,5 @@ src/
 - UI、图标、间距和交互规范详见 [design.md](design.md)，所有参与者提交界面改动前都应检查贡献清单。
 - 产品与工程的判断标准汇总在 [PRINCIPLES.md](PRINCIPLES.md)：稳定性优先、用户数据不可丢、先测量再优化、决策留痕等。
 - 本地打包验证的实测数据与规矩见 [docs/packaging.md](docs/packaging.md)：本地只打单架构 `--dir`，不在软链 `node_modules` 的 worktree 里打包。
+- 验收脚本凡是会开 Electron 的，一律用 `scripts/offscreen-window.cjs` 启动，不要直接 `electron .`。窗口必须在用户的屏幕上看不见、也不许抢焦点：用户是在自己机器上干活的。`--window-position` 对 Electron 不生效（实测被忽略），别再用它冒充“离屏”。
+- 跑验收脚本前先 `npm run build`。忘了构建会拿旧产物去验，红的是假的；脚本里有 `assertBuildFresh()` 会拦住这种情况。

@@ -15,7 +15,10 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
+import { assertBuildFresh } from './build-freshness.mjs'
+
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+assertBuildFresh()
 const WORK = join(homedir(), 'Library', 'Caches', `colamd-verify-features-${Date.now()}`)
 
 /** 1×1 透明 PNG，用来验证本地图片能不能画出来。 */
@@ -404,8 +407,8 @@ async function pressKey(renderer, key, code, keyCode, modifiers = 0) {
 async function checkCheatsheet() {
   const source = join(APP, 'resources', 'templates', 'cheatsheet.md')
   const port = 9990 + Math.floor(Math.random() * 9)
-  const child = spawn('npx', ['electron', '.', source, `--user-data-dir=${join(WORK, 'udd-cheatsheet')}`,
-    '--window-position=-4000,-4000', `--remote-debugging-port=${port}`
+  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${join(WORK, 'udd-cheatsheet')}`,
+    `--remote-debugging-port=${port}`
   ], { cwd: APP, stdio: 'ignore', detached: true })
 
   try {
@@ -531,8 +534,8 @@ function main() {
     writeFileSync(join(WORK, 'pixel.png'), PIXEL_PNG)
 
     const port = 9960 + Math.floor(Math.random() * 30)
-    const child = spawn('npx', ['electron', '.', source, `--user-data-dir=${join(WORK, 'udd')}`,
-      '--window-position=-4000,-4000', `--remote-debugging-port=${port}`
+    const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${join(WORK, 'udd')}`,
+      `--remote-debugging-port=${port}`
     ], { cwd: APP, stdio: 'ignore', detached: true })
 
     try {

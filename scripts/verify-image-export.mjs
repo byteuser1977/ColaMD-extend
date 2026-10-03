@@ -12,7 +12,10 @@ import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
+import { assertBuildFresh } from './build-freshness.mjs'
+
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+assertBuildFresh()
 const WORK = join(homedir(), 'Library', 'Caches', `colamd-verify-export-${Date.now()}`)
 
 // 短的应导出成一张连续长图，长的应退回编号页；两个阅读宽度走的是同一套逻辑
@@ -136,9 +139,9 @@ async function runCase(testCase) {
   const out = join(dir, `${testCase.name}.png`)
   writeFileSync(fixture, document(testCase.rows), 'utf8')
 
-  const child = spawn('npx', ['electron', '.', fixture, `--user-data-dir=${join(dir, 'udd')}`,
+  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', fixture, `--user-data-dir=${join(dir, 'udd')}`,
     // sRGB：macOS 的显示色彩管理会把取色值整体挪动，验证要在确定的色彩空间里做
-    '--window-position=-4000,-4000', '--force-color-profile=srgb',
+    '--force-color-profile=srgb',
     `--remote-debugging-port=${port}`, `--inspect=${inspect}`
   ], { cwd: APP, stdio: 'ignore', detached: true })
 

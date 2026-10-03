@@ -13,7 +13,10 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
+import { assertBuildFresh } from './build-freshness.mjs'
+
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+assertBuildFresh()
 const WORK = join(homedir(), 'Library', 'Caches', `colamd-verify-scroll-${Date.now()}`)
 
 /** 文档要足够长，长到「打开时解析到的那一段」离尾部很远。 */
@@ -101,8 +104,8 @@ async function main() {
   writeFileSync(source, fixture(), 'utf8')
 
   const port = 9960 + Math.floor(Math.random() * 30)
-  const child = spawn('npx', ['electron', '.', source, `--user-data-dir=${join(WORK, 'udd')}`,
-    '--window-position=-4000,-4000', `--remote-debugging-port=${port}`
+  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${join(WORK, 'udd')}`,
+    `--remote-debugging-port=${port}`
   ], { cwd: APP, stdio: 'ignore', detached: true })
 
   let failures = 0
