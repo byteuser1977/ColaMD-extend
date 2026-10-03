@@ -58,6 +58,7 @@ Markdown 不只是文档，而是**结构化内容的数据源**。
 
 ### 发布约定
 
+- 更新是攒着发的，不每天发版：修好一段时间内的反馈后集中出一版。因此**写 changelog 前先看这一版攒了什么**：`git log <上一个 tag>..main --oneline`，别只看手上最后那几笔
 - 每个大版本更新后：在 `resources/demo/changelog.md` **追加**本版更新内容，并更新对应的演示文件（Help 菜单 → 新功能演示，⌘⇧D）
 - 演示目录是**可玩的 changelog**：changelog.md 记录更新历史，同目录的演示文件让用户上手玩，而不是只读文字
 - 演示页已接入菜单，打包时随 extraResources 发布
