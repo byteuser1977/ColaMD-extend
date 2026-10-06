@@ -1,6 +1,10 @@
 import { nativeImage } from 'electron'
 import { basename, dirname, extname, isAbsolute, resolve } from 'path'
 import { fileURLToPath } from 'url'
+// 这三个必须在 package.json 里**直接声明**。
+// 曾经它们只是 @milkdown/* 的传递依赖，靠 npm 的依赖提升侥幸能 load：构建期发现不了
+// （主进程的依赖是外部化的，vite 不解析它们），一执行 npm install 删掉 milkdown，
+// Word 导出就会在运行时「模块找不到」（2026-10-06 换内核后的清理里查出来的）。
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'

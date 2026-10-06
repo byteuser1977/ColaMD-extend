@@ -147,5 +147,3 @@ export function createEditorCore(parent: HTMLElement, options: EditorOptions = {
   handle = api
   return api
 }
-
-export { createState, bodyStart } from './state'

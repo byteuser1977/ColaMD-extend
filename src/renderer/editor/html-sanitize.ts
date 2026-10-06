@@ -78,8 +78,3 @@ export function sanitizeHTML(value: string): DocumentFragment {
 }
 
 /** 一个标签的消毒版本（行内 HTML：`<br>`、`<img>`、成对标签的开合各算一个）。 */
-export function sanitizeTag(value: string): HTMLElement | null {
-  const fragment = sanitizeHTML(value)
-  const element = fragment.firstElementChild
-  return element instanceof HTMLElement ? element : null
-}

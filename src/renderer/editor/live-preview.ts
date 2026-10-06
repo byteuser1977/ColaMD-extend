@@ -1288,5 +1288,3 @@ export const livePreview: Extension = [
   livePreviewField,
   parseRefresh,
 ]
-
-export { WidgetType }

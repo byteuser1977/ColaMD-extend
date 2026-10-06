@@ -9,7 +9,7 @@
 // 设计原则见 docs/editor-architecture.md。一句话：缓冲区里存的就是文件的字节，
 // 渲染是叠在上面的一层装饰，保存时原样写回，不做任何序列化。
 
-import { EditorSelection, type EditorState, type SelectionRange } from '@codemirror/state'
+import { type EditorState, type SelectionRange } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { createEditorCore, getEditorHandle, type EditorHandle } from './core'
 import { footnoteDefinitions } from './footnotes'
@@ -654,4 +654,3 @@ export function getText(): string {
 }
 
 /** 供测试与调试查看装饰层的落点高亮状态。 */
-export { EditorSelection }
