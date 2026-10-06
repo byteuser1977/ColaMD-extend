@@ -322,6 +322,27 @@ function isActiveLine(state: EditorState, pos: number): boolean {
   return false
 }
 
+/**
+ * 光标是否压在某个区间上，而不是只在这一行。
+ *
+ * 给有序列表的序号用。序号长在行首，而「光标正好停在行首」恰恰是删掉上一行之后的常态：
+ * 按行判断的话，刚删完的那一行会露出文件里的原文序号，和下面重排出来的序号撞在一起
+ * （1、2、3 删掉第 2 项之后，第 2 行写着 3、第 3 行也算出 3）。
+ * 所以这里按区间判断：光标落在数字里，或者正好选中了这串数字，才算「在看它」。
+ */
+function touchesRange(state: EditorState, from: number, to: number): boolean {
+  if (exportingCleanly(state)) return false
+  if (!editorFocused(state)) return false
+  for (const range of state.selection.ranges) {
+    if (range.empty) {
+      if (range.head > from && range.head < to) return true
+    } else if (range.from >= from && range.to <= to) {
+      return true
+    }
+  }
+  return false
+}
+
 /** 跨行的块（表格、公式、属性区）同理：只有光标落在块里才露出源码。 */
 function isActiveRange(state: EditorState, from: number, to: number): boolean {
   if (exportingCleanly(state)) return false
@@ -387,7 +408,6 @@ class MathWidget extends WidgetType {
  * 无序列表的圆点。
  *
  * CM6 里没有 `ul`/`li` 元素，`-` 只是一段普通文字，圆点得自己画。
- * 有序列表不动：`1.` 本身就是用户写的序号，换掉反而看不出层级。
  */
 class ListBulletWidget extends WidgetType {
   toDOM(): HTMLElement {
@@ -396,6 +416,55 @@ class ListBulletWidget extends WidgetType {
     span.textContent = '•'
     return span
   }
+}
+
+/**
+ * 有序列表的序号。
+ *
+ * markdown 里只有列表**第一项**的数字有用：CommonMark 拿它当 `<ol start>`，后面的数字
+ * 是摆设，谁来渲染都按顺序重排。所以这里也按顺序算：文件里写着 `1. / 3. / 4.`，
+ * 屏幕上就是 1、2、3。删掉中间一项，后面的自己接上，不用手改文件（2026-10-06 报的）。
+ *
+ * 文件里的那几位数字一个都没动。想改起始编号，点一下序号：点击把光标放进这几位数字里，
+ * 装饰随即退回源码（见 touchesRange）。
+ */
+class ListNumberWidget extends WidgetType {
+  constructor(readonly text: string, readonly from: number, readonly to: number) {
+    super()
+  }
+
+  eq(other: ListNumberWidget): boolean {
+    return other.text === this.text && other.from === this.from && other.to === this.to
+  }
+
+  toDOM(): HTMLElement {
+    const span = document.createElement('span')
+    // 类名和源码态一样：复制与导出靠 `cm-md-listmark` 认出「这是标记不是正文」，丢掉它
+    span.className = 'cm-md-listmark cm-md-listnum'
+    span.textContent = this.text
+    span.dataset.from = String(this.from)
+    span.dataset.to = String(this.to)
+    return span
+  }
+}
+
+/**
+ * 这一项该显示几号：起点取列表第一项写的数字，往下依次加一。
+ *
+ * 位置由 `orderedIndex` 提供（`collectBlocks` 看到 `OrderedList` 时一次数好的）：
+ * 每项各自往上数一遍就是 O(n²)，长列表上要卡一下。
+ * 嵌套不用管：每个 `OrderedList` 节点自己带一串 `ListItem`，子列表是另一个节点，各算各的。
+ */
+function orderedNumber(state: EditorState, mark: SyntaxNodeRef, orderedIndex: Map<number, number>): string | null {
+  const item = mark.node.parent
+  const list = item?.parent
+  if (!item || !list || list.name !== 'OrderedList') return null
+  const firstMark = list.firstChild ? list.firstChild.getChild('ListMark') : null
+  if (!firstMark) return null
+  const start = Number.parseInt(state.doc.sliceString(firstMark.from, firstMark.to), 10)
+  const index = orderedIndex.get(item.from)
+  if (!Number.isFinite(start) || index === undefined) return null
+  return `${start + index}${state.doc.sliceString(mark.to - 1, mark.to) === ')' ? ')' : '.'}`
 }
 
 /** 数一个列表项的嵌套深度（往上数几层 ListItem）。 */
@@ -968,8 +1037,18 @@ function collectImages(state: EditorState, ranges: DecorationRange[], front: Ran
 // ─── 引用块与分隔线 ──────────────────────────────────────────────────────────
 
 function collectBlocks(state: EditorState, ranges: DecorationRange[], front: Range | null): void {
+  // 有序列表每一项的位置，看到 `OrderedList` 时一次数好，给序号用。
+  const orderedIndex = new Map<number, number>()
   iterateContent(state, front, (node) => {
     switch (node.name) {
+      case 'OrderedList': {
+        let index = 0
+        for (let item = node.node.firstChild; item; item = item.nextSibling) {
+          if (item.name !== 'ListItem') continue
+          orderedIndex.set(item.from, index++)
+        }
+        break
+      }
       case 'Blockquote': {
         pushBlockLines(state, node.from, node.to, 'cm-md-blockquote', ranges)
         break
@@ -992,12 +1071,25 @@ function collectBlocks(state: EditorState, ranges: DecorationRange[], front: Ran
           hideMarker(state, node.from, node.to, ranges, isActiveLine(state, node.from))
           break
         }
-        // `-` / `*` / `+` 画成真的圆点；`1.` 这种保留原文，序号就是用户写的
+        // `-` / `*` / `+` 画成真的圆点
         if (/^[-*+]$/.test(raw) && !isActiveLine(state, node.from)) {
           ranges.push({
             from: node.from,
             to: node.to,
             deco: Decoration.replace({ widget: new ListBulletWidget() }),
+          })
+          break
+        }
+        // 有序列表的序号显示重排后的值（见 ListNumberWidget）。只有第一项写的数字有意义，
+        // 自己的数字和它对不上就得画出来；对得上（第一项）就是把原文压淡。
+        const number = /^\d+[.)]$/.test(raw) && !touchesRange(state, node.from, node.to)
+          ? orderedNumber(state, node, orderedIndex)
+          : null
+        if (number !== null && number !== raw) {
+          ranges.push({
+            from: node.from,
+            to: node.to,
+            deco: Decoration.replace({ widget: new ListNumberWidget(number, node.from, node.to) }),
           })
         } else {
           ranges.push({ from: node.from, to: node.to, deco: MARK({ class: 'cm-md-listmark' }) })

@@ -232,6 +232,20 @@ function installEditorInteractions(root: HTMLElement, view: EditorView): void {
     toggleTaskAt(view, source)
   })
 
+  // 有序列表的序号：屏幕上显示的是重排后的序号，点它就把文件里那几位数字选出来，
+  // 装饰退回源码（2026-10-06）。想改起始编号就从这里改。
+  root.addEventListener('click', (e) => {
+    if (!(e.target instanceof HTMLElement)) return
+    const number = e.target.closest('.cm-md-listnum')
+    if (!(number instanceof HTMLElement)) return
+    const from = Number(number.dataset.from)
+    const to = Number(number.dataset.to)
+    if (!Number.isInteger(from) || !Number.isInteger(to) || to <= from) return
+    e.preventDefault()
+    view.dispatch({ selection: { anchor: from, head: to } })
+    view.focus()
+  })
+
   // ⌘/Ctrl+Enter 切换光标所在的任务列表项
   root.addEventListener('keydown', (e) => {
     if (!(e.metaKey || e.ctrlKey) || e.key !== 'Enter') return

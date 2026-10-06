@@ -57,10 +57,14 @@ function fixture() {
     '- [x] 待办已完成',
     '',
     '1. 有序项一',
-    '2. 有序项二',
+    '3. 有序项二',
+    '4. 有序项三',
     '',
     '> 引用文字',
     '> 引用第二行',
+    '',
+    '5. 起点为五',
+    '6. 起点为六',
     '',
     '---',
     '',
@@ -842,7 +846,7 @@ function main() {
       check('全选复制拿到整篇', whole.text === fixture(),
         `复制到 ${whole.text.length} 字节，原文 ${fixture().length} 字节，结尾 ${JSON.stringify(whole.text.slice(-24))}`)
       const listTags = (html, tag) => [
-        (html.match(new RegExp(`<${tag}>`, 'g')) ?? []).length,
+        (html.match(new RegExp(`<${tag}(?=[ >])`, 'g')) ?? []).length,
         (html.match(new RegExp(`</${tag}>`, 'g')) ?? []).length,
       ]
       const unbalanced = ['ul', 'ol', 'li'].filter((tag) => {
@@ -852,6 +856,60 @@ function main() {
       check('复制的 HTML 列表结构合法',
         whole.html !== '' && unbalanced.length === 0 && !/<(ul|ol)>(?!<li>)/.test(whole.html),
         `不配对的标签=${unbalanced.join(',') || '无'} html=${whole.html.slice(0, 200)}`)
+
+      // 有序列表的序号：markdown 里只有第一项的数字有用（CommonMark 拿它当 `<ol start>`），
+      // 后面的数字谁渲染谁重排。所以文件里写着 1./3./4.，屏幕上就该是 1./2./3.，
+      // 而文件一个字节都不许动（2026-10-06 报的：删掉中间一项，序号一直停在 1、3）。
+      const shownNumbers = JSON.parse(await evaluate(renderer, `JSON.stringify(
+        ['有序项一', '有序项二', '有序项三'].map((t) => {
+          const line = [...document.querySelectorAll('#editor .cm-line')].find((l) => l.textContent.includes(t))
+          return line ? line.textContent : null
+        }))`))
+      check('有序列表的序号按顺序排',
+        JSON.stringify(shownNumbers) === JSON.stringify(['1. 有序项一', '2. 有序项二', '3. 有序项三']),
+        `屏幕上=${JSON.stringify(shownNumbers)}`)
+      check('重排只改屏幕不改文件',
+        whole.text.includes('3. 有序项二') && whole.text.includes('4. 有序项三'),
+        `文件里那几行=${JSON.stringify(whole.text.split('\n').filter((l) => l.includes('有序项') || l.includes('起点为')))}`)
+      check('导出的 HTML 记住有序列表的起点',
+        whole.html.includes('<ol start="5">') && whole.html.includes('<li>起点为五'),
+        `起点那一段=${JSON.stringify(whole.html.slice(Math.max(0, whole.html.indexOf('起点为五') - 30), whole.html.indexOf('起点为五') + 8))}`)
+
+      // 想改起始编号：点一下序号，它就退回文件里的原文（平时显示的是重排后的值）。
+      const numberBox = JSON.parse(await evaluate(renderer, `(() => {
+        const span = document.querySelector('#editor .cm-md-listnum')
+        if (!span) return JSON.stringify({ ok: false })
+        const r = span.getBoundingClientRect()
+        return JSON.stringify({ ok: true, text: span.textContent, x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) })
+      })()`))
+      for (const type of ['mousePressed', 'mouseReleased']) {
+        if (!numberBox.ok) break
+        await renderer.send('Input.dispatchMouseEvent', { type, x: numberBox.x, y: numberBox.y, button: 'left', clickCount: 1 })
+      }
+      await sleep(400)
+      const revealed = await lineText(renderer, '有序项二')
+      check('点序号露出文件里的原文',
+        numberBox.ok === true && revealed === '3. 有序项二',
+        `点到的序号=${numberBox.text} 点完那一行=${JSON.stringify(revealed)}`)
+
+      // 用户报的那一幕：三行有序列表删掉中间一行，剩下的序号要自己接上。
+      await clickLine(renderer, '有序项二')
+      await pressKey(renderer, 'Home', 'Home', 36)
+      await pressKey(renderer, 'ArrowDown', 'ArrowDown', 40, 8)
+      await pressKey(renderer, 'Backspace', 'Backspace', 8)
+      await sleep(300)
+      const afterDelete = await evaluate(renderer, `JSON.stringify(
+        ['有序项一', '有序项三'].map((t) => {
+          const line = [...document.querySelectorAll('#editor .cm-line')].find((l) => l.textContent.includes(t))
+          return line ? line.textContent : null
+        }))`)
+      await evaluate(renderer, SELECT_ALL)
+      await sleep(300)
+      const afterDeleteSource = JSON.parse(await evaluate(renderer, COPY_PROBE)).text
+      check('删掉一项后序号自己接上',
+        afterDelete === JSON.stringify(['1. 有序项一', '2. 有序项三']) &&
+        afterDeleteSource.includes('4. 有序项三') && !afterDeleteSource.includes('有序项二'),
+        `删完屏幕上=${afterDelete} 删完文件里=${JSON.stringify(afterDeleteSource.split('\n').filter((l) => l.includes('有序项')))}`)
 
       const perf = await measureKeys(renderer)
       check('30 次光标移动 < 1200ms', perf < 1200, `${perf}ms`)
