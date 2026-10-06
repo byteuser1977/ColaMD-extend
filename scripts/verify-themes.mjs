@@ -20,7 +20,7 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
-import { verifyWorkdir } from './verify-workdir.mjs'
+import { stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
 
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 assertBuildFresh()
@@ -317,7 +317,7 @@ async function main() {
       else console.log(`  ✓ theme-${theme}：${info.rules} 条规则全部命中`)
     }
   } finally {
-    try { process.kill(-child.pid, 'SIGTERM') } catch { /* 已经退了 */ }
+    stopVerifyApp(udd)
   }
 
   console.log(failures === 0 ? '\n主题验收通过 ✓' : `\n主题验收失败：${failures} 项`)

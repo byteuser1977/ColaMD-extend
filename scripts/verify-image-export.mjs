@@ -12,7 +12,7 @@ import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
-import { verifyWorkdir } from './verify-workdir.mjs'
+import { stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
 
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 assertBuildFresh()
@@ -194,7 +194,7 @@ async function runCase(testCase) {
     main.close()
     return { pages, analysed }
   } finally {
-    try { process.kill(-child.pid, 'SIGKILL') } catch { /* 已经退出 */ }
+    stopVerifyApp(WORK)
     await sleep(300)
   }
 }

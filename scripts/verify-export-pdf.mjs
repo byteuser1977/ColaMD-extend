@@ -13,7 +13,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
-import { verifyWorkdir } from './verify-workdir.mjs'
+import { stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
 
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 assertBuildFresh()
@@ -161,7 +161,7 @@ async function main() {
     }
     console.log(`✓ ${ROWS} 行的文档导出成 ${count} 页，整篇都在纸上`)
   } finally {
-    try { process.kill(-child.pid, 'SIGKILL') } catch { /* 已经退出 */ }
+    stopVerifyApp(udd)
     await sleep(300)
   }
 }

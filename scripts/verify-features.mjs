@@ -15,7 +15,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
-import { verifyWorkdir } from './verify-workdir.mjs'
+import { stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
 
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 assertBuildFresh()
@@ -609,7 +609,7 @@ async function checkCheatsheet() {
       gaps > 0 && focused && eventData.html === 0 && (copied.types ?? []).includes('text/html') && copied.htmlLen > 2000,
       `占位=${gaps} 有焦点=${focused} 全文=${docBytes} 字节 事件里 html=${eventData.html} 纯文本=${eventData.text} 剪贴板=${clip}`)
   } finally {
-    try { process.kill(-child.pid) } catch { /* 已经退了 */ }
+    stopVerifyApp(WORK)
   }
 }
 
@@ -969,7 +969,7 @@ function main() {
         : `\n✓ ${checks.length} 条全通过`)
       if (failed.length) process.exitCode = 1
     } finally {
-      try { process.kill(-child.pid, 'SIGKILL') } catch { /* 已经退出 */ }
+      stopVerifyApp(WORK)
       await sleep(300)
       rmSync(WORK, { recursive: true, force: true })
     }

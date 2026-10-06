@@ -13,7 +13,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
-import { verifyWorkdir } from './verify-workdir.mjs'
+import { stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
 
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 assertBuildFresh()
@@ -138,7 +138,7 @@ async function main() {
         `等了 ${waited}ms，首行「${state.first}」`)
     }
   } finally {
-    try { process.kill(-child.pid, 'SIGKILL') } catch { /* 已经退出 */ }
+    stopVerifyApp(udd)
     await sleep(300)
     rmSync(WORK, { recursive: true, force: true })
   }

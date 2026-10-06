@@ -10,6 +10,7 @@
 import { mkdirSync, rmSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
 
 const ROOT = join(homedir(), 'Library', 'Caches', 'colamd-verify')
 
@@ -23,10 +24,26 @@ function wipe(path) {
   }
 }
 
+/**
+ * 按标记（profile 路径）结束测试用的 Electron，先 SIGTERM 再 SIGKILL。
+ *
+ * 为什么要按路径杀而不是 `process.kill(-child.pid)`：脚本自己被强杀（timeout、
+ * Ctrl-C、我手滑）时那个 finally 根本不会跑到，窗口虽然是离屏的，进程照样挂在
+ * 机器上。2026-10-06 用户看见「还开着七个 app」，清出来 42 个进程，最早的是当天早上
+ * 的探针。杀完再确认一次，所以这里连 SIGKILL 都要来一遍。
+ */
+export function stopVerifyApp(marker = ROOT) {
+  for (const signal of ['-TERM', '-KILL']) {
+    spawnSync('pkill', [signal, '-f', marker], { stdio: 'ignore' })
+  }
+}
+
 export function verifyWorkdir(name) {
   const dir = join(ROOT, name)
   // 只擦自己名下这一格，别碰 Caches 里别人的东西
   if (!dir.startsWith(`${ROOT}/`)) throw new Error(`工作目录必须落在 ${ROOT} 下：${dir}`)
+  // 上一轮要是被强杀了，先把它的进程收掉，再擦目录：不然进程还占着文件
+  stopVerifyApp(ROOT)
   wipe(dir)
   mkdirSync(dir, { recursive: true })
   process.on('exit', () => wipe(dir))
