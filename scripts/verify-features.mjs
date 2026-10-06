@@ -12,14 +12,14 @@
 // 所以那边一律用 includes() 而不是正则；非要匹配反引号时写 \x60。
 import { spawn } from 'node:child_process'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
+import { verifyWorkdir } from './verify-workdir.mjs'
 
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 assertBuildFresh()
-const WORK = join(homedir(), 'Library', 'Caches', `colamd-verify-features-${Date.now()}`)
+const { dir: WORK, udd } = verifyWorkdir('features')
 
 /** 1×1 透明 PNG，用来验证本地图片能不能画出来。 */
 const PIXEL_PNG = Buffer.from(
@@ -494,7 +494,7 @@ async function pressKey(renderer, key, code, keyCode, modifiers = 0) {
 async function checkCheatsheet() {
   const source = join(APP, 'resources', 'templates', 'cheatsheet.md')
   const port = 9990 + Math.floor(Math.random() * 9)
-  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${join(WORK, 'udd-cheatsheet')}`,
+  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${udd}-cheatsheet`,
     `--remote-debugging-port=${port}`
   ], { cwd: APP, stdio: 'ignore', detached: true })
 
@@ -621,7 +621,7 @@ function main() {
     writeFileSync(join(WORK, 'pixel.png'), PIXEL_PNG)
 
     const port = 9960 + Math.floor(Math.random() * 30)
-    const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${join(WORK, 'udd')}`,
+    const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${udd}`,
       `--remote-debugging-port=${port}`
     ], { cwd: APP, stdio: 'ignore', detached: true })
 

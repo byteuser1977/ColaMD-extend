@@ -9,14 +9,14 @@
 // 窗口一律放在屏幕外，测试不占用屏幕。
 import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
+import { verifyWorkdir } from './verify-workdir.mjs'
 
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 assertBuildFresh()
-const WORK = join(homedir(), 'Library', 'Caches', `colamd-verify-export-${Date.now()}`)
+const { dir: WORK } = verifyWorkdir('image-export')
 
 // 短的应导出成一张连续长图，长的应退回编号页；两个阅读宽度走的是同一套逻辑
 const CASES = [

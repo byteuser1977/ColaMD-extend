@@ -10,14 +10,14 @@
 // 窗口放在屏幕外，不占用屏幕。
 import { spawn } from 'node:child_process'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
+import { verifyWorkdir } from './verify-workdir.mjs'
 
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 assertBuildFresh()
-const WORK = join(homedir(), 'Library', 'Caches', `colamd-verify-scroll-${Date.now()}`)
+const { dir: WORK, udd } = verifyWorkdir('scroll-render')
 
 /** 文档要足够长，长到「打开时解析到的那一段」离尾部很远。 */
 const ROWS = 1200
@@ -104,7 +104,7 @@ async function main() {
   writeFileSync(source, fixture(), 'utf8')
 
   const port = 9960 + Math.floor(Math.random() * 30)
-  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${join(WORK, 'udd')}`,
+  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${udd}`,
     `--remote-debugging-port=${port}`
   ], { cwd: APP, stdio: 'ignore', detached: true })
 

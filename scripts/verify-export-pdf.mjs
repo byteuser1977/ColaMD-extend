@@ -10,14 +10,14 @@
 // 窗口放在屏幕外，测试不占用屏幕。
 import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
+import { verifyWorkdir } from './verify-workdir.mjs'
 
 const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 assertBuildFresh()
-const WORK = join(homedir(), 'Library', 'Caches', `colamd-verify-pdf-${Date.now()}`)
+const { dir: WORK, udd } = verifyWorkdir('export-pdf')
 
 /** 三百行正文：屏幕上一屏只装得下二十来行，所以「只有视口」和「整篇」的页数差得很远。 */
 const ROWS = 300
@@ -100,7 +100,7 @@ async function main() {
 
   const port = 9900 + Math.floor(Math.random() * 60)
   const inspect = port + 1000
-  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${join(WORK, 'udd')}`,
+  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${udd}`,
     '--force-color-profile=srgb',
     `--remote-debugging-port=${port}`, `--inspect=${inspect}`
   ], { cwd: APP, stdio: 'ignore', detached: true })
