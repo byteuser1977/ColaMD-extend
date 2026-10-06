@@ -95,7 +95,7 @@ function toggleList(view: EditorView, ordered: boolean): void {
     })
     .join('\n')
 
-  view.dispatch({ changes: { from, to, insert: next } })
+  view.dispatch({ changes: { from, to, insert: next }, userEvent: 'input' })
   view.focus()
 }
 

@@ -18,6 +18,7 @@ import { highlightSelectionMatches } from '@codemirror/search'
 import { keymap } from '@codemirror/view'
 import { markdownHighlightStyle } from './source-theme'
 import { frontmatterRange } from './math-scan'
+import { renumberLists } from './list-renumber'
 
 /** 可编辑性放在一个 compartment 里，方便运行时切换而不重建编辑器。 */
 export const editableCompartment = new Compartment()
@@ -33,14 +34,19 @@ export const editableCompartment = new Compartment()
  *
  * 保留 GFM，因为表格、删除线、任务列表、裸链接都是要渲染的。
  */
+const markdownParser: MarkdownParser = (commonmarkLanguage.parser as MarkdownParser).configure([GFM])
+
 const markdownBase = new Language(
   commonmarkLanguage.data,
   // `Language` 只把 parser 当 CodeMirror 自己的 Parser 接口看，不带 configure；
   // 实际对象是 @lezer/markdown 的 MarkdownParser，上一层扩展要在这里换掉。
-  (commonmarkLanguage.parser as MarkdownParser).configure([GFM]),
+  markdownParser,
   [],
   'markdown'
 )
+
+/** 这份 parser 也拿给 list-renumber 用：它要单独解析改动所在的那一段。 */
+export { markdownParser }
 
 /**
  * 状态层的扩展集合：语言解析、语法高亮、撤销栈、缩进、快捷键。
@@ -54,6 +60,9 @@ export function stateExtensions(): Extension {
     indentOnInput(),
     bracketMatching(),
     highlightSelectionMatches(),
+    // 增删有序列表项时把序号排一遍（见 list-renumber.ts）。它是**写文件**的一层，
+    // 所以只认用户自己的编辑，打开文件、外部写入、导出都不碰。
+    renumberLists,
     // markdown 语言支持 + 语法高亮（颜色走 CSS 变量，深浅主题自动跟随）
     markdown({ base: markdownBase, codeLanguages: languages, addKeymap: false }),
     syntaxHighlighting(markdownHighlightStyle),
