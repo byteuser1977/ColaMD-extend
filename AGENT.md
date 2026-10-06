@@ -111,3 +111,11 @@ src/
 - 本地打包验证的实测数据与规矩见 [docs/packaging.md](docs/packaging.md)：本地只打单架构 `--dir`，不在软链 `node_modules` 的 worktree 里打包。
 - 验收脚本凡是会开 Electron 的，一律用 `scripts/offscreen-window.cjs` 启动，不要直接 `electron .`。窗口必须在用户的屏幕上看不见、也不许抢焦点：用户是在自己机器上干活的。`--window-position` 对 Electron 不生效（实测被忽略），别再用它冒充“离屏”。
 - 跑验收脚本前先 `npm run build`。忘了构建会拿旧产物去验，红的是假的；脚本里有 `assertBuildFresh()` 会拦住这种情况。
+- 这一版攒下的验收脚本，改动碰到哪儿就跑哪条（拿不准就都跑）：
+  - `npm run verify:markdown`：打开再保存，字节不许变（`save(open(x)) === x`）
+  - `npm run verify:features`：界面功能逐条断言，正文里能看见的东西最多的一条网
+  - `npm run verify:scroll-render`：滚到没解析过的地方，那几行也必须渲染过
+  - `npm run verify:themes`：主题 CSS 的每条规则都要命中真实元素并改变计算样式
+  - `npm run check:theme-colors`：12 套内置主题与独立主题文件的变量契约
+  - `npm run verify:links`、`npm run verify:image-export`、`npm run verify:export-pdf`：链接跳转与两种导出的真机验证
+  - 四份类型检查：`npx tsc -p tsconfig.main.json --noEmit`，`preload` / `renderer` / `web` 同理
