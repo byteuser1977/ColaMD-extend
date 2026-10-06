@@ -28,7 +28,7 @@ See the [theme swatches](https://raw.githubusercontent.com/marswaveai/ColaMD/mai
 
 ## Creating Your Own Theme
 
-ColaMD custom themes are plain CSS files. You can style the editor by targeting CSS custom properties or writing direct selectors.
+ColaMD custom themes are plain CSS files. Start from [template.css](template.css): it is a working theme with every variable and a few selectors commented, and the same check that guards the built-in themes runs over it, so it can not teach you a selector that does nothing.
 
 ### CSS Variables
 

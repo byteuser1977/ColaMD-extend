@@ -28,7 +28,7 @@ Whatever writes the file (an AI agent such as Claude Code or Codex, a script, or
 
 ## Themes
 
-Twelve built-in themes, six light, six dark, inspired by Bear, Notion, iA Writer, Kindle, Solarized, Nord, Gruvbox, and Dracula. Every one of them is also a standalone CSS file in [`themes/`](themes/), with a guide to [writing your own](themes/README.md).
+Twelve built-in themes, six light, six dark, inspired by Bear, Notion, iA Writer, Kindle, Solarized, Nord, Gruvbox, and Dracula. Every one of them is also a standalone CSS file in [`themes/`](themes/), with a guide to [writing your own](themes/README.md) and a commented [template](themes/template.css) to copy.
 
 <p align="center">
   <img src="docs/images/theme-swatches.svg" alt="ColaMD themes" width="92%">
@@ -56,7 +56,6 @@ Twelve built-in themes, six light, six dark, inspired by Bear, Notion, iA Writer
 - **PDF, HTML & Word Export**: Turn your Markdown document into a themed PDF, self-contained HTML, or editable Word document.
 - **Image Export**: Share Markdown as one continuous PNG at the desktop or mobile reading width; longer documents continue as numbered pages.
 - **Portable Image Paths**: Local images use safe `file://` URLs for display and return to relative paths when saved.
-- **VS Code Integration**: Open the current Markdown file in ColaMD directly from VS Code.
 - **Minimal by Design**: No toolbar, no permanent sidebar, no distractions.
 - **Cross-Platform**: Available for macOS, Windows, and Linux.
 
