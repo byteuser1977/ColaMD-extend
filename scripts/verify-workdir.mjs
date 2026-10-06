@@ -53,5 +53,7 @@ export function verifyWorkdir(name) {
       process.exit(1)
     })
   }
-  return { dir, udd: join(dir, 'udd') }
+  // 主 profile 叫 udd-main 而不是 udd：按标记杀进程是子串匹配，`udd` 会连
+  // `udd-cheatsheet` 一起命中。verify:features 同时开两扇窗口，那样会误杀。
+  return { dir, udd: join(dir, 'udd-main') }
 }

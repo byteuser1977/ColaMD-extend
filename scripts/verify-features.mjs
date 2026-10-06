@@ -128,6 +128,12 @@ function connect(url) {
       }
     })
     ws.addEventListener('error', () => reject(new Error(`连接不上 ${url}`)))
+    // 窗口被杀掉时 socket 会自己关：这时候必须有动静。以前挂着的请求永远不 settle，
+    // 事件循环一空，脚本就静默 exit 0（2026-10-06 为了这个查了半小时）。
+    ws.addEventListener('close', () => {
+      for (const [, pending_] of pending) pending_.rej(new Error('调试目标已关闭（窗口被杀了？）'))
+      pending.clear()
+    })
   })
 }
 
@@ -494,7 +500,7 @@ async function pressKey(renderer, key, code, keyCode, modifiers = 0) {
 async function checkCheatsheet() {
   const source = join(APP, 'resources', 'templates', 'cheatsheet.md')
   const port = 9990 + Math.floor(Math.random() * 9)
-  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${udd}-cheatsheet`,
+  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${join(WORK, 'udd-cheatsheet')}`,
     `--remote-debugging-port=${port}`
   ], { cwd: APP, stdio: 'ignore', detached: true })
 
@@ -609,7 +615,7 @@ async function checkCheatsheet() {
       gaps > 0 && focused && eventData.html === 0 && (copied.types ?? []).includes('text/html') && copied.htmlLen > 2000,
       `占位=${gaps} 有焦点=${focused} 全文=${docBytes} 字节 事件里 html=${eventData.html} 纯文本=${eventData.text} 剪贴板=${clip}`)
   } finally {
-    stopVerifyApp(WORK)
+    stopVerifyApp(join(WORK, 'udd-cheatsheet'))
   }
 }
 
@@ -969,7 +975,7 @@ function main() {
         : `\n✓ ${checks.length} 条全通过`)
       if (failed.length) process.exitCode = 1
     } finally {
-      stopVerifyApp(WORK)
+      stopVerifyApp(udd)
       await sleep(300)
       rmSync(WORK, { recursive: true, force: true })
     }
