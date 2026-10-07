@@ -1789,7 +1789,7 @@ function buildMenu(): void {
         importTheme: '导入主题...', whatsNew: '新功能演示',
         cheatsheet: 'Markdown 语法', about: '关于 ColaMD', checkForUpdates: '检查更新...', updateAvailable: '发现新版本', close: '关闭窗口',
         undo: '撤销', redo: '重做', cut: '剪切', copy: '复制', paste: '粘贴', selectAll: '全选',
-        actualSize: '实际大小', zoomIn: '放大', zoomOut: '缩小', fullscreen: '切换全屏', playSlideshow: '放映幻灯片',
+        actualSize: '恢复默认字号', zoomIn: '放大字号', zoomOut: '缩小字号', fullscreen: '切换全屏', playSlideshow: '放映幻灯片',
         fontSettings: '编辑器字体…',
         language: '界面语言', chinese: '中文', english: 'English',
         hide: '隐藏 ColaMD', hideOthers: '隐藏其他应用', showAll: '显示全部', quit: '退出 ColaMD',
@@ -1811,7 +1811,7 @@ function buildMenu(): void {
         importTheme: 'Import Theme...', whatsNew: "What's New",
         cheatsheet: 'Markdown Syntax', about: 'About ColaMD', checkForUpdates: 'Check for Updates...', updateAvailable: 'Update Available', close: 'Close Window',
         undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy', paste: 'Paste', selectAll: 'Select All',
-        actualSize: 'Actual Size', zoomIn: 'Zoom In', zoomOut: 'Zoom Out', fullscreen: 'Toggle Full Screen', playSlideshow: 'Play Slideshow',
+        actualSize: 'Reset Font Size', zoomIn: 'Larger Text', zoomOut: 'Smaller Text', fullscreen: 'Toggle Full Screen', playSlideshow: 'Play Slideshow',
         fontSettings: 'Editor Font…',
         language: 'Language', chinese: '中文', english: 'English',
         hide: 'Hide ColaMD', hideOthers: 'Hide Others', showAll: 'Show All', quit: 'Quit ColaMD',
@@ -1996,9 +1996,11 @@ function buildMenu(): void {
     {
       label: labels.view,
       submenu: [
-        { label: labels.actualSize, role: 'resetZoom' },
-        { label: labels.zoomIn, role: 'zoomIn' },
-        { label: labels.zoomOut, role: 'zoomOut' },
+        // 整页缩放会把顶栏连同 macOS 的红绿灯一起弄歪（红绿灯是系统画的，尺寸不跟）。
+        // 所以这三项调的是正文字号，界面尺寸不动（2026-10-06）。
+        { label: labels.actualSize, accelerator: 'CmdOrCtrl+0', click: () => sendToFocused('step-font', 0) },
+        { label: labels.zoomIn, accelerator: 'CmdOrCtrl+Plus', click: () => sendToFocused('step-font', 1) },
+        { label: labels.zoomOut, accelerator: 'CmdOrCtrl+-', click: () => sendToFocused('step-font', -1) },
         { type: 'separator' },
         {
           label: labels.filePanel,

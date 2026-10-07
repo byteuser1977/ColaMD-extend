@@ -87,6 +87,7 @@ export interface ElectronAPI {
   listSystemFonts: () => Promise<string[]>
   onEditorFontChanged: (callback: (prefs: { family: string; size: number }) => void) => void
   onOpenFontSettings: (callback: () => void) => void
+  onStepFont: (callback: (delta: number) => void) => void
   reportExternalConflict: (content: string) => Promise<void>
   onExternalConflictResult: (callback: (result: { action: 'keep' | 'load'; content?: string; recoveryPath?: string }) => void) => void
   revealPath: (target: string) => Promise<boolean>
@@ -238,6 +239,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onOpenFontSettings: (callback: () => void) => {
     ipcRenderer.on('open-font-settings', () => callback())
+  },
+  onStepFont: (callback: (delta: number) => void) => {
+    ipcRenderer.on('step-font', (_event, delta: number) => callback(delta === 0 ? 0 : delta > 0 ? 1 : -1))
   },
   reportExternalConflict: (content: string) => {
     return ipcRenderer.invoke('report-external-conflict', content)

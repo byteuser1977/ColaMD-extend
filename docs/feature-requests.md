@@ -225,6 +225,26 @@ Rule kept: exactly nine cards. The order is documented in an HTML comment above 
 
 ## Candidates
 
+### 公众号排版模式（WeChat article formatting）
+
+**Source:** User request (2026-10-06).
+
+**Need:** 稿子写完要贴进公众号，但现在复制出去的是给网页看的 HTML：粘进公众号编辑器之后背景被抹掉、宽度撑爆、代码块散架。要的是一个**模式**——点进去之后，复制拿到的就是微信公众号编辑器吃得下的那种 HTML。用户对要求的原话是「不支持背景，宽度也有要求，反正有一堆要求」，这一堆要求就是下面这些。
+
+**Constraints（公众号编辑器的硬规矩，写下来免得重新踩）:**
+
+- 只吃**行内样式**：`<style>`、`class`、`id` 会被丢掉。输出必须把每条样式内联到元素上，不能依赖主题 CSS，也不能带任何 `cm-` 之类的编辑器类名。
+- 不支持页面背景、阴影、固定定位、动画。输出是一张白底、系统字体族、行高固定的「公众号纸张」，主题里的这些效果在这个模式下要关掉。
+- 宽度按手机算（375–414 逻辑像素）。图片 `max-width: 100%`，而且必须先变成公众号能自己搬走的形态：本地文件路径在公众号里打不开，需要 URL 或 data URL。**这是第一个要先拍板的事。**
+- 代码块在公众号里不能横向滚动。需要等宽内联样式加换行策略，长行怎么处理要定。
+- 公式、Mermaid、图片这些「不是文字」的东西公众号不渲染，只能先转成图片。图片导出那条链路已经有渲染器（`src/main/image-export.ts`、`mermaid-export.ts`），可以直接复用。
+- 正文里的外链在公众号不跳转（只能走「阅读原文」或白名单）。保留成纯文本、还是加一句提示，**这是第二个要先拍板的事。**
+- 脚注、锚点跳转同样不生效，只能落在末尾当列表。
+
+**Architecture note:** 现有的富文本复制（`writeRichCopy()`）已经能产出语义 HTML，所以这个模式的本质是「同一套渲染 + 一份公众号专用的输出样式」，不是第二个渲染器。按「如非必要，勿增实体」，入口落在菜单里，不新增常驻工具栏。
+
+**Status:** Candidate, not scheduled. 参考实现是现成的（mdnice / markdown-nice 那一路：Markdown → 行内样式 HTML）。按项目里「参考老前辈的决策」的原则，先研究它们的样式表怎么定，再决定我们的做法，不自己发明一套。
+
 ### Zoomable viewer for Mermaid diagrams (#129)
 
 **Source:** [#129](https://github.com/marswaveai/ColaMD/issues/129)

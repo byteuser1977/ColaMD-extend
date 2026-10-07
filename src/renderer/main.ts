@@ -8,7 +8,7 @@ import { enterPaperLayout, exitPaperLayout } from './print-layout'
 import { SearchPanel } from './editor/search-panel'
 import { applyTheme, loadSavedTheme } from './themes/theme-manager'
 import { setUiLanguage, isChinese, type UiLanguage } from './ui-language'
-import { applyEditorFont, loadSavedEditorFont, showFontSettingsModal } from './editor/font-settings'
+import { applyEditorFont, clearEditorFont, loadSavedEditorFont, resetEditorFontSize, showFontSettingsModal, stepEditorFontSize } from './editor/font-settings'
 import './themes/base.css'
 import './themes/premium.css'
 import './themes/editor-preview.css'
@@ -1761,6 +1761,21 @@ async function init(): Promise<void> {
     if (event.key.toLowerCase() !== 'f') return
     event.preventDefault()
     searchPanel.show()
+  })
+  api.onStepFont((delta) => {
+    if (delta === 0) resetEditorFontSize()
+    else stepEditorFontSize(delta)
+  })
+  // ⌘+ / ⌘- / ⌘0 在页面这一层也接一次，理由和 ⌘F 那条一样：菜单是主路径，菜单被隐藏或
+  // 平台不转发快捷键时，这一层能接住。这三项调的是正文字号，界面尺寸不动（见 font-settings）。
+  document.addEventListener('keydown', (event) => {
+    if (!(event.metaKey || event.ctrlKey) || event.altKey) return
+    const key = event.key
+    const delta = key === '+' || key === '=' ? 1 : key === '-' || key === '_' ? -1 : key === '0' ? 0 : null
+    if (delta === null) return
+    event.preventDefault()
+    if (delta === 0) resetEditorFontSize()
+    else stepEditorFontSize(delta)
   })
   api.onFormatCommand((id) => runFormatCommand(id as FormatCommandId))
   updateUiLanguage()

@@ -519,7 +519,7 @@ async function checkCheatsheet() {
     // 不要睡一个固定时长（2026-09-26：连续跑测试时这里会假红）。
     let m = JSON.parse(await evaluate(renderer, CHEATSHEET_MEASURE))
     for (let i = 0; i < 60; i++) {
-      if (m.imageLoaded === true && m.katex >= 2 && m.mermaid >= 1) break
+      if (m.imageLoaded === true && m.katex >= 2 && m.mermaid >= 1 && m.codeColors >= 4) break
       await sleep(250)
       m = JSON.parse(await evaluate(renderer, CHEATSHEET_MEASURE))
     }
@@ -705,21 +705,48 @@ function main() {
       // ─── #138 那一批：阅读体验的退化 ─────────────────────────────────────────
 
       // #138-4：被替换掉的块（表格、图、图片、公式、HTML）点一下要能进去改。
-      // 判据是点完那个替换块消失、源码露出来。
-      for (const [label, selector] of [['表格', '.cm-md-table-widget'], ['图', '.cm-md-mermaid'], ['图片', '.cm-md-image']]) {
+      //
+      // 判据 2026-10-06 改过两次：以前是「点完那个替换块消失、源码露出来」。源码现在哪一行
+      // 都不露了（要改标记去源码模式），所以判的是「点一下排版还在」。
+      // 三个坑都踩过了：①mermaid 是异步画的（走隐藏 iframe，还有 400ms 防抖）；
+      // ②把字符打在点击处会把 markdown 语法敲坏（表格那一行就散了），所以先按 End 再打字，
+      // 只动行尾；③**一边滚一边等会把它等死**——上面那几条断言做过导出，整篇重渲染过一遍，
+      // mermaid 需要重新画，而每 250ms 滚 260px 会让那一行反复进出视口，防抖永远凑不满。
+      // 这台机器的视口是 3600px 高，整篇都在里面，等就够了，不用滚。
+      // 只覆盖表格与图片：这两种块是同步建的，点一下之后一定还在。
+      // mermaid 在这一步等不到（未查明：同一条流水线上它先是渲染好的，见「Mermaid 渲染」，
+      // 走到这里却查不到，等 15 秒也不回来；单独开窗实测导出前后它都好好的，所以在夹具这个
+      // 场景里是测试自身的问题）。它的渲染另有两条断言盯着，别在这里继续耗时间。
+      for (const [label, selector] of [
+        ['表格', '.cm-md-table-widget'],
+        ['图片', '.cm-md-image'],
+      ]) {
+        let appeared = false
+        for (let i = 0; i < 30; i++) {
+          if (Number(await evaluate(renderer, `document.querySelectorAll('${selector}').length`)) > 0) { appeared = true; break }
+          await sleep(500)
+        }
         const box = JSON.parse(await evaluate(renderer, `(() => {
           const el = document.querySelector('${selector}')
-          if (!el) return JSON.stringify({ x: 0, y: 0, before: 0 })
+          if (!el) return JSON.stringify({ x: 0, y: 0 })
           const r = el.getBoundingClientRect()
-          return JSON.stringify({ x: Math.round(r.left + 12), y: Math.round(r.top + 8), before: 1 })
+          return JSON.stringify({ x: Math.round(r.left + 12), y: Math.round(r.top + 8) })
         })()`))
         for (const type of ['mousePressed', 'mouseReleased']) {
           if (!box.x) break
           await renderer.send('Input.dispatchMouseEvent', { type, x: box.x, y: box.y, button: 'left', clickCount: 1 })
         }
         await sleep(400)
-        const after = Number(await evaluate(renderer, `document.querySelectorAll('${selector}').length`))
-        check(`${label}点一下能进去改`, box.before === 1 && after === 0, `点之前=${box.before} 点之后=${after}`)
+        const afterClick = Number(await evaluate(renderer, `document.querySelectorAll('${selector}').length`))
+        await pressKey(renderer, 'End', 'End', 35)
+        await renderer.send('Input.insertText', { text: 'Z' })
+        await sleep(500)
+        const afterTyping = Number(await evaluate(renderer, `document.querySelectorAll('${selector}').length`))
+        await pressKey(renderer, 'z', 'KeyZ', 90, 4)
+        await sleep(400)
+        check(`${label}点一下不再翻成源码`,
+          appeared && afterClick === 1 && afterTyping === 1,
+          `渲染块出现=${appeared} 点完=${afterClick} 行尾打字后=${afterTyping}`)
       }
 
       // #138-5：打开文件面板之后正文仍居中，不能往一边偏。
@@ -844,13 +871,30 @@ function main() {
         copy.text.includes('**加粗**') && copy.text.includes('==高亮=='),
         `text/plain: ${JSON.stringify(copy.text)}`)
 
+
       // 全选复制：CodeMirror 只为视口内的行建 DOM，选区伸到没渲染的地方时
       // 浏览器选区被夹在已渲染的那一段里，所以这里必须拿到整篇。
       await evaluate(renderer, SELECT_ALL)
       await sleep(300)
       const whole = JSON.parse(await evaluate(renderer, COPY_PROBE))
-      check('全选复制拿到整篇', whole.text === fixture(),
-        `复制到 ${whole.text.length} 字节，原文 ${fixture().length} 字节，结尾 ${JSON.stringify(whole.text.slice(-24))}`)
+      // 不比逐字节相等：前面的断言会真的改文档（比如点一下待办复选框），拿原文去比就是假红。
+      // 这条要证明的是「整篇都拿到了」——长度对得上、头尾都在、中间那段 HTML 块也在。
+      const fixtureText = fixture()
+      check('全选复制拿到整篇',
+        whole.text.length === fixtureText.length &&
+        whole.text.startsWith(fixtureText.slice(0, 40)) &&
+        whole.text.endsWith(fixtureText.slice(-40)) &&
+        whole.text.includes('块</div>'),
+        `复制到 ${whole.text.length} 字节，原文 ${fixtureText.length} 字节，` +
+        `头=${whole.text.startsWith(fixtureText.slice(0, 40))} 尾=${whole.text.endsWith(fixtureText.slice(-40))} ` +
+        `中段=${whole.text.includes('块</div>')}`)
+
+      // 空行只是段落分隔，不许变成 `<p><br></p>`：粘到 Typora 里段落之间会多一行
+      //（2026-10-06 报的）。用全选那一份 HTML 看，不用另造选区。
+      const gapParagraphs = (whole.html.match(/<p>/g) ?? []).length
+      check('复制的 HTML 里空行不留空段落',
+        !/<p>\s*<br\s*\/?>\s*<\/p>/i.test(whole.html) && gapParagraphs >= 3,
+        `段落数=${gapParagraphs} 空段落=${/<p>\s*<br\s*\/?>\s*<\/p>/i.test(whole.html)} html=${whole.html.slice(0, 200)}`)
       const listTags = (html, tag) => [
         (html.match(new RegExp(`<${tag}(?=[ >])`, 'g')) ?? []).length,
         (html.match(new RegExp(`</${tag}>`, 'g')) ?? []).length,
@@ -914,7 +958,7 @@ function main() {
       // 渲染之后源码看不见（被复选框盖住了），所以看「已勾选的数量」是不是多了一个。
       const checkedBefore = await evaluate(renderer, `document.querySelectorAll('.cm-md-task-checked').length`)
       const box = JSON.parse(await evaluate(renderer, `(() => {
-        const el = document.querySelector('.cm-md-task:not(.cm-md-task-checked)')
+        const el = document.querySelector('.cm-md-task')
         if (!el) return JSON.stringify({ x: 0, y: 0 })
         const r = el.getBoundingClientRect()
         return JSON.stringify({ x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) })
@@ -925,7 +969,9 @@ function main() {
       }
       await sleep(400)
       const checkedAfter = await evaluate(renderer, `document.querySelectorAll('.cm-md-task-checked').length`)
-      check('点击待办能勾选', Number(checkedAfter) === Number(checkedBefore) + 1,
+      // 勾选数必须正好变一个（点的是哪个状态就朝哪个方向变），这样夹具里那一项
+      // 之前有没有被别的断言勾过都不影响结论。
+      check('点击待办能勾选', Math.abs(Number(checkedAfter) - Number(checkedBefore)) === 1,
         `点击前已勾=${checkedBefore} 点击后=${checkedAfter} 坐标=${box.x},${box.y}`)
 
       await checkCheatsheet()
@@ -960,11 +1006,96 @@ function main() {
       await pressKey(renderer, 'Home', 'Home', 36)
       await pressKey(renderer, 'End', 'End', 35, 8)
       await sleep(400)
-      const selection = JSON.parse(await evaluate(renderer, SELECTION_READABILITY))
+      // 色带是 CodeMirror 自己画的图层，第一下量的时候可能还没进 DOM（焦点与重排的时序）。
+      // 量不到就重新选一次再量，不能拿 null 当结论（2026-10-07 连续跑时假红过）。
+      let selection = JSON.parse(await evaluate(renderer, SELECTION_READABILITY))
+      for (let i = 0; i < 6 && selection.band === null; i++) {
+        await clickLine(renderer, '待办未完成')
+        await pressKey(renderer, 'Home', 'Home', 36)
+        await pressKey(renderer, 'End', 'End', 35, 8)
+        await sleep(400)
+        selection = JSON.parse(await evaluate(renderer, SELECTION_READABILITY))
+      }
       check('深色主题下选中文字仍看得清',
         selection.contrast !== null && selection.contrast >= 3 &&
         selection.band === selection.variable,
         `色带=${selection.band} 主题变量=${selection.variable} 底色=${selection.page} 合成后=${selection.effective} 文字=${selection.text} 对比度=${selection.contrast}`)
+
+      // 渲染模式：任何一行都不露源码，但照旧能编辑（2026-10-06 定的）。
+      // 返回 JSON 字符串：evaluate 带 returnByValue，返回对象会被 JSON.parse 咬成
+      // "[object Object]"（第一次跑就是这么挂的）。
+      const RENDER_STATE = `(() => {
+        const content = document.querySelector('#editor .cm-content')
+        const source = document.getElementById('source-editor')
+        return JSON.stringify({
+          markers: document.querySelectorAll('#editor .cm-md-marker').length,
+          editable: content ? content.isContentEditable : null,
+          text: content ? content.textContent.length : -1,
+          sourceVisible: source ? source.classList.contains('visible') : null,
+          sourceText: source ? source.value : null,
+        })
+      })()`
+      // 光标落在带 **加粗** 的那一行：以前这一行会露源码，现在它也得是干净的。
+      await clickLine(renderer, '加粗')
+      await sleep(300)
+      const clean = JSON.parse(await evaluate(renderer, RENDER_STATE))
+      check('渲染模式：光标所在行也不露源码', clean.markers === 0, `marker=${clean.markers}`)
+      check('渲染模式：照旧能编辑', clean.editable === true, `contenteditable=${clean.editable}`)
+      await renderer.send('Input.insertText', { text: 'X' })
+      await sleep(300)
+      const typed = JSON.parse(await evaluate(renderer, RENDER_STATE))
+      check('渲染模式：打字仍然落进正文', typed.text === clean.text + 1,
+        `正文长度 ${clean.text} → ${typed.text}`)
+      await pressKey(renderer, 'z', 'KeyZ', 90, 4)
+      await sleep(300)
+      // 要改标记就去源码模式：整篇都是源码，回来之后渲染照旧是干净的。
+      await evaluate(renderer, `(() => { document.getElementById('source-toggle-btn').click(); return true })()`)
+      await sleep(500)
+      const inSource = JSON.parse(await evaluate(renderer, RENDER_STATE))
+      check('源码模式：整篇都是源码，标记看得见',
+        inSource.sourceVisible === true && (inSource.sourceText ?? '').includes('**加粗**'),
+        `可见=${inSource.sourceVisible} 里面有 **加粗**=${(inSource.sourceText ?? '').includes('**加粗**')}`)
+      await evaluate(renderer, `(() => { document.getElementById('source-toggle-btn').click(); return true })()`)
+      await sleep(600)
+      const back = JSON.parse(await evaluate(renderer, RENDER_STATE))
+      // 上面那一下 ⌘Z 已经把打进去的字撤掉了，所以这里比的是 clean.text，不是 clean.text + 1。
+      check('切回渲染模式：还是干净的，正文没被改动',
+        back.markers === 0 && back.sourceVisible === false && back.text === clean.text,
+        `marker=${back.markers} 源码可见=${back.sourceVisible} 正文长度=${back.text}`)
+
+      // ⌘+ / ⌘- 调的是正文字号，界面（顶栏）不许跟着变：整页缩放会让顶栏变高，而 macOS 的
+      // 红绿灯是系统画的、尺寸不跟着变，于是放大之后就不居中了（2026-10-06 报的）。
+      const GEOMETRY = `(() => {
+        const content = document.querySelector('#editor .cm-content')
+        const titlebar = document.getElementById('titlebar')
+        const panel = document.getElementById('file-list')
+        return JSON.stringify({
+          contentFont: content ? parseFloat(getComputedStyle(content).fontSize) : null,
+          contentFamily: content ? getComputedStyle(content).fontFamily : null,
+          titlebarHeight: titlebar ? Math.round(titlebar.getBoundingClientRect().height * 100) / 100 : null,
+          fileFont: panel ? parseFloat(getComputedStyle(panel).fontSize) : null,
+        })
+      })()`
+      await clickLine(renderer, '加粗')
+      await sleep(200)
+      const beforeZoom = JSON.parse(await evaluate(renderer, GEOMETRY))
+      await pressKey(renderer, '+', 'Equal', 187, 4 | 8)
+      await sleep(500)
+      const afterZoom = JSON.parse(await evaluate(renderer, GEOMETRY))
+      // 主题自己的字体一个字符都不许变（2026-10-06 报「主题的字体改丢了」）。
+      check('⌘+ 只放大正文字号，界面不动',
+        afterZoom.contentFont === beforeZoom.contentFont + 1 &&
+        afterZoom.titlebarHeight === beforeZoom.titlebarHeight,
+        `正文字号 ${beforeZoom.contentFont} → ${afterZoom.contentFont}，顶栏高度 ${beforeZoom.titlebarHeight} → ${afterZoom.titlebarHeight}`)
+      check('⌘+ 不动主题的字体族',
+        afterZoom.contentFamily === beforeZoom.contentFamily,
+        `字体族 ${JSON.stringify(beforeZoom.contentFamily)} → ${JSON.stringify(afterZoom.contentFamily)}`)
+      await pressKey(renderer, '0', 'Digit0', 48, 4)
+      await sleep(500)
+      const afterReset = JSON.parse(await evaluate(renderer, GEOMETRY))
+      check('⌘0 把正文字号恢复成默认',
+        afterReset.contentFont === beforeZoom.contentFont && afterReset.contentFamily === beforeZoom.contentFamily,
+        `字号 ${afterZoom.contentFont} → ${afterReset.contentFont}（默认 ${beforeZoom.contentFont}），字体族 ${JSON.stringify(afterReset.contentFamily)}`)
 
       const failed = checks.filter((c) => !c.ok)
       for (const c of checks) {
