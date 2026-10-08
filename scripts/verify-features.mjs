@@ -98,6 +98,12 @@ function fixture() {
     '',
     '<div class="raw-html">HTML 块</div>',
     '',
+    // #125：行内 HTML 的 color 目前不生效。成对标签的开、合是两个各自独立的
+    // widget，中间的文字不归任何一个管，所以 style 落在空标签上。淡源里实测：
+    // 找不到任何 textContent 正好是「红色的字」的元素。这条断言记的是现状，
+    // 把它修好的时候这里会红，那正是提醒该换断言了（需求清单里记着这笔）。
+    '行内上色：<span style="color: #ff0000">红色的字</span>。',
+    '',
     // 查找跳转的靶子：这一条在文档最末尾，一屏高的视口里绝对看不见。
     'NEEL 后半段的锚点。',
     ''
@@ -262,6 +268,11 @@ const MEASURE = `(() => {
       raw: has(lineOf('脚注引用'), '[^')
     },
     html: { rendered: q('#editor .raw-html').length, raw: has(lineOf('HTML 块'), '<div') },
+    inlineColor: (() => {
+      const el = [...document.querySelectorAll('#editor .cm-content *')]
+        .find((n) => n.textContent.trim() === '红色的字')
+      return el ? colorOf(el) : null
+    })(),
     exportHtml: (() => {
       const out = typeof window.__colamdExportDocumentHTML === 'function'
         ? window.__colamdExportDocumentHTML()
@@ -693,6 +704,9 @@ function main() {
       check('脚注渲染', m.footnote.refs >= 1, `refs=${m.footnote.refs} 露源码=${m.footnote.raw}`)
       check('脚注悬停预览', m.footnote.previewCard >= 1, `预览卡片=${m.footnote.previewCard}`)
       check('HTML 块渲染', m.html.rendered >= 1, `rendered=${m.html.rendered} 露源码=${m.html.raw}`)
+      // 块级 HTML 里的 color 是生效的；行内成对标签目前不生效，理由见夹具里那段注释。
+      check('行内 HTML 的 color 目前不生效（#125 已知缺口）', m.inlineColor === null,
+        `红色的字 computed color=${m.inlineColor}（真的变红了就说明这条缺口补上了，请改写这条断言）`)
       check('导出的 HTML 是语义标签',
         m.exportHtml.strong && m.exportHtml.em && m.exportHtml.anchor && m.exportHtml.list &&
         m.exportHtml.code && m.exportHtml.table && m.exportHtml.quote && m.exportHtml.heading,
@@ -749,22 +763,120 @@ function main() {
           `渲染块出现=${appeared} 点完=${afterClick} 行尾打字后=${afterTyping}`)
       }
 
-      // #138-5：打开文件面板之后正文仍居中，不能往一边偏。
-      const contentGaps = async () => JSON.parse(await evaluate(renderer, `(() => {
+      // 2026-10-08 报：鼠标拖选不到引用块和表格里的文字。这一组用真鼠标事件拖一遍，
+      // 看浏览器层真的选中了什么。普通段落当对照组：它要也不动，问题就不在块上，
+      // 而在我们自己的鼠标处理把拖动吃掉了。
+      const dragAcross = async (token, offset) => {
+        const box = JSON.parse(await evaluate(renderer, `(() => {
+          const line = [...document.querySelectorAll('#editor .cm-line')].find((l) => l.textContent.includes(${JSON.stringify(token)}))
+          if (!line) return 'null'
+          const r = line.getBoundingClientRect()
+          const x1 = Math.round(r.left + (${offset ?? 6}))
+          return JSON.stringify({ x1, x2: Math.round(r.right - 6), y: Math.round(r.top + r.height / 2) })
+        })()`))
+        if (!box) return { found: false, text: '' }
+        await renderer.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: box.x1, y: box.y, button: 'left', clickCount: 1 })
+        for (let i = 1; i <= 8; i++) {
+          const x = Math.round(box.x1 + ((box.x2 - box.x1) * i) / 8)
+          await renderer.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y: box.y, button: 'left', buttons: 1 })
+        }
+        await renderer.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: box.x2, y: box.y, button: 'left', clickCount: 1 })
+        await sleep(250)
+        const text = await evaluate(renderer, `window.getSelection().toString()`)
+        return { found: true, text: text ?? '' }
+      }
+      const drags = {}
+      for (const [key, token, offset] of [
+        ['paragraph', '普通段落，含', 6],
+        ['quote', '引用文字', 6],
+        ['table', '列甲', 6],
+        ['code', 'const answer = 42', 6],
+      ]) {
+        drags[key] = await dragAcross(token, offset)
+      }
+      console.log(`\n拖选实测：${JSON.stringify(Object.fromEntries(Object.entries(drags).map(([k, v]) => [k, v.text.slice(0, 40)])))}\n`)
+
+      // 同一个问题的另两种手法：双击选词、从上一行拖跨进引用块。
+      const doubleClickWord = async (token) => {
+        const box = JSON.parse(await evaluate(renderer, `(() => {
+          const line = [...document.querySelectorAll('#editor .cm-line')].find((l) => l.textContent.includes(${JSON.stringify(token)}))
+          if (!line) return 'null'
+          const r = line.getBoundingClientRect()
+          return JSON.stringify({ x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) })
+        })()`))
+        if (!box) return ''
+        for (const type of ['mousePressed', 'mouseReleased']) {
+          await renderer.send('Input.dispatchMouseEvent', { type, x: box.x, y: box.y, button: 'left', clickCount: 2 })
+        }
+        await sleep(250)
+        return (await evaluate(renderer, `window.getSelection().toString()`)) ?? ''
+      }
+      const quoteWord = await doubleClickWord('引用文字')
+      const paraWord = await doubleClickWord('普通段落，含')
+      console.log(`\n双击选词：引用块=${JSON.stringify(quoteWord)} 普通段落=${JSON.stringify(paraWord)}\n`)
+      check('双击引用块里的词能选中', quoteWord.length > 0 && quoteWord.includes('引用'),
+        `引用块双击选中=${JSON.stringify(quoteWord)}，普通段落双击选中=${JSON.stringify(paraWord)}`)
+      check('拖选普通段落能选中（对照组）', (drags.paragraph.text ?? '').includes('普通段落'),
+        `选中=${JSON.stringify(drags.paragraph.text.slice(0, 60))}`)
+      check('拖选引用块的文字能选中（2026-10-08 报）', (drags.quote.text ?? '').includes('引用文字'),
+        `选中=${JSON.stringify(drags.quote.text.slice(0, 60))}`)
+      check('拖选表格里的文字（#141 已知缺口）', (drags.table.text ?? '').includes('列甲'),
+        `选中=${JSON.stringify(drags.table.text.slice(0, 60))}`)
+      check('拖选代码块里的文字', (drags.code.text ?? '').includes('const answer'),
+        `选中=${JSON.stringify(drags.code.text.slice(0, 60))}`)
+
+      // #138-5 与 #143：面板打开之后正文必须让开它那一列，而且在剩下的可见区域里居中。
+      // 面板是一列浮在窗口上的纸（position: fixed），它不占布局，所以「可见区域」只能靠
+      // 窗口减掉面板那一列算出来。这里不动真实的开关状态，只把面板元素显示出来量几何，
+      // 免得把「面板默认收起」这件事写进用户的设置里。
+      const panelGeometry = async () => JSON.parse(await evaluate(renderer, `(() => {
         const content = document.querySelector('#editor .cm-content').getBoundingClientRect()
-        const scroller = document.querySelector('#editor .cm-scroller').getBoundingClientRect()
-        return JSON.stringify({ left: Math.round(content.left - scroller.left), right: Math.round(scroller.right - content.right) })
+        const panel = document.getElementById('file-panel').getBoundingClientRect()
+        const left = panel.left <= 4
+        const visible = left
+          ? { left: panel.right, right: window.innerWidth }
+          : { left: 0, right: panel.left }
+        return JSON.stringify({
+          left: Math.round(left),
+          contentLeft: Math.round(content.left),
+          contentRight: Math.round(content.right),
+          visibleLeft: Math.round(visible.left),
+          visibleRight: Math.round(visible.right),
+        })
       })()`))
-      const gapsClosed = await contentGaps()
-      // 这里只切类名，不走菜单：要量的是「面板占位之后正文还居不居中」这一条 CSS，
-      // 面板本身的开合另有真机验收。
-      await evaluate(renderer, `document.body.classList.add('show-file-panel')`)
-      await sleep(400)
-      const gapsOpen = await contentGaps()
-      await evaluate(renderer, `document.body.classList.remove('show-file-panel')`)
-      await sleep(200)
-      check('打开文件面板后正文仍居中', Math.abs(gapsOpen.left - gapsOpen.right) <= 2,
-        `面板关 左=${gapsClosed.left} 右=${gapsClosed.right}；面板开 左=${gapsOpen.left} 右=${gapsOpen.right}`)
+      const measureColumn = async (bodyClass) => {
+        await evaluate(renderer, `(() => {
+          const panel = document.getElementById('file-panel')
+          panel.dataset.wasHidden = panel.hidden ? '1' : ''
+          panel.hidden = false
+          document.body.classList.add('show-file-panel')
+          ${bodyClass ? `document.body.classList.add('${bodyClass}')` : ''}
+          return true
+        })()`)
+        await sleep(400)
+        const m = await panelGeometry()
+        await evaluate(renderer, `(() => {
+          const panel = document.getElementById('file-panel')
+          panel.hidden = panel.dataset.wasHidden === '1'
+          delete panel.dataset.wasHidden
+          document.body.classList.remove('show-file-panel')
+          ${bodyClass ? `document.body.classList.remove('${bodyClass}')` : ''}
+          return true
+        })()`)
+        await sleep(200)
+        return m
+      }
+      const describeColumn = (m) => {
+        const side = m.left ? '左' : '右'
+        return `面板在${side}：正文 ${m.contentLeft}~${m.contentRight}，可见 ${m.visibleLeft}~${m.visibleRight}`
+      }
+      const clearsPanel = (m) => m.contentRight <= m.visibleRight + 1 && m.contentLeft >= m.visibleLeft - 1
+      const centeredInVisible = (m) => Math.abs((m.contentLeft - m.visibleLeft) - (m.visibleRight - m.contentRight)) <= 2
+      for (const [dockClass, label] of [[null, '右'], ['panel-left', '左']]) {
+        const m = await measureColumn(dockClass)
+        check(`面板在${label}：正文不钻到面板底下（#143）`, clearsPanel(m), describeColumn(m))
+        check(`面板在${label}：正文在可见区域里居中（#138-5）`, centeredInVisible(m), describeColumn(m))
+      }
 
       // #137：大纲不能把代码块里的 `#` 当成标题。
       // 文件面板默认是收起的（manualHidden 默认真），先按它的开关把它打开。
