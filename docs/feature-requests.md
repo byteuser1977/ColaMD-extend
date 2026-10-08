@@ -249,7 +249,25 @@ Rule kept: exactly nine cards. The order is documented in an HTML comment above 
 
 **Source:** [#129](https://github.com/marswaveai/ColaMD/issues/129)
 
-Mermaid renders with `useMaxWidth`, so a diagram wider than the reading column scales down with no lower bound on text size, and `overflow-x` never engages because the SVG never exceeds 100%. Needs a way to inspect a wide diagram at full size (zoom or open-in-overlay). Undecided.
+Mermaid renders with `useMaxWidth`, so a diagram wider than the reading column scales down with no lower bound on text size, and `overflow-x` never engages because the SVG never exceeds 100%. Confirmed as a real limitation, not scheduled. Direction: a temporary overlay over the SVG that is already drawn (scroll to zoom, drag to pan, Esc or click-outside to close), because the content is vector, so zooming needs no second render and no new dependency. Entry point still to be decided: a hover button in the same pattern as the code block's copy button, or a double click.
+
+### Selectable text inside a rendered block (#141)
+
+**Source:** [#141](https://github.com/marswaveai/ColaMD/issues/141)
+
+Clicking a rendered block (table, diagram, image, formula, raw HTML) puts the caret into the Markdown behind it, so the block's own text never enters the selection model: dragging across a table selects nothing, and the same holds for a diagram's labels. The document is text and rendering is a layer of decoration over it (`docs/editor-architecture.md`), so letting widget contents take part in selection is a structural change rather than a styling fix. Narrower paths that do not need it: the copy path stays structured (already true, `clean-html.ts` clones the rendered table), and a rendered block could carry an explicit copy affordance. Undecided.
+
+### XDG data directories on Linux (#142)
+
+**Source:** [#142](https://github.com/marswaveai/ColaMD/issues/142)
+
+Three paths are hardcoded under the home directory on all three platforms: `~/.colamd/themes`, `~/.colamd/recovered` and `~/.colamd/recent.json` (`src/main/index.ts`). Everything Electron manages already follows the platform convention: window state, language, the update flag and the renderer error log live in `userData`, which on Linux is `$XDG_CONFIG_HOME/colamd`. Moving the three to `$XDG_CONFIG_HOME` and `$XDG_DATA_HOME` means deciding what macOS and Windows do in the same breath, plus a migration for data already written. Reported as a standards issue rather than a breakage. Undecided.
+
+### Inline HTML pairs (#125)
+
+**Source:** [#125](https://github.com/marswaveai/ColaMD/issues/125)
+
+Block-level HTML renders, and its inline styles survive the sanitizer, `color` included. A paired inline tag does not: `<span style="color:red">文字</span>` in the middle of a paragraph parses as two separate `HTMLTag` nodes, each replaced by its own widget, so the style lands on an empty tag and the text between them stays plain. Measured on 2026-10-08, when an assertion was added to `verify:features` to pin the current state; the earlier reply on the issue claimed it already worked, and that was wrong. Fixing it means treating a matched pair as one range in the decoration layer, which first has to decide how far a pair may span (one line, or across a block). No bespoke colour syntax will be added on top of Markdown either way: it would produce files only ColaMD understands. Undecided.
 
 ### One row title bar with tabs
 
@@ -392,6 +410,12 @@ Fenced code blocks currently render as plain styled text with a copy button, wit
 
 
 ## Declined
+
+### Official Homebrew tap
+
+**Source:** [#140](https://github.com/marswaveai/ColaMD/issues/140)
+
+Declined (2026-10-08). A tap is a second distribution channel that has to be kept in step with every release, with its own failure modes, and macOS already has a signed and notarized dmg plus a zip that updates itself. Keeping a personal cask is fine and does not need us: the artifact name is fixed (`ColaMD-<version>-<arch>.dmg`), the app is `ColaMD.app`, and the GitHub API publishes a `sha256` digest per asset. The details are in the issue.
 
 ### Theme following the system appearance
 
