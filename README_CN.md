@@ -1,4 +1,4 @@
-的觉得
+# ColaMD 扩展版（Extend）
 
 <br />
 
@@ -12,8 +12,11 @@ ColaMD 是一款开源、免费、优雅的 Markdown 编辑器，用于写作、
 
 无论是什么在写这个文件（Claude Code、Codex 这类 AI Agent，一个脚本，或另一个编辑器），ColaMD 都会立刻显示最新内容，不用重开文件，也不用手动刷新。
 
+**本仓库（ColaMD-extend）是 [marswaveai/ColaMD](https://github.com/marswaveai/colamd) 的扩展版**，当前基于上游 v2.7.6。上游的全部功能都在；扩展版在此之上陆续移植自有功能，见[扩展版功能](#扩展版功能)与[移植路线图](#移植路线图扩展版)。
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub release](https://img.shields.io/github/release/marswaveai/colamd.svg)](https://github.com/marswaveai/colamd/releases)
+[![Upstream](https://img.shields.io/badge/upstream-v2.7.6-blue)](https://github.com/marswaveai/colamd)
+[![GitHub release](https://img.shields.io/github/release/byteuser1977/ColaMD-extend.svg)](https://github.com/byteuser1977/ColaMD-extend/releases)
 
 [下载](#下载) | [功能](#功能)
 
@@ -83,13 +86,32 @@ ColaMD 是一款开源、免费、优雅的 Markdown 编辑器，用于写作、
 
 * **跨平台**: 支持 macOS、Windows 和 Linux。
 
+## 扩展版功能
+
+扩展版计划在上游之上提供以下能力（移植进度见[移植路线图](#移植路线图扩展版)）：
+
+* **显示插件系统**: 统一管理数学公式、Mermaid 图表的样式，剪贴板复制与导出（PDF / HTML / Word）自动适配
+* **更多自定义主题**: academic-paper（GB/T 7713 学术规范）、Swiss Design、Forest Ink、归藏、Elegant 等，均带 Mermaid 配色适配
+* **国际化补齐**: 在上游语言切换的基础上，补齐菜单与界面的简中/英文覆盖
+* **npm 库构建**: 把编辑器核心打包为 npm 包，供 VSCode 扩展等外部项目集成
+* **移动端**: 基于 Capacitor 的 Android / iOS 适配
+
+## 分支说明
+
+| 分支 | 用途 |
+|------|------|
+| `main` | 上游镜像: 跟随 [marswaveai/ColaMD](https://github.com/marswaveai/colamd) 同步，不含扩展提交 |
+| `extend/2.x` | 扩展版主开发线: 基于上游 2.x 陆续移植 develop 的功能（当前分支） |
+| `develop` | v1.5.2 存档: 旧架构（上游 1.x 基座）的完整功能参考，已冻结 |
+| `release/1.5.2` / `mobile` | 旧版本的发布备份与移动端分支，只读保留 |
+
 ## 与现有 Markdown 工作流配合
 
 ColaMD 不要求你改变现有习惯，也适合与 Obsidian、Typora、VS Code 等 Markdown 软件配合使用。它们共享同一套 `.md` 文件，你可以用不同工具完成不同任务。
 
 ## 下载
 
-> 查看 [Releases](https://github.com/marswaveai/colamd/releases) 获取最新构建。
+> 查看 [扩展版 Releases](https://github.com/byteuser1977/ColaMD-extend/releases) 获取最新构建；上游版本见 [marswaveai/ColaMD Releases](https://github.com/marswaveai/colamd/releases)。
 
 | 平台      | 格式                   |
 | ------- | -------------------- |
@@ -98,6 +120,18 @@ ColaMD 不要求你改变现有习惯，也适合与 Obsidian、Typora、VS Code
 | Linux   | `.AppImage` / `.deb` |
 
 ## 路线图
+
+### 移植路线图（扩展版）
+
+develop（v1.5.2）的功能基于上游 1.x 旧架构，不能直接合并，需要在 2.x 内核上重新适配，顺序如下：
+
+1. 自定义主题: 纯 CSS 主题先行（academic-paper、Swiss Design、Forest Ink、归藏、Elegant）
+2. 插件样式管理: 上游 2.x 已内置 KaTeX 与 Mermaid，重点是统一样式注入与导出适配
+3. 国际化补齐: 对比上游已有的语言切换，补齐覆盖面
+4. npm 库构建: 编辑器核心打包为可复用的 npm 包
+5. 移动端: 基于 Capacitor 的 Android / iOS 适配（工作量最大，最后做）
+
+### 上游路线图
 
 ColaMD 会继续把「免费、优雅、专注」这件事做好：
 
@@ -172,3 +206,5 @@ ColaMD 会继续把「免费、优雅、专注」这件事做好：
 ***
 
 ColaMD 由 [Cola.app](https://cola.app) 开发，作者 [orange2ai](https://github.com/orange2ai)。欢迎提交 Issue、想法和 Pull Request。
+
+扩展版（ColaMD-extend）由 [byteuser1977](https://github.com/byteuser1977) 维护。

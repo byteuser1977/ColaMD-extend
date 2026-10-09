@@ -1,4 +1,4 @@
-# ColaMD
+# ColaMD Extend
 
 > A free, elegant Markdown editor anyone can pick up. No toolbars, no clutter, and the file on disk is always what you see.
 
@@ -10,8 +10,11 @@ It offers true WYSIWYG editing, 12 built-in themes, rich-text copy, smart line b
 
 Whatever writes the file (an AI agent such as Claude Code or Codex, a script, or another editor), ColaMD shows the new content right away. No reopening, no manual refresh.
 
+**This repository (ColaMD-extend) is an extended fork of [marswaveai/ColaMD](https://github.com/marswaveai/colamd)**, currently based on upstream v2.7.6. Everything upstream offers is here; the fork ports its own features on top, see [Extend Features](#extend-features) and the [porting roadmap](#porting-roadmap-extend).
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub release](https://img.shields.io/github/release/marswaveai/colamd.svg)](https://github.com/marswaveai/colamd/releases)
+[![Upstream](https://img.shields.io/badge/upstream-v2.7.6-blue)](https://github.com/marswaveai/colamd)
+[![GitHub release](https://img.shields.io/github/release/byteuser1977/ColaMD-extend.svg)](https://github.com/byteuser1977/ColaMD-extend/releases)
 
 [Download](#download) | [Features](#features)
 
@@ -59,13 +62,32 @@ Twelve built-in themes, six light, six dark, inspired by Bear, Notion, iA Writer
 - **Minimal by Design**: No toolbar, no permanent sidebar, no distractions.
 - **Cross-Platform**: Available for macOS, Windows, and Linux.
 
+## Extend Features
+
+Planned on top of upstream (progress in the [porting roadmap](#porting-roadmap-extend)):
+
+- **Display plugin system**: unified style management for math and Mermaid diagrams, applied consistently to clipboard copy and exports (PDF / HTML / Word)
+- **More custom themes**: academic-paper (GB/T 7713), Swiss Design, Forest Ink, Guizang, Elegant, each with Mermaid color adaptation
+- **i18n completion**: fill the remaining menu and UI coverage on top of upstream language switching
+- **npm library build**: package the editor core as an npm package for external integrations such as the VSCode extension
+- **Mobile**: Capacitor-based Android / iOS support
+
+## Branches
+
+| Branch | Purpose |
+|--------|---------|
+| `main` | Upstream mirror: follows [marswaveai/ColaMD](https://github.com/marswaveai/colamd), no fork commits |
+| `extend/2.x` | Main development line: ports develop features onto upstream 2.x (current branch) |
+| `develop` | v1.5.2 archive: complete feature reference on the old (1.x) architecture, frozen |
+| `release/1.5.2` / `mobile` | Release and mobile backups of the old version, read-only |
+
 ## Works with your Markdown workflow
 
 ColaMD does not ask you to change your habits. It works well alongside Obsidian, Typora, VS Code, and other Markdown apps, all sharing the same `.md` files, with each tool doing what it does best.
 
 ## Download
 
-> Check [Releases](https://github.com/marswaveai/colamd/releases) for the latest builds.
+> Check the [Extend releases](https://github.com/byteuser1977/ColaMD-extend/releases) for the latest builds; upstream builds live at [marswaveai/ColaMD Releases](https://github.com/marswaveai/colamd/releases).
 
 | Platform | Format |
 |----------|--------|
@@ -74,6 +96,18 @@ ColaMD does not ask you to change your habits. It works well alongside Obsidian,
 | Linux    | `.AppImage` / `.deb` |
 
 ## Roadmap
+
+### Porting roadmap (Extend)
+
+develop (v1.5.2) features are built on the old 1.x architecture and cannot be merged directly; they are re-adapted onto the 2.x core in this order:
+
+1. Custom themes: pure-CSS themes first (academic-paper, Swiss Design, Forest Ink, Guizang, Elegant)
+2. Plugin style management: upstream 2.x already ships KaTeX and Mermaid; focus on unified style injection and export adaptation
+3. i18n completion: compare with upstream language switching and fill the gaps
+4. npm library build: package the editor core as a reusable npm package
+5. Mobile: Capacitor-based Android / iOS support (largest effort, last)
+
+### Upstream roadmap
 
 ColaMD will keep growing as a focused, free Markdown editor:
 
@@ -122,3 +156,5 @@ ColaMD will keep growing as a focused, free Markdown editor:
 ---
 
 ColaMD is built by [Cola.app](https://cola.app) and maintained by [orange2ai](https://github.com/orange2ai). Issues, ideas and pull requests are welcome.
+
+The Extend fork (ColaMD-extend) is maintained by [byteuser1977](https://github.com/byteuser1977).
