@@ -114,5 +114,5 @@ nsis:
 
 publish:
   provider: github
-  owner: marswaveai
-  repo: ColaMD
+  owner: byteuser1977
+  repo: ColaMD-extend
