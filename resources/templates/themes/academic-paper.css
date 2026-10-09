@@ -1,0 +1,43 @@
+/* ===== ColaMD Extend Theme: 学术论文 Academic Paper =====
+   纯白纸面、纯黑正文，遵循中文学术论文排版习惯（GB/T 7713）：
+   宋体正文、黑体标题、克制的灰度层级。
+
+   Import: Theme > Import Theme, or place in ~/.colamd/themes/
+   Variables target :root; element rules target the ColaMD editor DOM. */
+
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --border-color: #cccccc;
+  --link-color: #000000;
+  --code-bg: #f5f5f5;
+  --code-block-bg: #f5f5f5;
+  --code-block-text: #000000;
+  --blockquote-border: #000000;
+  --blockquote-bg: #fafafa;
+  --table-header-bg: #fafafa;
+  --selection-bg: rgba(0, 0, 0, 0.12);
+  --highlight-bg: #e0e0e0;
+}
+
+#editor .cm-content {
+  font-family: 'Songti SC', 'STSong', 'SimSun', 'Noto Serif SC', Georgia, 'Times New Roman', serif;
+  line-height: 1.8;
+}
+
+#editor .cm-content .cm-md-atxheading1,
+#editor .cm-content .cm-md-atxheading2,
+#editor .cm-content .cm-md-atxheading3,
+#editor .cm-content .cm-md-atxheading4 {
+  font-family: 'Heiti SC', 'SimHei', 'Noto Sans SC', 'PingFang SC', sans-serif;
+  font-weight: 700;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+#editor .cm-content .cm-md-blockquote {
+  border-left-width: 3px;
+  font-style: normal;
+}

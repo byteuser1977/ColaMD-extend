@@ -52,6 +52,11 @@ const demoDir = app.isPackaged
 const cheatsheetDir = app.isPackaged
   ? join(process.resourcesPath, 'templates')
   : join(__dirname, '../../resources/templates')
+// 随包发布的扩展主题（Extend 版）：「导入主题」的默认落点。这些主题不走内置注册，
+// 用户从这里挑文件导入后才会进 ~/.colamd/themes（见 load-custom-theme）。
+const themeTemplatesDir = app.isPackaged
+  ? join(process.resourcesPath, 'templates', 'themes')
+  : join(__dirname, '../../resources/templates/themes')
 
 interface SiblingFile {
   name: string
@@ -1448,7 +1453,10 @@ ipcMain.handle('load-custom-theme', async (event) => {
   if (!win) return null
   const result = await dialog.showOpenDialog(win, {
     filters: [{ name: 'CSS', extensions: ['css'] }],
-    properties: ['openFile']
+    properties: ['openFile'],
+    // 随包发布的扩展主题就在这里，直接把对话框定位过去，省得用户在文件系统里
+    // 翻安装目录。目录不存在（老安装包）时保持系统默认位置。
+    ...(existsSync(themeTemplatesDir) ? { defaultPath: themeTemplatesDir } : {})
   })
   if (result.canceled || result.filePaths.length === 0) return null
 

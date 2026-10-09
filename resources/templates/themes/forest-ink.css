@@ -1,0 +1,35 @@
+/* ===== ColaMD Extend Theme: 森林墨 Forest Ink =====
+   宣纸灰绿底 + 松烟墨绿正文，深绿代码块，安静的东方纸面。
+
+   Import: Theme > Import Theme, or place in ~/.colamd/themes/
+   Variables target :root; element rules target the ColaMD editor DOM. */
+
+:root {
+  --bg-color: #eef1ee;
+  --text-color: #1a2e1f;
+  --text-secondary: #555555;
+  --text-muted: #777777;
+  --border-color: #c8d0ca;
+  --link-color: #3d6b4a;
+  --code-bg: #e4e8e4;
+  --code-block-bg: #1a2e1f;
+  --code-block-text: #dde4dd;
+  --blockquote-border: #3d6b4a;
+  --blockquote-bg: #e3e7e3;
+  --table-header-bg: #e4e8e4;
+  --selection-bg: rgba(61, 107, 74, 0.18);
+  --highlight-bg: rgba(61, 107, 74, 0.15);
+}
+
+#editor .cm-content .cm-md-strong {
+  color: #2d5538;
+}
+
+#editor .cm-content .cm-md-inlinecode {
+  color: #2d5538;
+}
+
+#editor .cm-content .cm-md-hr {
+  border-top-color: #3d6b4a;
+  opacity: 0.35;
+}

@@ -1,0 +1,48 @@
+/* ===== ColaMD Extend Theme: 瑞士 Swiss Design =====
+   瑞士国际主义平面设计风格：纯白纸面、近黑正文、标准瑞士红点缀，
+   表头黑底白字，零圆角，克制到只剩网格与字重。
+
+   Import: Theme > Import Theme, or place in ~/.colamd/themes/
+   Variables target :root; element rules target the ColaMD editor DOM. */
+
+:root {
+  --bg-color: #ffffff;
+  --text-color: #0d0d0d;
+  --text-secondary: #5c5c5c;
+  --text-muted: #999999;
+  --border-color: #e0e0e0;
+  --link-color: #e30613;
+  --code-bg: #f4f4f4;
+  --code-block-bg: #eaeaea;
+  --code-block-text: #0d0d0d;
+  --blockquote-border: #0d0d0d;
+  --blockquote-bg: #f4f4f4;
+  --table-header-bg: #0d0d0d;
+  --selection-bg: rgba(227, 6, 19, 0.12);
+  --highlight-bg: #fef0f1;
+}
+
+#editor .cm-content {
+  line-height: 1.6;
+}
+
+#editor .cm-content .cm-md-atxheading1,
+#editor .cm-content .cm-md-atxheading2,
+#editor .cm-content .cm-md-atxheading3 {
+  font-weight: 700;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+#editor .cm-content .cm-md-inlinecode {
+  color: #b8000b;
+}
+
+#editor .cm-content .cm-md-table-widget th {
+  color: #ffffff;
+}
+
+#editor .cm-content .cm-md-blockquote {
+  border-left-width: 3px;
+  font-style: normal;
+}

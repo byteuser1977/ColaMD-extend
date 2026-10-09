@@ -1,0 +1,36 @@
+/* ===== ColaMD Extend Theme: 归藏 Guizang =====
+   暖米纸面 + 赭石点缀，万物莫不归藏于其中。深褐代码块，
+   整套配色取自暖陶土色系。
+
+   Import: Theme > Import Theme, or place in ~/.colamd/themes/
+   Variables target :root; element rules target the ColaMD editor DOM. */
+
+:root {
+  --bg-color: #f5f0e8;
+  --text-color: #2b2520;
+  --text-secondary: #7a7068;
+  --text-muted: #a3988b;
+  --border-color: #d4cfc6;
+  --link-color: #8b4513;
+  --code-bg: #e8e0d4;
+  --code-block-bg: #2b2520;
+  --code-block-text: #d8d0c4;
+  --blockquote-border: #8b4513;
+  --blockquote-bg: #ede8df;
+  --table-header-bg: #ede8df;
+  --selection-bg: rgba(139, 69, 19, 0.18);
+  --highlight-bg: #e8dcc0;
+}
+
+#editor .cm-content .cm-md-strong {
+  color: #8b4513;
+}
+
+#editor .cm-content .cm-md-inlinecode {
+  color: #8b4513;
+}
+
+#editor .cm-content .cm-md-hr {
+  border-top-color: #8b4513;
+  opacity: 0.35;
+}

@@ -67,7 +67,7 @@ Twelve built-in themes, six light, six dark, inspired by Bear, Notion, iA Writer
 Planned on top of upstream (progress in the [porting roadmap](#porting-roadmap-extend)):
 
 - **Display plugin system**: unified style management for math and Mermaid diagrams, applied consistently to clipboard copy and exports (PDF / HTML / Word)
-- **More custom themes**: academic-paper (GB/T 7713), Swiss Design, Forest Ink, Guizang, Elegant, each with Mermaid color adaptation
+- **More custom themes**: academic-paper (GB/T 7713), Swiss Design, Forest Ink, Guizang, Pixso Design — shipped as importable theme files, each with Mermaid color adaptation planned
 - **i18n completion**: fill the remaining menu and UI coverage on top of upstream language switching
 - **npm library build**: package the editor core as an npm package for external integrations such as the VSCode extension
 - **Mobile**: Capacitor-based Android / iOS support
@@ -101,7 +101,7 @@ ColaMD does not ask you to change your habits. It works well alongside Obsidian,
 
 develop (v1.5.2) features are built on the old 1.x architecture and cannot be merged directly; they are re-adapted onto the 2.x core in this order:
 
-1. Custom themes: pure-CSS themes first (academic-paper, Swiss Design, Forest Ink, Guizang, Elegant)
+1. ✅ Custom themes: 5 pure-CSS themes (academic-paper, Swiss Design, Forest Ink, Guizang, Pixso Design) ship with the app under `templates/themes` and are loaded via Theme > Import Theme (no menu registration)
 2. Plugin style management: upstream 2.x already ships KaTeX and Mermaid; focus on unified style injection and export adaptation
 3. i18n completion: compare with upstream language switching and fill the gaps
 4. npm library build: package the editor core as a reusable npm package

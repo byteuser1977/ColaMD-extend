@@ -1,0 +1,35 @@
+/* ===== ColaMD Extend Theme: 设计美学 Pixso Design =====
+   冷白纸面、近墨正文，靛蓝到紫的渐变只作点缀色，
+   现代 SaaS 文档的干净留白。
+
+   Import: Theme > Import Theme, or place in ~/.colamd/themes/
+   Variables target :root; element rules target the ColaMD editor DOM. */
+
+:root {
+  --bg-color: #f8f9fb;
+  --text-color: #2d3436;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --border-color: #e5e7eb;
+  --link-color: #6366f1;
+  --code-bg: #f4f5f7;
+  --code-block-bg: #1e2235;
+  --code-block-text: #e4e7ed;
+  --blockquote-border: #6366f1;
+  --blockquote-bg: #f9fafb;
+  --table-header-bg: #f9fafb;
+  --selection-bg: rgba(99, 102, 241, 0.12);
+  --highlight-bg: #eef2ff;
+}
+
+#editor .cm-content .cm-md-strong {
+  color: #4f46e5;
+}
+
+#editor .cm-content .cm-md-inlinecode {
+  color: #6366f1;
+}
+
+#editor .cm-content .cm-md-blockquote {
+  border-left-width: 3px;
+}
