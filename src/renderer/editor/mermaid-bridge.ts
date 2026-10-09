@@ -32,6 +32,20 @@ type QueuedRender = { run: () => void; reject: (reason: Error) => void }
 
 const waitingForReady: QueuedRender[] = []
 
+// 还没落定的渲染。导出前要等它们画完，否则 PDF/HTML 里印的是「图表渲染中…」的占位。
+const activeRenders = new Set<Promise<unknown>>()
+
+/**
+ * 等当前所有 mermaid 渲染落定（成功或失败都算）。导出与富文本复制前调用。
+ * 循环而不是一次 allSettled：整篇展开的过程中会不断有新 widget 开始渲染，
+ * 一次收尾可能漏掉后出发的那批。每个渲染都有 15s 超时兜底，不会永远等下去。
+ */
+export async function awaitAllMermaidRenders(): Promise<void> {
+  while (activeRenders.size > 0) {
+    await Promise.allSettled(Array.from(activeRenders))
+  }
+}
+
 function currentTheme(): 'default' | 'dark' {
   for (const cls of DARK_THEME_CLASSES) {
     if (document.body.classList.contains(cls)) return 'dark'
@@ -132,7 +146,7 @@ export function releaseMermaidRenderer(): void {
 
 export function renderMermaid(code: string, options: { theme?: 'default' | 'dark'; bg?: string } = {}): Promise<string> {
   ensureIframe()
-  return new Promise<string>((resolve, reject) => {
+  const promise = new Promise<string>((resolve, reject) => {
     const run = () => dispatchRender(code, resolve, reject, options)
     if (ready) {
       run()
@@ -140,4 +154,8 @@ export function renderMermaid(code: string, options: { theme?: 'default' | 'dark
       waitingForReady.push({ run, reject })
     }
   })
+  // 落定后移出集合。catch 吞掉失败——失败也算落定（widget 自己会退回源码），不该抛未处理拒绝。
+  activeRenders.add(promise)
+  void promise.catch(() => {}).finally(() => activeRenders.delete(promise))
+  return promise
 }

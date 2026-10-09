@@ -16,6 +16,7 @@
 // 导出退回原来的行为（宁可少渲染，不要崩）。
 
 import { getEditorScroller, getEditorView } from './editor/editor'
+import { awaitAllMermaidRenders } from './editor/mermaid-bridge'
 
 const STYLE_ID = 'colamd-paper-layout'
 /** 纸上的标记类。与 `exporting` 分开：那个管「藏起光标与属性区」，这个管「摊平」。 */
@@ -80,6 +81,11 @@ export async function renderWholeDocument(): Promise<boolean> {
   await nextFrame()
   const deadline = Date.now() + RENDER_TIMEOUT_MS
   while (!fullyRendered() && Date.now() < deadline) await nextFrame()
+  // 行铺完不等于图画完：mermaid 是异步渲染，整篇展开会新造一批 widget 各自去画，
+  // 不等的话 PDF/HTML/富文本复制里就是「图表渲染中…」的占位（develop 1.x 的
+  // pendingRenders 在 2.x 的对应物）。最后一帧让 widget 把 SVG 替换进 DOM。
+  await awaitAllMermaidRenders()
+  await nextFrame()
   return ok
 }
 
