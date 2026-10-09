@@ -9,6 +9,7 @@ mobile/ios/build/
 mobile/ios/ColaMDReader.xcodeproj/project.xcworkspace/
 mobile/ios/ColaMDReader.xcodeproj/xcuserdata/
 vscode-extension/*.vsix
+.vscode/
 dist-web/
 
 # tsc -b 的增量缓存（项目的类型检查走 tsc -p <cfg> --noEmit，不会产出它）
