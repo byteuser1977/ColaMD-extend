@@ -12,5 +12,9 @@ vscode-extension/*.vsix
 .vscode/
 dist-web/
 
+# Capacitor Android 构建产物（工程源码将来随移动端移植入库，只忽略产物）
+android/.gradle/
+android/build/
+
 # tsc -b 的增量缓存（项目的类型检查走 tsc -p <cfg> --noEmit，不会产出它）
 *.tsbuildinfo
