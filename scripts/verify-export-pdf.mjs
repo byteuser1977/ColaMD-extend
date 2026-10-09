@@ -13,9 +13,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
-import { stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
+import { APP_ROOT, ELECTRON_BIN, stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
 
-const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+const APP = APP_ROOT
 assertBuildFresh()
 const { dir: WORK, udd } = verifyWorkdir('export-pdf')
 
@@ -100,7 +100,7 @@ async function main() {
 
   const port = 9900 + Math.floor(Math.random() * 60)
   const inspect = port + 1000
-  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${udd}`,
+  const child = spawn(ELECTRON_BIN, ['scripts/offscreen-window.cjs', source, `--user-data-dir=${udd}`,
     '--force-color-profile=srgb',
     `--remote-debugging-port=${port}`, `--inspect=${inspect}`
   ], { cwd: APP, stdio: 'ignore', detached: true })

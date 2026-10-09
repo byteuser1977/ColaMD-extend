@@ -9,8 +9,27 @@
 // 「换个脚本跑就换了初始状态」的假红。所以是每个脚本一份，而不是全仓一份。
 import { mkdirSync, rmSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
+
+const require = createRequire(import.meta.url)
+
+/**
+ * electron 可执行文件的真实路径（require('electron') 在普通 Node 里返回二进制路径，
+ * electron 包自己的 cli.js 就是这么找的）。以前 spawn('npx', ['electron', …]) 只在
+ * macOS 成立：Windows 上没有 npx 这个可执行文件（只有 npx.cmd，不带 shell 的 spawn
+ * 找不到），直接拿二进制路径跨平台都能跑。
+ */
+export const ELECTRON_BIN = require('electron')
+
+/**
+ * 仓库根目录（verify-workdir 在 scripts/ 下，.. 就是根）。以前各脚本自己
+ * `new URL('..', import.meta.url).pathname`，Windows 上 pathname 是 `/D:/...`，
+ * 带前导斜杠的路径做不成 cwd，spawn 一律报 ENOENT。fileURLToPath 跨平台。
+ */
+export const APP_ROOT = fileURLToPath(new URL('..', import.meta.url))
 
 const ROOT = join(homedir(), 'Library', 'Caches', 'colamd-verify')
 
@@ -41,7 +60,7 @@ export function stopVerifyApp(marker = ROOT) {
 export function verifyWorkdir(name) {
   const dir = join(ROOT, name)
   // 只擦自己名下这一格，别碰 Caches 里别人的东西
-  if (!dir.startsWith(`${ROOT}/`)) throw new Error(`工作目录必须落在 ${ROOT} 下：${dir}`)
+  if (!dir.startsWith(`${ROOT}${sep}`)) throw new Error(`工作目录必须落在 ${ROOT} 下：${dir}`)
   // 上一轮要是被强杀了，先把它的进程收掉，再擦目录：不然进程还占着文件
   stopVerifyApp(ROOT)
   wipe(dir)

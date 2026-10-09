@@ -20,9 +20,9 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
-import { stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
+import { APP_ROOT, ELECTRON_BIN, stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
 
-const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+const APP = APP_ROOT
 assertBuildFresh()
 const { dir: WORK, udd } = verifyWorkdir('themes')
 const THEMES = join(APP, 'themes')
@@ -254,7 +254,7 @@ async function main() {
   const contents = new Map(files.map((f) => [f, readFileSync(join(THEMES, f), 'utf8')]))
 
   const port = 9990 + Math.floor(Math.random() * 30)
-  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${udd}`,
+  const child = spawn(ELECTRON_BIN, ['scripts/offscreen-window.cjs', source, `--user-data-dir=${udd}`,
     `--remote-debugging-port=${port}`
   ], { cwd: APP, stdio: 'ignore', detached: true })
 

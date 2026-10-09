@@ -13,9 +13,9 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
-import { stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
+import { APP_ROOT, ELECTRON_BIN, stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
 
-const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+const APP = APP_ROOT
 assertBuildFresh()
 const { dir: WORK, udd } = verifyWorkdir('scroll-render')
 
@@ -104,7 +104,7 @@ async function main() {
   writeFileSync(source, fixture(), 'utf8')
 
   const port = 9960 + Math.floor(Math.random() * 30)
-  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source, `--user-data-dir=${udd}`,
+  const child = spawn(ELECTRON_BIN, ['scripts/offscreen-window.cjs', source, `--user-data-dir=${udd}`,
     `--remote-debugging-port=${port}`
   ], { cwd: APP, stdio: 'ignore', detached: true })
 

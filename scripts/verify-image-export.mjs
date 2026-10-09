@@ -12,9 +12,9 @@ import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
-import { stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
+import { APP_ROOT, ELECTRON_BIN, stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
 
-const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+const APP = APP_ROOT
 assertBuildFresh()
 const { dir: WORK } = verifyWorkdir('image-export')
 
@@ -139,7 +139,7 @@ async function runCase(testCase) {
   const out = join(dir, `${testCase.name}.png`)
   writeFileSync(fixture, document(testCase.rows), 'utf8')
 
-  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', fixture, `--user-data-dir=${join(dir, 'udd')}`,
+  const child = spawn(ELECTRON_BIN, ['scripts/offscreen-window.cjs', fixture, `--user-data-dir=${join(dir, 'udd')}`,
     // sRGB：macOS 的显示色彩管理会把取色值整体挪动，验证要在确定的色彩空间里做
     '--force-color-profile=srgb',
     `--remote-debugging-port=${port}`, `--inspect=${inspect}`
