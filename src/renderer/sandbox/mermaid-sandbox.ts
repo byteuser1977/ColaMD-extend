@@ -3,7 +3,16 @@ import mermaid from 'mermaid'
 // Runs inside the hidden sandbox iframe. Mermaid is statically imported here so
 // it is bundled into this entry's chunk only — the main app never loads it.
 
-type RenderRequest = { type: 'render'; id: number; code: string; theme: 'default' | 'dark'; bg?: string }
+type RenderRequest = {
+  type: 'render'
+  id: number
+  code: string
+  theme: 'default' | 'dark' | 'base'
+  bg?: string
+  // 导入主题经 --mermaid-* CSS 变量声明自己的调色板，bridge 读出后整组传进来。
+  // 只在主题声明了变量时才有值（'base' 主题）；内置主题不带。
+  themeVariables?: Record<string, string>
+}
 
 const BASE_CONFIG = {
   startOnLoad: false,
@@ -35,8 +44,8 @@ window.addEventListener('message', (event) => {
   // code-block background so labels don't show up as stray blocks.
   mermaid.initialize({
     ...BASE_CONFIG,
-    theme: data.theme === 'dark' ? 'dark' : 'default',
-    themeVariables: { edgeLabelBackground: data.bg || 'transparent' },
+    theme: data.theme,
+    themeVariables: { ...(data.themeVariables ?? {}), edgeLabelBackground: data.bg || 'transparent' },
   })
   mermaid.render(`mermaid-sandbox-${data.id}`, data.code)
     .then(({ svg }) => {

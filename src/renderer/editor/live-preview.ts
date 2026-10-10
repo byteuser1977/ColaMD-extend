@@ -495,7 +495,40 @@ function collectTaskItems(state: EditorState, ranges: DecorationRange[], front: 
  *
  * 渲染是异步的（mermaid 要在隐藏沙箱里跑），所以先放一个占位，画好了再原地替换。
  * 失败就把代码块原样留着——图是锦上添花，代码是用户写的东西。
+ *
+ * 切主题时图要重画：调色板是渲染那一刻从 CSS 变量读的（见 mermaid-bridge.ts）。
+ * 重画**不走 CM6 的装饰更新**：key 不变、装饰集不动，widget 的 DOM 记在
+ * liveMermaids 里，主题换装广播（theme-manager.ts 的 colamd:theme-applied）
+ * 之后原地重画。曾经试过让 key 带上「主题代数」、切主题时整个 widget 销毁重建，
+ * 实测 CM6 在 replace 装饰的重建路径上会把新 widget 的槽位弄丢（装饰集里 widget
+ * 明明还在，DOM 里却只剩一个空 span；打字、滚动、视口变化都救不回来——后续重算
+ * 认为「装饰没变」，坏槽位被永久保留，2026-10-10 真实窗口验证）。原地重画完全
+ * 绕开这条路：widget 自己 DOM 的内部内容，CM6 本来就不看。
  */
+interface LiveMermaid {
+  dom: HTMLElement
+  code: string
+}
+
+/** 当前挂在视图里的每一张 mermaid 图。destroy 时摘除，不留死 DOM。 */
+const liveMermaids = new Set<LiveMermaid>()
+
+/** 把一张图画进它的 DOM：先占位，成功换 SVG，失败退回源码块（绝不吞字）。 */
+function paintMermaid(target: LiveMermaid): void {
+  target.dom.classList.remove('cm-md-mermaid-ready', 'cm-md-mermaid-failed')
+  target.dom.textContent = isChinese() ? '图表渲染中…' : 'Rendering diagram…'
+  void renderMermaid(target.code)
+    .then((svg) => {
+      target.dom.innerHTML = svg
+      target.dom.classList.add('cm-md-mermaid-ready')
+    })
+    .catch(() => {
+      // 画不出来就退回代码块，绝不吞掉用户的图
+      target.dom.textContent = '```mermaid\n' + target.code + '\n```'
+      target.dom.classList.add('cm-md-mermaid-failed')
+    })
+}
+
 class MermaidWidget extends WidgetType {
   constructor(readonly code: string, readonly key: string, readonly from: number, readonly to: number) {
     super()
@@ -505,29 +538,37 @@ class MermaidWidget extends WidgetType {
     return other.key === this.key && other.from === this.from && other.to === this.to
   }
 
+  private live: LiveMermaid | null = null
+
   toDOM(): HTMLElement {
     const wrap = document.createElement('div')
     wrap.className = 'cm-md-mermaid'
     withSourceRange(wrap, this.from, this.to)
-    wrap.textContent = isChinese() ? '图表渲染中…' : 'Rendering diagram…'
 
     // **不指定**配色：交给 mermaid-bridge 按代码块底色的明暗挑（和它自己的注释一致）。
     // 这里曾经按应用主题挑（`theme-dark` 才用深色），可 elegant 和 bear 是浅色主题
     // 配深色代码块，于是深底上画出了浅色主题的图：连线 #333 落在 #2c2c2c 上，
     // 边缘文字也几乎看不见（2026-09-26 用户报的「线条和背景色太接近」）。
-    void renderMermaid(this.code)
-      .then((svg) => {
-        wrap.innerHTML = svg
-        wrap.classList.add('cm-md-mermaid-ready')
-      })
-      .catch(() => {
-        // 画不出来就退回代码块，绝不吞掉用户的图
-        wrap.textContent = '```mermaid\n' + this.code + '\n```'
-        wrap.classList.add('cm-md-mermaid-failed')
-      })
+    if (this.live) liveMermaids.delete(this.live)
+    this.live = { dom: wrap, code: this.code }
+    liveMermaids.add(this.live)
+    paintMermaid(this.live)
     return wrap
   }
+
+  destroy(): void {
+    if (this.live) liveMermaids.delete(this.live)
+    this.live = null
+  }
 }
+
+// 主题换装后把还挂着的每一张图原地重画。DOM 不换、装饰集不动，CM6 全程不知情。
+window.addEventListener('colamd:theme-applied', () => {
+  for (const target of liveMermaids) {
+    if (!target.dom.isConnected) continue
+    paintMermaid(target)
+  }
+})
 
 function collectMermaid(state: EditorState, ranges: DecorationRange[], front: Range | null): void {
   const text = state.doc.toString()

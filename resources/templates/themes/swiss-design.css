@@ -20,6 +20,18 @@
   --table-header-bg: #0d0d0d;
   --selection-bg: rgba(227, 6, 19, 0.12);
   --highlight-bg: #fef0f1;
+
+  /* Mermaid 图表配色。图表画在代码块背景（#eaeaea）上：白节点黑框黑字，
+     瑞士红只给连线，作全套版面唯一的点缀色。变量契约见本目录 README.md。 */
+  --mermaid-primary-color: #ffffff;
+  --mermaid-primary-text: #0d0d0d;
+  --mermaid-primary-border: #0d0d0d;
+  --mermaid-line-color: #e30613;
+  --mermaid-text-color: #0d0d0d;
+  --mermaid-secondary-color: #f7f7f7;
+  --mermaid-tertiary-color: #f0f0f0;
+  --mermaid-cluster-bg: #f4f4f4;
+  --mermaid-cluster-border: #0d0d0d;
 }
 
 #editor .cm-content {

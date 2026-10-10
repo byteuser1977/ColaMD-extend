@@ -70,6 +70,11 @@ export function applyTheme(name: string, customCSS?: string): void {
     const surfaceHex = painted(surface, '#ffffff')
     window.electronAPI?.reportTitlebarColors?.({ background: surfaceHex, symbol: painted(icon, surfaceHex) })
   }
+
+  // 换装完成。mermaid 图的调色板是**渲染时**从 CSS 变量读的（mermaid-bridge.ts），
+  // 已画好的图不会自己换色：广播一下，live-preview.ts 里的图表 widget 收到就
+  // 原地重画。启动时的首次 applyTheme 还没有图表——初始渲染本来就用新主题。
+  window.dispatchEvent(new CustomEvent('colamd:theme-applied'))
 }
 
 // Resolve a colour to #rrggbb, as painted over an opaque one: a translucent value

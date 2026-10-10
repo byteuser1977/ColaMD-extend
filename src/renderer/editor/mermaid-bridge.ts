@@ -66,6 +66,32 @@ function mermaidThemeForBackground(bg: string): 'default' | 'dark' {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5 ? 'dark' : 'default'
 }
 
+// 主题可以用一组 CSS 变量声明自己的 Mermaid 调色板（导入主题就是纯 CSS 文件，
+// 这是它把配色带进图表的唯一通道）。变量由这里读出，经渲染请求传给沙箱，
+// 沙箱把它们并进 mermaid 的 themeVariables 并切到 'base' 主题。
+// 只在主题真的声明了变量时才接管：内置主题不定义这些变量，仍走 default/dark。
+const MERMAID_PALETTE_VARS: Array<[cssVar: string, mermaidKey: string]> = [
+  ['--mermaid-primary-color', 'primaryColor'],
+  ['--mermaid-primary-text', 'primaryTextColor'],
+  ['--mermaid-primary-border', 'primaryBorderColor'],
+  ['--mermaid-line-color', 'lineColor'],
+  ['--mermaid-text-color', 'textColor'],
+  ['--mermaid-secondary-color', 'secondaryColor'],
+  ['--mermaid-tertiary-color', 'tertiaryColor'],
+  ['--mermaid-cluster-bg', 'clusterBkg'],
+  ['--mermaid-cluster-border', 'clusterBorder'],
+]
+
+function readMermaidPalette(): Record<string, string> | null {
+  const style = getComputedStyle(document.body)
+  const vars: Record<string, string> = {}
+  for (const [cssVar, mermaidKey] of MERMAID_PALETTE_VARS) {
+    const value = style.getPropertyValue(cssVar).trim()
+    if (value) vars[mermaidKey] = value
+  }
+  return Object.keys(vars).length > 0 ? vars : null
+}
+
 function rejectAllPending(reason: Error): void {
   for (const entry of pending.values()) {
     clearTimeout(entry.timer)
@@ -113,8 +139,14 @@ function dispatchRender(code: string, resolve: (svg: string) => void, reject: (r
   pending.set(id, { resolve, reject, timer })
   // The palette follows the surface the diagram is drawn on. On screen that is
   // the code block's own colour; an export says which one it wants.
+  //
+  // 显式 theme 只来自导出（画布色是固定的白/黑），那时配色跟画布走内置调色板；
+  // 屏幕路径若主题声明了 --mermaid-* 调色板，就整组接管（mermaid 'base' 主题），
+  // 否则退回按代码块背景亮度选 default/dark 的老路。
   const bg = options.bg ?? getComputedStyle(document.body).getPropertyValue('--code-block-bg').trim()
-  iframe?.contentWindow?.postMessage({ type: 'render', id, code, theme: options.theme ?? mermaidThemeForBackground(bg), bg }, '*')
+  const palette = options.theme ? null : readMermaidPalette()
+  const theme = options.theme ?? (palette ? 'base' : mermaidThemeForBackground(bg))
+  iframe?.contentWindow?.postMessage({ type: 'render', id, code, theme, bg, themeVariables: palette ?? undefined }, '*')
 }
 
 window.addEventListener('message', (event) => {

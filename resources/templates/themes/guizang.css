@@ -20,6 +20,18 @@
   --table-header-bg: #ede8df;
   --selection-bg: rgba(139, 69, 19, 0.18);
   --highlight-bg: #e8dcc0;
+
+  /* Mermaid 图表配色。图表画在代码块背景（#2b2520 深褐）上：赭石边框与连线，
+     米白文字，保持民族纹样的暖色质感。变量契约见本目录 README.md。 */
+  --mermaid-primary-color: #3a3129;
+  --mermaid-primary-text: #e8e0d4;
+  --mermaid-primary-border: #a37b52;
+  --mermaid-line-color: #b98d63;
+  --mermaid-text-color: #d8d0c4;
+  --mermaid-secondary-color: #332b23;
+  --mermaid-tertiary-color: #312a22;
+  --mermaid-cluster-bg: #241e18;
+  --mermaid-cluster-border: #8b6a4f;
 }
 
 #editor .cm-content .cm-md-strong {

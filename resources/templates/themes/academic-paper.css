@@ -20,6 +20,18 @@
   --table-header-bg: #fafafa;
   --selection-bg: rgba(0, 0, 0, 0.12);
   --highlight-bg: #e0e0e0;
+
+  /* Mermaid 图表配色。图表画在代码块背景（#f5f5f5）上：白节点黑框黑字，
+     灰阶连线，学术排版的克制配色。变量契约见本目录 README.md。 */
+  --mermaid-primary-color: #ffffff;
+  --mermaid-primary-text: #000000;
+  --mermaid-primary-border: #000000;
+  --mermaid-line-color: #333333;
+  --mermaid-text-color: #1a1a1a;
+  --mermaid-secondary-color: #f0f0f0;
+  --mermaid-tertiary-color: #e8e8e8;
+  --mermaid-cluster-bg: #fafafa;
+  --mermaid-cluster-border: #999999;
 }
 
 #editor .cm-content {
