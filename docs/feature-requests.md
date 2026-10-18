@@ -255,11 +255,15 @@ Rule kept: exactly nine cards. The order is documented in an HTML comment above 
 
 Mermaid renders with `useMaxWidth`, so a diagram wider than the reading column scales down with no lower bound on text size, and `overflow-x` never engages because the SVG never exceeds 100%. Confirmed as a real limitation, not scheduled. Direction: a temporary overlay over the SVG that is already drawn (scroll to zoom, drag to pan, Esc or click-outside to close), because the content is vector, so zooming needs no second render and no new dependency. Entry point still to be decided: a hover button in the same pattern as the code block's copy button, or a double click.
 
-### Selectable text inside a rendered block (#141)
+### Selectable text inside a rendered block (#141, #153)
 
-**Source:** [#141](https://github.com/marswaveai/ColaMD/issues/141)
+**Source:** [#141](https://github.com/marswaveai/ColaMD/issues/141), [#153](https://github.com/marswaveai/ColaMD/issues/153)
 
-Clicking a rendered block (table, diagram, image, formula, raw HTML) puts the caret into the Markdown behind it, so the block's own text never enters the selection model: dragging across a table selects nothing, and the same holds for a diagram's labels. The document is text and rendering is a layer of decoration over it (`docs/editor-architecture.md`), so letting widget contents take part in selection is a structural change rather than a styling fix. Narrower paths that do not need it: the copy path stays structured (already true, `clean-html.ts` clones the rendered table), and a rendered block could carry an explicit copy affordance. Undecided.
+A rendered block (table, diagram, image, formula, raw HTML) is a replacement widget, so its own text never enters the selection model: dragging across a rendered table selects nothing, and the same holds for a diagram's labels.
+
+2026-10-15 changed what a click does (#153): block widgets reveal their Markdown while the caret is inside, and clicking a table cell lands the caret in that cell of the source (`isBlockActive` in `live-preview.ts`, `tableCellAnchor` in `editor.ts`). The reported problem, that typing after clicking a table destroyed it, is gone with that.
+
+Still open: editing and selecting text inside the rendered block itself, without stepping into the source. The document is text and rendering is a layer of decoration over it (`docs/editor-architecture.md`), so that is a structural change rather than a styling fix: the rendered table would have to stay real text, with the pipes hidden and the cells padded so the columns line up. Undecided.
 
 ### XDG data directories on Linux (#142)
 
