@@ -5,7 +5,7 @@
  * 不写死任何机器的路径（1.5.2 的脚本写死了 macOS Homebrew，Windows 上跑不了）。
  */
 import { spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -36,4 +36,20 @@ if (!process.env.JAVA_HOME) {
 run(gradlew, [`assemble${mode}`], { cwd: gradleDir, shell: true })
 
 const apk = join(gradleDir, 'app', 'build', 'outputs', 'apk', mode.toLowerCase(), `app-${mode.toLowerCase()}.apk`)
-console.log(`\nAPK: ${existsSync(apk) ? apk : '(查看 gradle 输出确认产物路径)'}`)
+if (!existsSync(apk)) {
+  console.log('\n(查看 gradle 输出确认产物路径)')
+  process.exit(1)
+}
+
+// release 产物归一到 release/ 目录（与 electron-builder 的桌面安装包同处），
+// 命名带版本号；debug 留在 gradle 输出目录
+if (mode === 'Release') {
+  const version = JSON.parse(await import('node:fs/promises').then((m) => m.readFile(join(root, 'package.json'), 'utf8'))).version
+  const outDir = join(root, 'release')
+  mkdirSync(outDir, { recursive: true })
+  const named = join(outDir, `colamd-${version}-android.apk`)
+  copyFileSync(apk, named)
+  console.log(`\nAPK: ${named}`)
+} else {
+  console.log(`\nAPK: ${apk}`)
+}
