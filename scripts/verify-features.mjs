@@ -6,6 +6,7 @@
 // 图片不显示、脚注没预览、复制出来是源码。这个脚本把那些能力写成断言。
 //
 // 用法: npm run verify:features（先 npm run build）
+// 只验 Mermaid 点击往返：npm run verify:features -- --mermaid-only
 // 窗口放在屏幕外，不占用屏幕；一次启动跑完所有断言。
 //
 // 注意：页面侧表达式写在模板字符串里，反斜杠会被模板字符串吃掉一次，
@@ -44,9 +45,17 @@ function fixture() {
     '',
     'NEEL 前半段的锚点。',
     '',
+    // 交互用的图放在首屏，鼠标坐标无需依赖放大的虚拟视口。
+    '```mermaid',
+    'graph TD; A-->B;',
+    '```',
+    '',
     '**00:00:17 开场**',
     '',
     '![本地图片](pixel.png)',
+    '',
+    // 链接里只包一张图：链接 mark 和图片 widget 盖同一段区间（#157）
+    '[![链接里的图](pixel.png)](https://example.com/img)',
     '',
     '## 二级标题',
     '',
@@ -81,16 +90,15 @@ function fixture() {
     '| --- | --- |',
     '| 甲一 | 乙一<br/>乙二 |',
     '| ![格子里的图](pixel.png) | 乙三 |',
+    // #161：格子里的单词含下划线时，两个相邻单词之间的那一对 `_` 曾经被当斜体吃掉。
+    '| 甲二 | local_upload / external_api / excel_upload |',
+    '| *真斜体* | snake_case_name |',
     '',
     '行内公式 $a^2+b^2=c^2$ 与价格 $349。',
     '',
     '$$',
     '\\int_0^1 x^2 dx',
     '$$',
-    '',
-    '```mermaid',
-    'graph TD; A-->B;',
-    '```',
     '',
     '脚注引用[^note]。',
     '',
@@ -228,7 +236,10 @@ const MEASURE = `(() => {
       headers: q('.cm-md-table-widget th').length,
       // 格子里的 <br/> 要画成换行，格子里的图片要画出来
       brs: q('.cm-md-table-widget td br').length,
-      imgs: q('.cm-md-table-widget td img').length
+      imgs: q('.cm-md-table-widget td img').length,
+      // #161：只有真正的星号斜体该成斜体，词中下划线不能
+      ems: q('.cm-md-table-widget em').map((e) => e.textContent),
+      cellTexts: q('.cm-md-table-widget td').map((td) => td.textContent)
     },
     quote: { count: q('.cm-md-blockquote').length, raw: (text(lineOf('引用文字')) || '').startsWith('>') },
     hr: { count: q('.cm-md-hr').length },
@@ -291,6 +302,8 @@ const MEASURE = `(() => {
         anchor: /<a[^>]+href/i.test(out),
         list: /<ul>|<ol>/i.test(out),
         code: /<pre><code>/i.test(out),
+        // 这段代码住在模板字符串里，反引号和反斜杠都得再转一层（下面 rgba 那条同理）
+        codeFenceFree: !/<pre><code>[\\s\\S]*?\`\`\`[\\s\\S]*?<\\/code><\\/pre>/i.test(out),
         table: /<table/i.test(out),
         quote: /<blockquote>/i.test(out),
         heading: /<h1>/i.test(out),
@@ -475,6 +488,17 @@ function check(name, ok, detail) {
   checks.push({ name, ok, detail })
 }
 
+function reportChecks() {
+  const failed = checks.filter((c) => !c.ok)
+  for (const c of checks) {
+    console.log(`${c.ok ? '✓' : '✗'} ${c.name}${c.ok ? '' : `  ← ${c.detail}`}`)
+  }
+  console.log(failed.length
+    ? `\n✗ ${failed.length}/${checks.length} 条没通过`
+    : `\n✓ ${checks.length} 条全通过`)
+  if (failed.length) process.exitCode = 1
+}
+
 /** 点一下某一行（把光标放进去），返回它的坐标。 */
 async function clickLine(renderer, fragment) {
   const box = JSON.parse(await evaluate(renderer, `(() => {
@@ -513,6 +537,84 @@ async function pressKey(renderer, key, code, keyCode, modifiers = 0) {
   await sleep(200)
 }
 
+/** 图表退出源码后必须原地恢复，不能靠滚动重建视口才出现。 */
+async function checkMermaidRestoration(renderer) {
+  await renderer.send('Emulation.setFocusEmulationEnabled', { enabled: true })
+  const waitForDiagram = async () => {
+    for (let i = 0; i < 40; i++) {
+      if (await evaluate(renderer, `Array.from(document.querySelectorAll('.cm-md-mermaid-ready svg')).some((svg) => {
+        const r = svg.getBoundingClientRect()
+        return r.width > 0 && r.height > 0
+      })`)) return true
+      await sleep(125)
+    }
+    return false
+  }
+  const appeared = await waitForDiagram()
+  check('Mermaid 点击前已渲染', appeared, `图表出现=${appeared}`)
+  if (!appeared) return
+
+  const clickDiagram = async () => {
+    const box = JSON.parse(await evaluate(renderer, `(() => {
+      const r = document.querySelector('.cm-md-mermaid').getBoundingClientRect()
+      return JSON.stringify({ x: Math.round(r.left + 12), y: Math.round(r.top + r.height / 2) })
+    })()`))
+    for (const type of ['mousePressed', 'mouseReleased']) {
+      await renderer.send('Input.dispatchMouseEvent', { type, ...box, button: 'left', clickCount: 1 })
+    }
+    // 源码展开后等 CM6 完成布局测量，再按行坐标点击，免得落在旧的图表位置上。
+    await sleep(200)
+  }
+  for (let round = 1; round <= 3; round++) {
+    await clickDiagram()
+    const revealed = await lineText(renderer, 'graph TD; A-->B;')
+    check(`Mermaid 第 ${round} 次点击进入源码`, revealed === 'graph TD; A-->B;', `源码=${JSON.stringify(revealed)}`)
+
+    // 只点击块外，期间不滚动、不切模式、不重载文档。
+    await clickLine(renderer, '普通段落')
+    const restored = await waitForDiagram()
+    check(`Mermaid 第 ${round} 次点走后无需滚动恢复`, restored, `图表恢复=${restored}`)
+    if (!restored) return
+  }
+
+  // 真正改节点，再进入源码撤销：既要能编辑，也要画出最新内容。
+  await clickDiagram()
+  await clickLine(renderer, 'graph TD; A-->B;')
+  await pressKey(renderer, 'End', 'End', 35)
+  await pressKey(renderer, 'ArrowLeft', 'ArrowLeft', 37)
+  await pressKey(renderer, 'ArrowLeft', 'ArrowLeft', 37, 8)
+  await renderer.send('Input.insertText', { text: 'C' })
+  const edited = await lineText(renderer, 'graph TD;')
+  await clickLine(renderer, '普通段落')
+  const editedReady = await waitForDiagram()
+  const hasLabel = async (label) => await evaluate(renderer,
+    `Array.from(document.querySelectorAll('.cm-md-mermaid svg text')).some((el) => el.textContent.trim() === ${JSON.stringify(label)})`)
+  check('Mermaid 编辑节点后渲染最新内容', edited === 'graph TD; A-->C;' && editedReady && await hasLabel('C'),
+    `源码=${JSON.stringify(edited)} 图表恢复=${editedReady}`)
+  if (!editedReady) return
+  await clickDiagram()
+  await pressKey(renderer, 'z', 'KeyZ', 90, 4)
+  await clickLine(renderer, '普通段落')
+  const undoneReady = await waitForDiagram()
+  check('Mermaid 撤销编辑后恢复原图', undoneReady && await hasLabel('B'), `图表恢复=${undoneReady}`)
+
+  // 图片/PDF 共用的整篇导出布局会重建装饰，返回编辑器后图表也必须还在。
+  await evaluate(renderer, 'window.__colamdPrintExport.enter()')
+  try {
+    const inPrint = await waitForDiagram()
+    check('Mermaid 图片/PDF 导出布局保留图表', inPrint && await hasLabel('B'), `导出布局中图表可见=${inPrint}`)
+  } finally {
+    await evaluate(renderer, 'window.__colamdPrintExport.exit()')
+  }
+  const afterExport = await waitForDiagram()
+  check('Mermaid 导出结束后仍显示图表', afterExport, `图表恢复=${afterExport}`)
+
+  await evaluate(renderer, SELECT_ALL)
+  const copied = JSON.parse(await evaluate(renderer, COPY_PROBE))
+  check('Mermaid 点击往返不改文档字节', copied.text === fixture(), `复制长度=${copied.text.length} 原文长度=${fixture().length}`)
+  await clickLine(renderer, '普通段落')
+}
+
 /** 语法速查：单独开一次窗口量一遍（它和夹具不是同一份文档）。 */
 async function checkCheatsheet() {
   const source = join(APP, 'resources', 'templates', 'cheatsheet.md')
@@ -524,6 +626,7 @@ async function checkCheatsheet() {
   try {
     const page = await waitTarget(port, (t) => t.type === 'page' && /index\.html/.test(t.url))
     const renderer = await connect(page.webSocketDebuggerUrl)
+    await renderer.send('Emulation.setFocusEmulationEnabled', { enabled: true })
     await renderer.send('Emulation.setDeviceMetricsOverride', {
       width: 1200, height: 3600, deviceScaleFactor: 1, mobile: false
     })
@@ -670,6 +773,11 @@ function main() {
       // mermaid 是异步画的，多等一会儿
       await sleep(2500)
 
+      await checkMermaidRestoration(renderer)
+      if (process.argv.includes('--mermaid-only')) {
+        reportChecks()
+        return
+      }
       const m = JSON.parse(await evaluate(renderer, MEASURE))
 
       check('标题渲染', m.headings.h1 >= 1 && m.headings.h2 >= 1, `h1=${m.headings.h1} h2=${m.headings.h2}`)
@@ -694,6 +802,14 @@ function main() {
         `表格=${m.table.tables} 真 table=${m.table.realTables} cells=${m.table.cells}`)
       check('表格格子里的 <br/> 画成换行', m.table.brs >= 1, `<br> 个数=${m.table.brs}`)
       check('表格格子里的图片画出来', m.table.imgs >= 1, `格子里 img 个数=${m.table.imgs}`)
+      // #161：CommonMark 里 `_` 不能跨在词中间生效。`local_upload / external_api`
+      // 是两个普通单词，不能被读成一句斜体，连下划线都不能丢。
+      const ems = m.table.ems ?? []
+      const cellTexts = m.table.cellTexts ?? []
+      check('词中下划线不当斜体（#161）',
+        ems.length === 1 && ems[0] === '真斜体' && cellTexts.some((t) => t.includes('local_upload / external_api'))
+          && cellTexts.some((t) => t.includes('snake_case_name')),
+        `斜体=${JSON.stringify(ems)} 格子=${JSON.stringify(cellTexts.filter((t) => t.includes('_')).slice(0, 3))}`)
       check('引用渲染', m.quote.count >= 1 && m.quote.raw === false, `count=${m.quote.count} 露 >: ${m.quote.raw}`)
       check('分隔线渲染', m.hr.count >= 1, `hr=${m.hr.count}`)
       check('公式渲染', m.math.katex >= 2, `katex=${m.math.katex} block=${m.math.block} error=${m.math.error}`)
@@ -723,6 +839,7 @@ function main() {
         m.exportHtml.strong && m.exportHtml.em && m.exportHtml.anchor && m.exportHtml.list &&
         m.exportHtml.code && m.exportHtml.table && m.exportHtml.quote && m.exportHtml.heading,
         `strong=${m.exportHtml.strong} em=${m.exportHtml.em} a=${m.exportHtml.anchor} ul=${m.exportHtml.list} pre=${m.exportHtml.code} table=${m.exportHtml.table} quote=${m.exportHtml.quote} h1=${m.exportHtml.heading}`)
+      check('导出的 HTML 代码块不残留收尾反引号', m.exportHtml.codeFenceFree === true, 'pre code 里无 ``` 残留')
       check('导出的 HTML 不带编辑器结构',
         m.exportHtml.cmClass === false && m.exportHtml.cmLine === false && m.exportHtml.frontmatter === false,
         `cm-md 类名残留=${m.exportHtml.cmClass}[${m.exportHtml.cmClassNames}] cm-line 残留=${m.exportHtml.cmLine} 属性区残留=${m.exportHtml.frontmatter}`)
@@ -797,6 +914,8 @@ function main() {
       // 图片：点一下排版要还在（它的源码就一行，不露）
       {
         const appeared = await waitFor('.cm-md-image')
+        // 按点之前的张数比，不写死 1：固件里图片不止一张（#157 那个链接包图的回归样例）
+        const imagesBefore = Number(await evaluate(renderer, `document.querySelectorAll('.cm-md-image').length`))
         await clickBox(JSON.parse(await evaluate(renderer, `(() => {
           const el = document.querySelector('.cm-md-image')
           if (!el) return JSON.stringify({ x: 0, y: 0 })
@@ -811,8 +930,8 @@ function main() {
         await pressKey(renderer, 'z', 'KeyZ', 90, 4)
         await sleep(400)
         check('图片点一下不再翻成源码',
-          appeared && afterClick === 1 && afterTyping === 1,
-          `渲染块出现=${appeared} 点完=${afterClick} 行尾打字后=${afterTyping}`)
+          appeared && imagesBefore > 0 && afterClick === imagesBefore && afterTyping === imagesBefore,
+          `渲染块出现=${appeared} 点前=${imagesBefore} 点完=${afterClick} 行尾打字后=${afterTyping}`)
       }
 
       // 2026-10-08 报：鼠标拖选不到引用块和表格里的文字。这一组用真鼠标事件拖一遍，
@@ -1140,6 +1259,29 @@ function main() {
       check('点击待办能勾选', Math.abs(Number(checkedAfter) - Number(checkedBefore)) === 1,
         `点击前已勾=${checkedBefore} 点击后=${checkedAfter} 坐标=${box.x},${box.y}`)
 
+      // #164：复选框只在它自己身上响应。以前看的是「离行左边缘 24px 以内」，
+      // 点复选框右边、行首空白都会把钩切过去，想在行首补字的人会莫名其妙勾上。
+      const beside = JSON.parse(await evaluate(renderer, `(() => {
+        const el = document.querySelector('.cm-md-task')
+        if (!el) return JSON.stringify({ x: 0, y: 0 })
+        const r = el.getBoundingClientRect()
+        return JSON.stringify({ x: Math.round(r.right + 6), y: Math.round(r.top + r.height / 2) })
+      })()`))
+      const checkedBesideBefore = await evaluate(renderer, `document.querySelectorAll('.cm-md-task-checked').length`)
+      for (const type of ['mousePressed', 'mouseReleased']) {
+        if (!beside.x) break
+        await renderer.send('Input.dispatchMouseEvent', { type, x: beside.x, y: beside.y, button: 'left', clickCount: 1 })
+      }
+      await sleep(350)
+      const checkedBesideAfter = await evaluate(renderer, `document.querySelectorAll('.cm-md-task-checked').length`)
+      check('点复选框旁边的空白不勾选（#164）', checkedBesideBefore === checkedBesideAfter,
+        `点击前=${checkedBesideBefore} 点击后=${checkedBesideAfter} 坐标=${beside.x},${beside.y}`)
+
+      // #164：左右键跨过复选框前缀的行为（原子区间）在真窗口里验过：从文字里
+      // 往左第一下到文字前，第二下直接到行首，不会停在 `[ ]` 方框之间或 `]` 与
+      // 正文之间。不写成断言，是因为它需要向编辑器里插字符再撤销，而夹具里的
+      // 那几行在视口外时 clickLine 定位不到，稳定性不如人看一遍。
+
       await checkCheatsheet()
 
       // 列表缩进：Tab 把这一行缩进一级，Shift+Tab 退回来。
@@ -1263,14 +1405,7 @@ function main() {
         afterReset.contentFont === beforeZoom.contentFont && afterReset.contentFamily === beforeZoom.contentFamily,
         `字号 ${afterZoom.contentFont} → ${afterReset.contentFont}（默认 ${beforeZoom.contentFont}），字体族 ${JSON.stringify(afterReset.contentFamily)}`)
 
-      const failed = checks.filter((c) => !c.ok)
-      for (const c of checks) {
-        console.log(`${c.ok ? '✓' : '✗'} ${c.name}${c.ok ? '' : `  ← ${c.detail}`}`)
-      }
-      console.log(failed.length
-        ? `\n✗ ${failed.length}/${checks.length} 条没通过`
-        : `\n✓ ${checks.length} 条全通过`)
-      if (failed.length) process.exitCode = 1
+      reportChecks()
     } finally {
       stopVerifyApp(udd)
       await sleep(300)

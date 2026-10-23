@@ -1,5 +1,6 @@
-import { createEditor, focusEditor, getMarkdown, getEditorView, getEditorScroller, onEditorJumpPhase, setMarkdown, setEditorEditable, releaseMermaidRenderer, getEditorState, restoreEditorState, applyMarkdownStyle, runFormatCommand, jumpToLine, jumpToHeading, setCleanExport, setDocumentFileUrl, type FormatCommandId } from './editor/editor'
+import { createEditor, focusEditor, getMarkdown, getEditorView, getEditorScroller, onEditorJumpPhase, setMarkdown, setEditorEditable, getEditorState, restoreEditorState, applyMarkdownStyle, runFormatCommand, jumpToLine, jumpToHeading, setCleanExport, setDocumentFileUrl, type FormatCommandId } from './editor/editor'
 import { markdownForWord } from './editor/mermaid-export'
+import { withDiagramZoomPaused } from './editor/mermaid-bridge'
 import { jumpToSourceLine } from './editor/source-line'
 import { documentHTMLFrom } from './editor/clean-html'
 import { isPresenting, startSlideshow, stopSlideshow } from './slideshow'
@@ -58,6 +59,14 @@ let editorReady = false
 // explicit panel preference is preserved.
 let manualHidden = localStorage.getItem('file-panel-hidden') !== '0'
 let panelMode: 'files' | 'outline' = 'files'
+// The panel has to stay in the DOM for the last part of its closing motion.
+// `hidden` still carries the semantic state once that motion finishes, so a
+// rapid re-open cancels the pending hide instead of leaving a dead panel.
+// `transitionend` is the normal cleanup path; this is only a generous safety
+// net for an interrupted or unsupported CSS transition, not a copy of its time.
+const PANEL_HIDE_FALLBACK_MS = 500
+let panelMotionReady = false
+let panelHideCleanup: (() => void) | null = null
 let outlineUpdateQueued = false
 // Outline doubles as a reading-progress view (#64): the entry for the section
 // currently at the top of the viewport is highlighted and kept visible.
@@ -484,7 +493,6 @@ function renderTabBar(): void {
 
 function showBlankDocument(): void {
   if (isPresenting()) stopSlideshow()
-  releaseMermaidRenderer()
   exitSourceMode()
   // A blank document carries no properties block from the one before it.
   activeFrontmatter = ''
@@ -1041,10 +1049,59 @@ function toggleSourceMode(): void {
   scheduleOutlineUpdate()
 }
 
+function cancelPendingPanelHide(): void {
+  panelHideCleanup?.()
+  panelHideCleanup = null
+}
+
+function hidePanelAfterTransition(panel: HTMLElement): void {
+  const finish = () => {
+    cleanup()
+    // A second toggle may have re-opened the panel while the close transition
+    // was still in flight. Only the state that is still closed may hide it.
+    if (!document.body.classList.contains('show-file-panel')) panel.hidden = true
+  }
+  const onTransitionEnd = (event: TransitionEvent) => {
+    if (event.target === panel && event.propertyName === 'transform') finish()
+  }
+  const timeout = window.setTimeout(finish, PANEL_HIDE_FALLBACK_MS)
+  const cleanup = () => {
+    window.clearTimeout(timeout)
+    panel.removeEventListener('transitionend', onTransitionEnd)
+    if (panelHideCleanup === cleanup) panelHideCleanup = null
+  }
+  panel.addEventListener('transitionend', onTransitionEnd)
+  panelHideCleanup = cleanup
+}
+
 function updatePanelVisibility(): void {
   const show = !manualHidden
-  filePanelEl().hidden = !show
-  document.body.classList.toggle('show-file-panel', show)
+  const panel = filePanelEl()
+  cancelPendingPanelHide()
+
+  if (show) {
+    // Start from the off-canvas CSS state, then enter it on the next style
+    // change. Reading offsetWidth deliberately commits that start position,
+    // otherwise display:none → visible would skip the opening transition.
+    panel.hidden = false
+    panel.setAttribute('aria-hidden', 'false')
+    if (!document.body.classList.contains('show-file-panel')) {
+      if (panelMotionReady) void panel.offsetWidth
+      document.body.classList.add('show-file-panel')
+    }
+  } else {
+    // A delayed `hidden` keeps the exit motion visible. If a file-row button
+    // owned focus, move it out before exposing an aria-hidden subtree.
+    if (panel.contains(document.activeElement)) fileToggleBtnEl().focus()
+    panel.setAttribute('aria-hidden', 'true')
+    document.body.classList.remove('show-file-panel')
+    if (panelMotionReady && !panel.hidden && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      hidePanelAfterTransition(panel)
+    } else {
+      panel.hidden = true
+    }
+  }
+
   fileToggleBtnEl().classList.toggle('active', show)
   fileListEl().hidden = panelMode !== 'files'
   outlineListEl().hidden = panelMode !== 'outline'
@@ -1052,6 +1109,15 @@ function updatePanelVisibility(): void {
   fileTabEl().setAttribute('aria-selected', String(panelMode === 'files'))
   outlineTabEl().classList.toggle('active', panelMode === 'outline')
   outlineTabEl().setAttribute('aria-selected', String(panelMode === 'outline'))
+
+  // Avoid animating a restored visible panel on the initial paint. Every later
+  // keyboard/menu/button toggle uses the same motion.
+  if (!panelMotionReady) {
+    requestAnimationFrame(() => {
+      panelMotionReady = true
+      document.body.classList.add('panel-motion-ready')
+    })
+  }
 }
 
 function setPanelMode(mode: 'files' | 'outline'): void {
@@ -1585,7 +1651,9 @@ function getExportSnapshot(content: string): {
     }
   }
   const editorRoot = document.querySelector<HTMLElement>('#editor .cm-content')
-  return {
+  // 导出交出去的是屏幕上这份 DOM：放大状态会跟着出去（纸上只剩图的一角），那排缩放按钮
+  // 也会被一起画上去。序列化的这会儿还原视口、藏掉控件，完事立刻恢复（见 withDiagramZoomPaused）。
+  return withDiagramZoomPaused(() => ({
     content,
     // 图片与 PDF 导出要的是「和屏幕上一模一样」，所以仍旧交编辑器那份 DOM；
     // HTML 导出交的是**一篇文档**：语义标签，没有编辑器自己的类名和行结构。
@@ -1596,7 +1664,7 @@ function getExportSnapshot(content: string): {
       .filter((name) => name !== 'show-file-panel' && name !== 'paper')
       .join(' '),
     background: getComputedStyle(document.body).backgroundColor,
-  }
+  }))
 }
 
 async function exportCurrentHTML(): Promise<void> {
@@ -1899,7 +1967,6 @@ async function init(): Promise<void> {
   api.onMenuPlaySlideshow(() => { void toggleSlideshow() })
 
   api.onNewFile(() => {
-    releaseMermaidRenderer()
     exitSourceMode()
     ensureTab()
     applyContent('')
@@ -1907,7 +1974,6 @@ async function init(): Promise<void> {
     renderTabBar()
   })
   api.onFileOpened((data) => {
-    releaseMermaidRenderer()
     // A document opened into a window that has none yet (a launch with a file)
     // lands in the first tab rather than creating a second one.
     ensureTab()

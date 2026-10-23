@@ -27,7 +27,7 @@ import { forceParsing, syntaxTree } from '@codemirror/language'
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
 import katex from 'katex'
 import { scanMath, excludedRanges, frontmatterRange, type Excluded } from './math-scan'
-import { renderMermaid } from './mermaid-bridge'
+import { renderMermaid, attachDiagramZoom, detachDiagramZoom, isDiagramZoomed } from './mermaid-bridge'
 import { sanitizeHTML, cleanStyle } from './html-sanitize'
 import { footnoteDefinitions, footnoteNumbers, FOOTNOTE_REF_RE } from './footnotes'
 import { isChinese } from '../ui-language'
@@ -508,7 +508,7 @@ function collectTaskItems(state: EditorState, ranges: DecorationRange[], front: 
 /**
  * ```mermaid 代码块画成图。
  *
- * 渲染是异步的（mermaid 要在隐藏沙箱里跑），所以先放一个占位，画好了再原地替换。
+ * 渲染是异步的（引擎要懒加载），所以先放一个占位，画好了再原地替换。
  * 失败就把代码块原样留着——图是锦上添花，代码是用户写的东西。
  */
 class MermaidWidget extends WidgetType {
@@ -526,14 +526,17 @@ class MermaidWidget extends WidgetType {
     withSourceRange(wrap, this.from, this.to)
     wrap.textContent = isChinese() ? '图表渲染中…' : 'Rendering diagram…'
 
-    // **不指定**配色：交给 mermaid-bridge 按代码块底色的明暗挑（和它自己的注释一致）。
-    // 这里曾经按应用主题挑（`theme-dark` 才用深色），可 elegant 和 bear 是浅色主题
-    // 配深色代码块，于是深底上画出了浅色主题的图：连线 #333 落在 #2c2c2c 上，
-    // 边缘文字也几乎看不见（2026-09-26 用户报的「线条和背景色太接近」）。
+    // **不指定**配色：图是画在代码块底色上的，颜色由 `--pele-*` 那组变量从主题推出来
+    // （themes/editor-preview.css 的 `.cm-md-mermaid`），换主题不用重画。
+    // 这里曾经按应用主题挑明暗两套调色板，可 elegant 和 bear 是浅色主题配深色代码块，
+    // 于是深底上画出了浅色主题的图：连线 #333 落在 #2c2c2c 上，边缘文字几乎看不见
+    // （2026-09-26 用户报的「线条和背景色太接近」）。现在没有「挑一套」这回事了。
     void renderMermaid(this.code)
       .then((svg) => {
         wrap.innerHTML = svg
         wrap.classList.add('cm-md-mermaid-ready')
+        // 画不下的图（被 max-width 压窄了）才真出得来控件（#129）
+        attachDiagramZoom(wrap)
       })
       .catch(() => {
         // 画不出来就退回代码块，绝不吞掉用户的图
@@ -542,7 +545,35 @@ class MermaidWidget extends WidgetType {
       })
     return wrap
   }
+
+  destroy(dom: HTMLElement): void {
+    detachDiagramZoom(dom)
+  }
+
+  ignoreEvent(event: Event): boolean {
+    if (!POINTER_EVENTS.has(event.type)) return false
+    const target = event.target
+    if (!(target instanceof Element)) return false
+    // 控件上的事不给编辑器管：否则 mousedown 一落，CM 就把光标放到块里，块退回源码、图当场
+    // 没了（另有一条「点渲染块跳源码」在 editor.ts，那边按控件和放大态各挡一道）。
+    if (target.closest('.pele-zoom')) return true
+    // 放大之后按住拖是在挪图，不是在选字
+    const host = target.closest<HTMLElement>('.cm-md-mermaid')
+    return !!host && isDiagramZoomed(host)
+  }
 }
+
+// 编辑器管的事件里，只有指针那一小拨需要抢：滚轮、滚动、键盘都照旧归编辑器。
+const POINTER_EVENTS = new Set([
+  'mousedown',
+  'mouseup',
+  'click',
+  'dblclick',
+  'pointerdown',
+  'pointerup',
+  'touchstart',
+  'touchend',
+])
 
 function collectMermaid(state: EditorState, ranges: DecorationRange[], front: Range | null): void {
   const text = state.doc.toString()
@@ -701,8 +732,15 @@ function alignOf(delimiter: string): string {
  * 换行，把格子里的 `![](x.png)` 画成图片；2.6 也这样，换内核后这两样都退成了纯文字。
  * 行内 HTML 里只有 `<br>` 被认：它是最常跟表格一起用的一个，而其它标签（尤其是带
  * 事件或样式的）放进表格只会多一个要防的口子。
+ *
+ * 下划线强调要卡词边界（#161）。CommonMark 与 GFM 里 `_` 不能跨在词中间生效，
+ * 所以 `local_upload / external_api` 是两个普通单词，`snake_case_name` 也一样；
+ * 这里早期只写了 `_` 配对，会把中间那段吃掉变成斜体，连下划线本身也不见了。
+ * `*` 不受这条限制（`a*b*c` 在 CommonMark 里确实是斜体），所以两个分支分开写。
+ * 边界用 Unicode 字母与数字，中文也算词字符。
  */
-const INLINE_RE = /(\*\*|__)(.+?)\1|(\*|_)(.+?)\3|`([^`]+)`|~~(.+?)~~|!\[([^\]]*)\]\(\s*(<[^>]*>|[^)\s]+)[^)]*\)|\[([^\]]*)\]\(([^)]*)\)|<br\s*\/?>/gi
+const INLINE_RE =
+  /\*\*(?<strong>.+?)\*\*|(?<![\p{L}\p{N}_])__(?<strongU>(?=\S).+?(?<=\S))__(?![\p{L}\p{N}_])|\*(?<em>.+?)\*|(?<![\p{L}\p{N}_])_(?<emU>(?=\S).+?(?<=\S))_(?![\p{L}\p{N}_])|`(?<code>[^`]+)`|~~(?<strike>.+?)~~|!\[(?<alt>[^\]]*)\]\(\s*(?<src><[^>]*>|[^)\s]+)[^)]*\)|\[(?<linkText>[^\]]*)\]\((?<href>[^)]*)\)|<br\s*\/?>/giu
 
 function appendInline(parent: HTMLElement, text: string, base: string | null): void {
   INLINE_RE.lastIndex = 0
@@ -710,31 +748,32 @@ function appendInline(parent: HTMLElement, text: string, base: string | null): v
   let match: RegExpExecArray | null
   while ((match = INLINE_RE.exec(text)) !== null) {
     if (match.index > last) parent.appendChild(document.createTextNode(text.slice(last, match.index)))
-    if (match[2] !== undefined) {
+    const g = match.groups ?? {}
+    if (g.strong !== undefined || g.strongU !== undefined) {
       const el = document.createElement('strong')
-      el.textContent = match[2]
+      el.textContent = g.strong ?? g.strongU ?? ''
       parent.appendChild(el)
-    } else if (match[4] !== undefined) {
+    } else if (g.em !== undefined || g.emU !== undefined) {
       const el = document.createElement('em')
-      el.textContent = match[4]
+      el.textContent = g.em ?? g.emU ?? ''
       parent.appendChild(el)
-    } else if (match[5] !== undefined) {
+    } else if (g.code !== undefined) {
       const el = document.createElement('code')
-      el.textContent = match[5]
+      el.textContent = g.code
       parent.appendChild(el)
-    } else if (match[6] !== undefined) {
+    } else if (g.strike !== undefined) {
       const el = document.createElement('s')
-      el.textContent = match[6]
+      el.textContent = g.strike
       parent.appendChild(el)
-    } else if (match[7] !== undefined) {
+    } else if (g.alt !== undefined) {
       const img = document.createElement('img')
-      img.src = resolveImageSrc(match[8] ?? '', base)
-      img.alt = match[7]
+      img.src = resolveImageSrc(g.src ?? '', base)
+      img.alt = g.alt
       parent.appendChild(img)
-    } else if (match[9] !== undefined) {
+    } else if (g.linkText !== undefined) {
       const el = document.createElement('a')
-      el.textContent = match[9] || match[10] || ''
-      const href = (match[10] ?? '').trim()
+      el.textContent = g.linkText || g.href || ''
+      const href = (g.href ?? '').trim()
       if (/^https?:\/\//i.test(href)) el.setAttribute('href', href)
       parent.appendChild(el)
     } else if (/^<br/i.test(match[0])) {
@@ -1115,6 +1154,12 @@ function collectInline(state: EditorState, ranges: DecorationRange[], front: Ran
         case 'EmphasisMark':
         case 'StrikethroughMark':
         case 'CodeMark': {
+          const fence = node.node.parent
+          // 整块 Mermaid 替换与围栏空替换同起点时，增量更新会只留下空块。
+          if (node.name === 'CodeMark' && fence?.name === 'FencedCode' &&
+              !isBlockActive(state, fence.from, fence.to) &&
+              /^(`{3,}|~{3,})\s*mermaid\s*$/.test(state.doc.sliceString(fence.from, state.doc.lineAt(fence.from).to).trim()) &&
+              codeInsideFence(state, fence).trim()) break
           ranges.push({ from, to, deco: active ? MARK({ class: 'cm-md-marker' }) : hide(from, to) })
           break
         }
@@ -1229,7 +1274,15 @@ function buildDecorations(state: EditorState, flash: { from: number; to: number 
   // 公式放最后：它覆盖区间，其它装饰不该插进它里面
   collectMath(state, ranges)
 
-  ranges.sort((a, b) => a.from - b.from || a.to - b.to)
+  // 排序键必须带上 startSide：RangeSetBuilder 只接受按 (from, startSide) 递增的顺序，
+  // 原来只按 (from, to) 排，同一段区间上挂了两种装饰时就翻车。
+  //
+  // 真事（#157）：`[![图](pic.png)](https://…)` 这种「链接里只包一张图」的写法，链接
+  // mark（startSide 5e8）和图片 widget（startSide 5e8 - 1）盖的是**同一段区间**，(from, to)
+  // 完全相等，先后全看数组原来的顺序。mark 排在前面就抛
+  // 「Ranges must be added sorted by `from` position and `startSide`」，整个装饰层作废，
+  // 表现是文件打开了但正文空白。
+  ranges.sort((a, b) => a.from - b.from || a.deco.startSide - b.deco.startSide || a.to - b.to)
   const builder = new RangeSetBuilder<Decoration>()
   for (const r of ranges) builder.add(r.from, r.to, r.deco)
   return builder.finish()

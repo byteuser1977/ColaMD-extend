@@ -18,9 +18,9 @@ import { renderWholeDocument, restoreViewport } from '../print-layout'
 
 import { headingFlashEffect, setCleanExport as setCleanExportEffect, setDocumentFileUrlEffect, primeDocumentFileUrl } from './live-preview'
 import { runFormatCommand as runFormat, type FormatCommandId } from './format-commands'
-import { releaseMermaidRenderer as releaseMermaidRendererBridge } from './mermaid-bridge'
 import { isChinese } from '../ui-language'
 import { headingAnchorLine } from './heading-anchor'
+import { isDiagramZoomed } from './mermaid-bridge'
 
 // katex 的样式表仍要引，公式 widget 里渲出来的 HTML 靠它排版。
 import 'katex/dist/katex.min.css'
@@ -112,12 +112,6 @@ function posFromDOM(view: EditorView, element: Element): number | null {
 //
 // 公式没有弹层，也没有第二个编辑器。它就是缓冲区里的几行文字：光标进那一行，
 // `$...$` 自动显形，就地改；光标离开，重新渲染。点击渲染后的公式只是把光标放进源码。
-
-// --- mermaid ---
-
-export function releaseMermaidRenderer(): void {
-  releaseMermaidRendererBridge()
-}
 
 // --- 格式命令 ---
 
@@ -287,6 +281,12 @@ function installEditorInteractions(root: HTMLElement, view: EditorView): void {
   // 一个处理器管全部；块级 widget 的光标落点有 isBlockActive 兜着，光标进去就露源码。
   // 表格不在这里：它按点到的那一格落光标，走上面那条 mousedown。
   root.addEventListener('click', (e) => {
+    // 图上的缩放控件、以及放大态下的图，都是控件自己的地盘：点一下就把光标送进源码，
+    // 图当场没了，正在看的局部也就白缩了（控件由 mermaid-bridge 的 attachDiagramZoom 装）。
+    const hit = e.target as HTMLElement
+    if (hit.closest('.pele-zoom')) return
+    const diagram = hit.closest('.cm-md-mermaid') as HTMLElement | null
+    if (diagram && isDiagramZoomed(diagram)) return
     const widget = (e.target as HTMLElement).closest('[data-source-from]') as HTMLElement | null
     if (!widget) return
     const from = Number(widget.dataset.sourceFrom)
@@ -337,11 +337,30 @@ function tableCellAnchor(view: EditorView, widget: HTMLElement, e: MouseEvent): 
 
 /** 表格源码行里第 index 格的起始位置。 */
 function tableCellStart(text: string, from: number, index: number): number {
-  let i = text.startsWith('|') ? 1 : 0
-  const starts = [from + i]
+  const trimmed = text.trimStart()
+  const leadingSpaces = text.length - trimmed.length
+  const hasLeadingPipe = trimmed.startsWith('|')
+
+  const starts: number[] = []
+  let i = 0
+
+  if (hasLeadingPipe) {
+    const firstPipe = text.indexOf('|')
+    i = firstPipe + 1
+    starts.push(from + i)
+  } else {
+    starts.push(from + leadingSpaces)
+    i = leadingSpaces
+  }
+
   for (; i < text.length; i++) {
-    if (text[i] === '\\' && text[i + 1] === '|') { i++; continue }
-    if (text[i] === '|') starts.push(from + i + 1)
+    if (text[i] === '\\' && text[i + 1] === '|') {
+      i++
+      continue
+    }
+    if (text[i] === '|') {
+      starts.push(from + i + 1)
+    }
   }
   return starts[Math.min(index, starts.length - 1)]
 }
@@ -571,13 +590,14 @@ const TASK_RE = /^([ \t]*(?:[-*+]|\d+[.)])[ \t]+\[)([ xX])(\])/
 
 /** 从点击位置找回任务项那一行；不是任务项就返回 null。 */
 function sourceFromTaskClick(view: EditorView, e: MouseEvent): number | null {
+  if (!(e.target instanceof HTMLElement)) return null
+  // 只认复选框本身（#164）：以前看的是「离行左边缘 24px 以内」，在复选框前后
+  // 那两块空白上一点也会切换勾选，想在行首补字的人会莫名其妙勾上。
+  if (!e.target.closest('.cm-md-task')) return null
   const pos = view.posAtCoords({ x: e.clientX, y: e.clientY })
   if (pos === null) return null
   const line = view.state.doc.lineAt(pos)
   if (!TASK_RE.test(line.text)) return null
-  // 只有复选框那块区域才切换，点文案仍旧放光标
-  const rect = (e.target as HTMLElement).getBoundingClientRect()
-  if (e.clientX - rect.left > 24) return null
   return line.from
 }
 

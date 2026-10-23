@@ -84,7 +84,7 @@ All twelve built-in themes already ship as standalone, commented CSS files in [`
 
 **Sources:** [#107](https://github.com/marswaveai/ColaMD/issues/107)
 
-**Status:** Every Mermaid block in the document becomes a picture in the `.docx`. Diagrams are rendered again for the export with Mermaid's light palette, because Word is a white page: the one on screen may belong to a dark theme, and in source mode there is no diagram on screen at all. A diagram that cannot be rendered keeps its code fence, so one broken block cannot fail an export.
+**Status:** Every Mermaid block in the document becomes a picture in the `.docx`. Diagrams are drawn again for the export with the app's light palette inlined into the SVG, because Word is a white page: the one on screen may belong to a dark theme, and in source mode there is no diagram on screen at all. A diagram that cannot be rendered keeps its code fence, so one broken block cannot fail an export.
 
 ### Text width
 
@@ -120,7 +120,9 @@ All twelve built-in themes already ship as standalone, commented CSS files in [`
 
 **Sources:** [#26](https://github.com/marswaveai/ColaMD/issues/26)
 
-**Status:** Mermaid blocks render through a lazily created hidden iframe, isolated from the main bundle (same-process iframe isolation, not a hardened browser sandbox). Includes 400ms debounce, click-to-edit source mode, and a 15s timeout recovery. The earlier CPU-storm removal (v1.8.1) is addressed by ignoring view-internal DOM mutations in the node view.
+**Status:** Mermaid blocks are rendered by [Pele](https://github.com/obsidianmd/pele) (MIT), the renderer Obsidian ships next. It is synchronous and dependency-free, so the hidden iframe, the 400ms debounce and the 15s timeout recovery are all gone; the engine itself is loaded on demand, so a document without a diagram pays nothing. Kept: click-to-edit source mode, and a block that fails to render keeps its code fence. Diagram colour comes from CSS variables that are derived from the theme (`themes/editor-preview.css`), so switching themes repaints the diagram without re-rendering it.
+
+Zoom (#129): a diagram that does not fit the column can be zoomed with Ctrl/⌘ + scroll wheel, the buttons in its corner, or a double click, and dragged to pan while zoomed. A diagram that already fits gets no controls at all. Exports reset the viewport and hide the buttons, so a zoomed diagram still leaves the whole picture on paper.
 
 ### Visible save status hint
 
@@ -229,6 +231,16 @@ Rule kept: exactly nine cards. The order is documented in an HTML comment above 
 
 ## Candidates
 
+### 右键菜单：插入表格、待办、列表、标题层级 (#163)
+
+**Source:** [#163](https://github.com/marswaveai/ColaMD/issues/163)
+
+**Need:** 写项目文档时表格用得多，但画一张表只能手敲 `|---|---|`。要的是编辑器里的右键菜单：插入表格（能选几行几列）、待办、有序/无序列表，以及把当前行调成某一级标题。参考对象是 Typora 的右键菜单。
+
+**Scope:** 菜单挂在正文上，条目跟光标所在的块走（在表格里给表格相关的操作，在列表里给列表的）。插入表格要能继续填格子，不是只塞进一行语法。不新增常驻工具栏。
+
+**Status:** Candidate, not scheduled.
+
 ### 公众号排版模式（WeChat article formatting）
 
 **Source:** User request (2026-10-06).
@@ -248,12 +260,6 @@ Rule kept: exactly nine cards. The order is documented in an HTML comment above 
 **Architecture note:** 现有的富文本复制（`writeRichCopy()`）已经能产出语义 HTML，所以这个模式的本质是「同一套渲染 + 一份公众号专用的输出样式」，不是第二个渲染器。按「如非必要，勿增实体」，入口落在菜单里，不新增常驻工具栏。
 
 **Status:** Candidate, not scheduled. 参考实现是现成的（mdnice / markdown-nice 那一路：Markdown → 行内样式 HTML）。按项目里「参考老前辈的决策」的原则，先研究它们的样式表怎么定，再决定我们的做法，不自己发明一套。
-
-### Zoomable viewer for Mermaid diagrams (#129)
-
-**Source:** [#129](https://github.com/marswaveai/ColaMD/issues/129)
-
-Mermaid renders with `useMaxWidth`, so a diagram wider than the reading column scales down with no lower bound on text size, and `overflow-x` never engages because the SVG never exceeds 100%. Confirmed as a real limitation, not scheduled. Direction: a temporary overlay over the SVG that is already drawn (scroll to zoom, drag to pan, Esc or click-outside to close), because the content is vector, so zooming needs no second render and no new dependency. Entry point still to be decided: a hover button in the same pattern as the code block's copy button, or a double click.
 
 ### Selectable text inside a rendered block (#141, #153)
 
@@ -290,7 +296,7 @@ Tabs can be opened and closed but not reordered. Not decided. Drag interactions 
 Measured, not guessed, and cheap enough to be worth listing:
 
 - Word count runs three full-document regex passes about 200ms after typing stops, although the number is only shown on hover. Compute on demand or maintain incrementally.
-- KaTeX sits on the startup path: 473KB is parsed even for a document with no math. Lazy-load it the way mermaid already is.
+- KaTeX sits on the startup path: 473KB is parsed even for a document with no math. Lazy-load it the way the diagram engine already is.
 - `releaseMermaidRenderer()` destroys the sandbox iframe on every file open, so a document with diagrams rebuilds and recompiles them each time. Being checked together with [#94](https://github.com/marswaveai/ColaMD/issues/94).
 - Windows-only compositing costs (`backdrop-filter`, several `box-shadow`) on integrated graphics, and documents between the source-mode threshold and "large". Measure before touching.
 
