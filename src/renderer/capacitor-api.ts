@@ -31,6 +31,15 @@ function emitEvent(tag: string, payload: unknown): void {
   listeners.get(tag)?.forEach((cb) => cb(payload))
 }
 
+/** onFileOpened 注册前的 Intent 内容缓冲（对齐 preload 的 pendingFileOpened 机制）。 */
+type FileOpenedData = { path: string | null; content: string; fileUrl: string | null }
+const pendingFileOpened: FileOpenedData[] = []
+function emitFileOpened(name: string, content: string): void {
+  const data: FileOpenedData = { path: `${DOCS_DIR}/${name}`, content, fileUrl: null }
+  if (listeners.get('file-opened')?.size) emitEvent('file-opened', data)
+  else pendingFileOpened.push(data)
+}
+
 /** 原生桥回调的 promise 化：MainActivity 通过 evaluateJavascript 调它。 */
 const nativeResolvers = new Map<string, (payload: Record<string, unknown>) => void>()
 ;(
@@ -158,11 +167,13 @@ function createCapacitorAPI(): ElectronAPI {
       if (!f) return null
       try {
         const result = await f.Filesystem.readdir({ path: DOCS_DIR, directory: f.Directory.Documents })
-        return result.files.map<SiblingFile>((fi) => ({
-          name: fi.name,
-          path: `${DOCS_DIR}/${fi.name}`,
-          kind: fi.type === 'directory' ? 'directory' : 'file',
-        }))
+        return result.files
+          .filter((fi) => !fi.name.startsWith('.') && fi.name !== 'exports')
+          .map<SiblingFile>((fi) => ({
+            name: fi.name,
+            path: `${DOCS_DIR}/${fi.name}`,
+            kind: fi.type === 'directory' ? 'directory' : 'file',
+          }))
       } catch {
         return [] // 目录还没建：空列表
       }
@@ -244,13 +255,18 @@ function createCapacitorAPI(): ElectronAPI {
     loadThemeCSS: async () => null,
     reportTheme: noopVoid,
     reportTitlebarColors: noopVoid,
-    popupAppMenu: noopVoid,
+    popupAppMenu: () => showMobileMenu(),
     onFullscreenChange: (cb) => onEvent('fullscreen-change', cb),
     getPathForFile: (file) => file.name, // WebView 的 File 没有真实路径，交给上层按未保存文件处理
     openExternal: (url) => void window.open(url, '_blank'),
     onFileChanged: (cb) => onEvent('file-changed', cb),
     onNewFile: (cb) => onEvent('new-file', cb),
-    onFileOpened: (cb) => onEvent('file-opened', cb),
+    // Intent 打开的内容可能早于渲染层注册到达，先缓冲、注册时补发
+    onFileOpened: (cb) => {
+      onEvent('file-opened', cb)
+      const buffered = pendingFileOpened.splice(0)
+      buffered.forEach((data) => cb(data))
+    },
     onMenuOpen: (cb) => onEvent('menu-open', cb),
     onMenuSave: (cb) => onEvent('menu-save', cb),
     onMenuSaveAs: (cb) => onEvent('menu-save-as', cb),
@@ -312,4 +328,80 @@ export function installCapacitorAPI(): void {
 /** 供移动端菜单 UI（阶段 2）主动触发主进程式事件：emitCapacitorEvent('menu-save') */
 export function emitCapacitorEvent(tag: string, payload?: unknown): void {
   emitEvent(tag, payload)
+}
+
+/**
+ * 轮询原生桥的 Intent 待开文件（MainActivity handleIntent 缓存，checkPendingFile
+ * 一次性取走）。注册 onFileOpened 的渲染层代码要等文档初始化跑完，所以轮询 +
+ * 缓冲双保险：内容到达早于注册也能补发。间隔 400ms，取空后自动停止。
+ */
+export function startIntentPolling(): void {
+  let stopped = false
+  const timer = setInterval(() => {
+    const bridge = (window as unknown as Record<string, unknown>).ColaMDNative as
+      | { checkPendingFile?: () => string }
+      | undefined
+    const raw = bridge?.checkPendingFile?.()
+    if (raw === undefined || raw === null) return // 桥没就绪，下一轮再试
+    if (raw === 'null' || raw === '') {
+      if (stopped) return
+      stopped = true
+      clearInterval(timer) // 桥通了且无待开文件，收工
+      return
+    }
+    try {
+      const parsed = JSON.parse(raw) as { name: string; content: string }
+      if (parsed?.name && typeof parsed.content === 'string') emitFileOpened(parsed.name, parsed.content)
+    } catch {
+      // JSON 解析失败（内容含未转义字符），丢弃，不阻塞后续轮询
+    }
+  }, 400)
+}
+
+/**
+ * 移动端菜单：桌面版 popupAppMenu 由主进程弹原生菜单，WebView 里没有主进程，
+ * 用 HTML 浮层替代。配色走主题基础变量（--bg-color 等），跟随全部主题。
+ */
+let menuEl: HTMLElement | null = null
+function showMobileMenu(): void {
+  if (menuEl) {
+    menuEl.remove()
+    menuEl = null
+    return
+  }
+  const items: [string, string][] = [
+    ['menu-new-tab', '新建标签页'],
+    ['menu-open', '打开文件'],
+    ['menu-save', '保存'],
+    ['menu-save-as', '另存为'],
+    ['toggle-file-panel', '文件面板'],
+    ['toggle-source-mode', '源码模式'],
+    ['menu-export-pdf', '导出 PDF'],
+    ['menu-export-html', '导出 HTML'],
+  ]
+  const root = document.createElement('div')
+  root.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,0.25)'
+  const list = document.createElement('div')
+  list.style.cssText = `position:absolute;top:48px;right:12px;min-width:180px;`
+    + `background:var(--bg-color,#fff);color:var(--text-color,#333);`
+    + `border:1px solid var(--border-color,#ddd);border-radius:10px;`
+    + `box-shadow:0 8px 28px rgba(0,0,0,0.22);padding:6px 0;font-size:14px`
+  items.forEach(([tag, label]) => {
+    const item = document.createElement('div')
+    item.style.cssText = 'padding:11px 20px;white-space:nowrap'
+    item.textContent = label
+    item.addEventListener('click', () => {
+      closeMenu()
+      emitEvent(tag, undefined)
+    })
+    list.appendChild(item)
+  })
+  root.addEventListener('click', closeMenu)
+  root.appendChild(list)
+  document.body.appendChild(root)
+  menuEl = root
+}
+function closeMenu(): void {
+  menuEl?.remove()
+  menuEl = null
 }
