@@ -30,9 +30,21 @@
     "verify:scroll-render": "node scripts/verify-scroll-render.mjs",
     "verify:image-export": "node scripts/verify-image-export.mjs",
     "verify:export-pdf": "node scripts/verify-export-pdf.mjs",
-    "verify:themes": "node scripts/verify-themes.mjs"
+    "verify:themes": "node scripts/verify-themes.mjs",
+    "cap:sync": "npm run build && npx cap sync android",
+    "cap:build:android": "node scripts/cap-android.mjs debug",
+    "cap:build:android:release": "node scripts/cap-android.mjs release",
+    "cap:open:android": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/filesystem": "^6.0.4",
+    "@capacitor/haptics": "^6.0.3",
+    "@capacitor/share": "^6.0.4",
+    "@capacitor/status-bar": "^6.0.3",
+    "@capawesome/capacitor-file-picker": "^6.2.0",
     "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-markdown": "^6.5.2",
     "@codemirror/language-data": "^6.5.2",
@@ -47,6 +59,7 @@
     "unified": "^11.0.5"
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.2.1",
     "@types/katex": "^0.16.8",
     "electron": "^44.3.0",
     "electron-builder": "^26.16.1",

@@ -14,6 +14,10 @@ import './themes/base.css'
 import './themes/premium.css'
 import './themes/editor-preview.css'
 import './themes/document.css'
+import { installCapacitorAPI } from './capacitor-api'
+
+// 移动端（Capacitor WebView）挂替身；Electron 桌面 no-op。必须在任何 electronAPI 触达之前。
+installCapacitorAPI()
 
 let sourceModeActive = false
 const editorEl = () => document.getElementById('editor') as HTMLElement

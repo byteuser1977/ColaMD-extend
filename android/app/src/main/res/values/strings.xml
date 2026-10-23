@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ColaMD</string>
+    <string name="title_activity_main">ColaMD</string>
+    <string name="package_name">cn.bytechain.colamd</string>
+    <string name="custom_url_scheme">cn.bytechain.colamd</string>
+</resources>
