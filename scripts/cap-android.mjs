@@ -13,7 +13,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const mode = process.argv[2] === 'release' ? 'Release' : 'Debug'
 
 function run(cmd, args, opts = {}) {
-  const r = spawnSync(cmd, args, { stdio: 'inherit', cwd: root, shell: process.platform === 'win32', ...opts })
+  // 不用 shell：node 自身路径常带空格（D:\Program Files\...），经 shell 会被截断；
+  // gradlew.bat 的调用单独传 shell（路径无空格）
+  const r = spawnSync(cmd, args, { stdio: 'inherit', cwd: root, ...opts })
   if (r.status !== 0) process.exit(r.status ?? 1)
 }
 
@@ -31,7 +33,7 @@ if (!process.env.JAVA_HOME) {
   console.error('未设置 JAVA_HOME，gradle 需要 JDK 17+（推荐 21）')
   process.exit(1)
 }
-run(gradlew, [`assemble${mode}`], { cwd: gradleDir })
+run(gradlew, [`assemble${mode}`], { cwd: gradleDir, shell: true })
 
 const apk = join(gradleDir, 'app', 'build', 'outputs', 'apk', mode.toLowerCase(), `app-${mode.toLowerCase()}.apk`)
 console.log(`\nAPK: ${existsSync(apk) ? apk : '(查看 gradle 输出确认产物路径)'}`)
