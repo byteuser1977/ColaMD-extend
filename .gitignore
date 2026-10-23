@@ -10,6 +10,9 @@ mobile/ios/ColaMDReader.xcodeproj/project.xcworkspace/
 mobile/ios/ColaMDReader.xcodeproj/xcuserdata/
 vscode-extension/*.vsix
 .vscode/
+.tmp/
+.temp/
+.trae/
 dist-web/
 
 # Capacitor Android 构建产物（工程源码将来随移动端移植入库，只忽略产物）
