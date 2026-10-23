@@ -21,17 +21,14 @@
   --selection-bg: rgba(99, 102, 241, 0.12);
   --highlight-bg: #eef2ff;
 
-  /* Mermaid 图表配色。图表画在代码块背景（#1e2235 深靛）上：节点比画布微亮一档，
-     靛蓝作边框，浅靛连线。变量契约见本目录 README.md。 */
-  --mermaid-primary-color: #2a2f4d;
-  --mermaid-primary-text: #e4e7ed;
-  --mermaid-primary-border: #6366f1;
-  --mermaid-line-color: #818cf8;
-  --mermaid-text-color: #e4e7ed;
-  --mermaid-secondary-color: #262b47;
-  --mermaid-tertiary-color: #242945;
-  --mermaid-cluster-bg: #191d2e;
-  --mermaid-cluster-border: #4b5187;
+  /* 图表配色（Pele 引擎，上游 2.7.7 起）。图直接画在代码块背景（#1e2235 深靛）上：
+     节点比画布微亮一档，靛蓝作边框，浅靛连线。变量契约见本目录 README.md。 */
+  --pele-surface: #2a2f4d;
+  --pele-surface-alt: #262b47;
+  --pele-fg: #e4e7ed;
+  --pele-muted: #e4e7ed;
+  --pele-line: #818cf8;
+  --pele-border: #6366f1;
 }
 
 #editor .cm-content .cm-md-strong {

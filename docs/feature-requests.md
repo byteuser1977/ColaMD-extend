@@ -84,7 +84,7 @@ All twelve built-in themes already ship as standalone, commented CSS files in [`
 
 **Sources:** [#107](https://github.com/marswaveai/ColaMD/issues/107)
 
-**Status:** Every Mermaid block in the document becomes a picture in the `.docx`. Diagrams are rendered again for the export with Mermaid's light palette, because Word is a white page: the one on screen may belong to a dark theme, and in source mode there is no diagram on screen at all. A diagram that cannot be rendered keeps its code fence, so one broken block cannot fail an export.
+**Status:** Every Mermaid block in the document becomes a picture in the `.docx`. Diagrams are drawn again for the export with the app's light palette inlined into the SVG, because Word is a white page: the one on screen may belong to a dark theme, and in source mode there is no diagram on screen at all. A diagram that cannot be rendered keeps its code fence, so one broken block cannot fail an export.
 
 ### Text width
 
@@ -120,7 +120,9 @@ All twelve built-in themes already ship as standalone, commented CSS files in [`
 
 **Sources:** [#26](https://github.com/marswaveai/ColaMD/issues/26)
 
-**Status:** Mermaid blocks render through a lazily created hidden iframe, isolated from the main bundle (same-process iframe isolation, not a hardened browser sandbox). Includes 400ms debounce, click-to-edit source mode, and a 15s timeout recovery. The earlier CPU-storm removal (v1.8.1) is addressed by ignoring view-internal DOM mutations in the node view.
+**Status:** Mermaid blocks are rendered by [Pele](https://github.com/obsidianmd/pele) (MIT), the renderer Obsidian ships next. It is synchronous and dependency-free, so the hidden iframe, the 400ms debounce and the 15s timeout recovery are all gone; the engine itself is loaded on demand, so a document without a diagram pays nothing. Kept: click-to-edit source mode, and a block that fails to render keeps its code fence. Diagram colour comes from CSS variables that are derived from the theme (`themes/editor-preview.css`), so switching themes repaints the diagram without re-rendering it.
+
+Zoom (#129): a diagram that does not fit the column can be zoomed with Ctrl/⌘ + scroll wheel, the buttons in its corner, or a double click, and dragged to pan while zoomed. A diagram that already fits gets no controls at all. Exports reset the viewport and hide the buttons, so a zoomed diagram still leaves the whole picture on paper.
 
 ### Visible save status hint
 
@@ -249,17 +251,15 @@ Rule kept: exactly nine cards. The order is documented in an HTML comment above 
 
 **Status:** Candidate, not scheduled. 参考实现是现成的（mdnice / markdown-nice 那一路：Markdown → 行内样式 HTML）。按项目里「参考老前辈的决策」的原则，先研究它们的样式表怎么定，再决定我们的做法，不自己发明一套。
 
-### Zoomable viewer for Mermaid diagrams (#129)
+### Selectable text inside a rendered block (#141, #153)
 
-**Source:** [#129](https://github.com/marswaveai/ColaMD/issues/129)
+**Source:** [#141](https://github.com/marswaveai/ColaMD/issues/141), [#153](https://github.com/marswaveai/ColaMD/issues/153)
 
-Mermaid renders with `useMaxWidth`, so a diagram wider than the reading column scales down with no lower bound on text size, and `overflow-x` never engages because the SVG never exceeds 100%. Confirmed as a real limitation, not scheduled. Direction: a temporary overlay over the SVG that is already drawn (scroll to zoom, drag to pan, Esc or click-outside to close), because the content is vector, so zooming needs no second render and no new dependency. Entry point still to be decided: a hover button in the same pattern as the code block's copy button, or a double click.
+A rendered block (table, diagram, image, formula, raw HTML) is a replacement widget, so its own text never enters the selection model: dragging across a rendered table selects nothing, and the same holds for a diagram's labels.
 
-### Selectable text inside a rendered block (#141)
+2026-10-15 changed what a click does (#153): block widgets reveal their Markdown while the caret is inside, and clicking a table cell lands the caret in that cell of the source (`isBlockActive` in `live-preview.ts`, `tableCellAnchor` in `editor.ts`). The reported problem, that typing after clicking a table destroyed it, is gone with that.
 
-**Source:** [#141](https://github.com/marswaveai/ColaMD/issues/141)
-
-Clicking a rendered block (table, diagram, image, formula, raw HTML) puts the caret into the Markdown behind it, so the block's own text never enters the selection model: dragging across a table selects nothing, and the same holds for a diagram's labels. The document is text and rendering is a layer of decoration over it (`docs/editor-architecture.md`), so letting widget contents take part in selection is a structural change rather than a styling fix. Narrower paths that do not need it: the copy path stays structured (already true, `clean-html.ts` clones the rendered table), and a rendered block could carry an explicit copy affordance. Undecided.
+Still open: editing and selecting text inside the rendered block itself, without stepping into the source. The document is text and rendering is a layer of decoration over it (`docs/editor-architecture.md`), so that is a structural change rather than a styling fix: the rendered table would have to stay real text, with the pipes hidden and the cells padded so the columns line up. Undecided.
 
 ### XDG data directories on Linux (#142)
 
@@ -286,7 +286,7 @@ Tabs can be opened and closed but not reordered. Not decided. Drag interactions 
 Measured, not guessed, and cheap enough to be worth listing:
 
 - Word count runs three full-document regex passes about 200ms after typing stops, although the number is only shown on hover. Compute on demand or maintain incrementally.
-- KaTeX sits on the startup path: 473KB is parsed even for a document with no math. Lazy-load it the way mermaid already is.
+- KaTeX sits on the startup path: 473KB is parsed even for a document with no math. Lazy-load it the way the diagram engine already is.
 - `releaseMermaidRenderer()` destroys the sandbox iframe on every file open, so a document with diagrams rebuilds and recompiles them each time. Being checked together with [#94](https://github.com/marswaveai/ColaMD/issues/94).
 - Windows-only compositing costs (`backdrop-filter`, several `box-shadow`) on integrated graphics, and documents between the source-mode threshold and "large". Measure before touching.
 

@@ -27,7 +27,7 @@ import { forceParsing, syntaxTree } from '@codemirror/language'
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
 import katex from 'katex'
 import { scanMath, excludedRanges, frontmatterRange, type Excluded } from './math-scan'
-import { renderMermaid } from './mermaid-bridge'
+import { renderMermaid, attachDiagramZoom, detachDiagramZoom, isDiagramZoomed } from './mermaid-bridge'
 import { sanitizeHTML, cleanStyle } from './html-sanitize'
 import { footnoteDefinitions, footnoteNumbers, FOOTNOTE_REF_RE } from './footnotes'
 import { isChinese } from '../ui-language'
@@ -316,9 +316,24 @@ function isActiveLine(_state: EditorState, _pos: number): boolean {
   return false
 }
 
-/** 跨行的块（表格、公式、属性区）同理：只有光标落在块里才露出源码。 */
+/** 行内的替换区间（链接地址、图片源码）不在露源码之列：那些文字本来就在眼前。 */
 function isActiveRange(_state: EditorState, _from: number, _to: number): boolean {
   return false
+}
+
+/**
+ * 块级 widget（表格、图、HTML 块、块公式）的判据：光标落进块里就露源码。
+ *
+ * 这些块是把**整段源码**替换成渲染结果的，光标一落进去，打出来的字写进的是被盖住的
+ * 源码。所以光标进块时把源码露出来，点走再渲染回去。Obsidian 对表格就是这么做的，
+ * 也是 2026-10-15 对 #153 的裁定。
+ *
+ * 行内的标记不在此列（2026-10-06 定）：光标所在的行不再整行露源码，要改标记去源码模式。
+ * 两端都算在内：点表格落在源码第一行开头，那是块的起点，也算「在里面」。
+ */
+function isBlockActive(state: EditorState, from: number, to: number): boolean {
+  const sel = state.selection.main
+  return sel.from >= from && sel.to <= to
 }
 
 // ─── 公式 ────────────────────────────────────────────────────────────────────
@@ -404,8 +419,8 @@ function collectMath(state: EditorState, ranges: DecorationRange[]): void {
   const excluded: Excluded[] = excludedRanges(text, syntaxTree(state))
 
   for (const range of scanMath(text, excluded)) {
-    // 光标所在行不画，退回源码，方便编辑；但定界符不属于正文，标出来让复制丢掉它
-    if (isActiveLine(state, range.from)) {
+    // 块公式：光标落进去就退回源码，就地改（行内公式的判据见上，保持不露）
+    if (isActiveLine(state, range.from) || (range.block && isBlockActive(state, range.from, range.to))) {
       const delim = range.block ? 2 : 1
       ranges.push({ from: range.from, to: range.from + delim, deco: MARK({ class: 'cm-md-marker' }) })
       ranges.push({ from: range.to - delim, to: range.to, deco: MARK({ class: 'cm-md-marker' }) })
@@ -493,41 +508,9 @@ function collectTaskItems(state: EditorState, ranges: DecorationRange[], front: 
 /**
  * ```mermaid 代码块画成图。
  *
- * 渲染是异步的（mermaid 要在隐藏沙箱里跑），所以先放一个占位，画好了再原地替换。
+ * 渲染是异步的（引擎要懒加载），所以先放一个占位，画好了再原地替换。
  * 失败就把代码块原样留着——图是锦上添花，代码是用户写的东西。
- *
- * 切主题时图要重画：调色板是渲染那一刻从 CSS 变量读的（见 mermaid-bridge.ts）。
- * 重画**不走 CM6 的装饰更新**：key 不变、装饰集不动，widget 的 DOM 记在
- * liveMermaids 里，主题换装广播（theme-manager.ts 的 colamd:theme-applied）
- * 之后原地重画。曾经试过让 key 带上「主题代数」、切主题时整个 widget 销毁重建，
- * 实测 CM6 在 replace 装饰的重建路径上会把新 widget 的槽位弄丢（装饰集里 widget
- * 明明还在，DOM 里却只剩一个空 span；打字、滚动、视口变化都救不回来——后续重算
- * 认为「装饰没变」，坏槽位被永久保留，2026-10-10 真实窗口验证）。原地重画完全
- * 绕开这条路：widget 自己 DOM 的内部内容，CM6 本来就不看。
  */
-interface LiveMermaid {
-  dom: HTMLElement
-  code: string
-}
-
-/** 当前挂在视图里的每一张 mermaid 图。destroy 时摘除，不留死 DOM。 */
-const liveMermaids = new Set<LiveMermaid>()
-
-/** 把一张图画进它的 DOM：先占位，成功换 SVG，失败退回源码块（绝不吞字）。 */
-function paintMermaid(target: LiveMermaid): void {
-  target.dom.classList.remove('cm-md-mermaid-ready', 'cm-md-mermaid-failed')
-  target.dom.textContent = isChinese() ? '图表渲染中…' : 'Rendering diagram…'
-  void renderMermaid(target.code)
-    .then((svg) => {
-      target.dom.innerHTML = svg
-      target.dom.classList.add('cm-md-mermaid-ready')
-    })
-    .catch(() => {
-      // 画不出来就退回代码块，绝不吞掉用户的图
-      target.dom.textContent = '```mermaid\n' + target.code + '\n```'
-      target.dom.classList.add('cm-md-mermaid-failed')
-    })
-}
 
 class MermaidWidget extends WidgetType {
   constructor(readonly code: string, readonly key: string, readonly from: number, readonly to: number) {
@@ -538,37 +521,61 @@ class MermaidWidget extends WidgetType {
     return other.key === this.key && other.from === this.from && other.to === this.to
   }
 
-  private live: LiveMermaid | null = null
-
   toDOM(): HTMLElement {
     const wrap = document.createElement('div')
     wrap.className = 'cm-md-mermaid'
     withSourceRange(wrap, this.from, this.to)
 
-    // **不指定**配色：交给 mermaid-bridge 按代码块底色的明暗挑（和它自己的注释一致）。
-    // 这里曾经按应用主题挑（`theme-dark` 才用深色），可 elegant 和 bear 是浅色主题
-    // 配深色代码块，于是深底上画出了浅色主题的图：连线 #333 落在 #2c2c2c 上，
-    // 边缘文字也几乎看不见（2026-09-26 用户报的「线条和背景色太接近」）。
-    if (this.live) liveMermaids.delete(this.live)
-    this.live = { dom: wrap, code: this.code }
-    liveMermaids.add(this.live)
-    paintMermaid(this.live)
+    wrap.textContent = isChinese() ? '图表渲染中…' : 'Rendering diagram…'
+
+    // **不指定**配色：图是画在代码块底色上的，颜色由 `--pele-*` 那组变量从主题推出来
+    // （themes/editor-preview.css 的 `.cm-md-mermaid`），换主题不用重画。
+    // 这里曾经按应用主题挑明暗两套调色板，可 elegant 和 bear 是浅色主题配深色代码块，
+    // 于是深底上画出了浅色主题的图：连线 #333 落在 #2c2c2c 上，边缘文字几乎看不见
+    // （2026-09-26 用户报的「线条和背景色太接近」）。现在没有「挑一套」这回事了。
+    void renderMermaid(this.code)
+      .then((svg) => {
+        wrap.innerHTML = svg
+        wrap.classList.add('cm-md-mermaid-ready')
+        // 画不下的图（被 max-width 压窄了）才真出得来控件（#129）
+        attachDiagramZoom(wrap)
+      })
+      .catch(() => {
+        // 画不出来就退回代码块，绝不吞掉用户的图
+        wrap.textContent = '```mermaid\n' + this.code + '\n```'
+        wrap.classList.add('cm-md-mermaid-failed')
+      })
     return wrap
   }
 
-  destroy(): void {
-    if (this.live) liveMermaids.delete(this.live)
-    this.live = null
+  destroy(dom: HTMLElement): void {
+    detachDiagramZoom(dom)
+  }
+
+  ignoreEvent(event: Event): boolean {
+    if (!POINTER_EVENTS.has(event.type)) return false
+    const target = event.target
+    if (!(target instanceof Element)) return false
+    // 控件上的事不给编辑器管：否则 mousedown 一落，CM 就把光标放到块里，块退回源码、图当场
+    // 没了（另有一条「点渲染块跳源码」在 editor.ts，那边按控件和放大态各挡一道）。
+    if (target.closest('.pele-zoom')) return true
+    // 放大之后按住拖是在挪图，不是在选字
+    const host = target.closest<HTMLElement>('.cm-md-mermaid')
+    return !!host && isDiagramZoomed(host)
   }
 }
 
-// 主题换装后把还挂着的每一张图原地重画。DOM 不换、装饰集不动，CM6 全程不知情。
-window.addEventListener('colamd:theme-applied', () => {
-  for (const target of liveMermaids) {
-    if (!target.dom.isConnected) continue
-    paintMermaid(target)
-  }
-})
+// 编辑器管的事件里，只有指针那一小拨需要抢：滚轮、滚动、键盘都照旧归编辑器。
+const POINTER_EVENTS = new Set([
+  'mousedown',
+  'mouseup',
+  'click',
+  'dblclick',
+  'pointerdown',
+  'pointerup',
+  'touchstart',
+  'touchend',
+])
 
 function collectMermaid(state: EditorState, ranges: DecorationRange[], front: Range | null): void {
   const text = state.doc.toString()
@@ -579,7 +586,7 @@ function collectMermaid(state: EditorState, ranges: DecorationRange[], front: Ra
       if (firstLineEnd === -1) return
       const opening = text.slice(node.from, firstLineEnd).trim()
       if (!/^(`{3,}|~{3,})\s*mermaid\s*$/.test(opening)) return
-      if (isActiveRange(state, node.from, node.to)) return
+      if (isBlockActive(state, node.from, node.to)) return
       // 去掉开头的 ```mermaid 行与结尾的 ```
       const bodyStart = firstLineEnd + 1
       const lastLineStart = text.lastIndexOf('\n', node.to - 1)
@@ -774,8 +781,8 @@ function appendInline(parent: HTMLElement, text: string, base: string | null): v
 function collectTables(state: EditorState, ranges: DecorationRange[], front: Range | null): void {
   iterateContent(state, front, (node) => {
       if (node.name !== 'Table') return
-      // 光标在表格里就退回源码：改表格就是改文字
-      if (isActiveRange(state, node.from, node.to)) {
+      // 光标在表格里就退回源码：改表格就是改文字（#153）
+      if (isBlockActive(state, node.from, node.to)) {
         pushBlockLines(state, node.from, node.to, 'cm-md-table', ranges)
         return false
       }
@@ -921,7 +928,7 @@ function collectHTML(state: EditorState, ranges: DecorationRange[], front: Range
   iterateContent(state, front, (node) => {
     const block = node.name === 'HTMLBlock'
     if (!block && node.name !== 'HTMLTag') return
-    if (block ? isActiveRange(state, node.from, node.to) : isActiveLine(state, node.from)) return false
+    if (block ? isBlockActive(state, node.from, node.to) : isActiveLine(state, node.from)) return false
     if (!block) {
       if (paired.has(node.from)) return false
       const pair = inlinePair(state, node.from, node.to)
@@ -1255,7 +1262,15 @@ function buildDecorations(state: EditorState, flash: { from: number; to: number 
   // 公式放最后：它覆盖区间，其它装饰不该插进它里面
   collectMath(state, ranges)
 
-  ranges.sort((a, b) => a.from - b.from || a.to - b.to)
+  // 排序键必须带上 startSide：RangeSetBuilder 只接受按 (from, startSide) 递增的顺序，
+  // 原来只按 (from, to) 排，同一段区间上挂了两种装饰时就翻车。
+  //
+  // 真事（#157）：`[![图](pic.png)](https://…)` 这种「链接里只包一张图」的写法，链接
+  // mark（startSide 5e8）和图片 widget（startSide 5e8 - 1）盖的是**同一段区间**，(from, to)
+  // 完全相等，先后全看数组原来的顺序。mark 排在前面就抛
+  // 「Ranges must be added sorted by `from` position and `startSide`」，整个装饰层作废，
+  // 表现是文件打开了但正文空白。
+  ranges.sort((a, b) => a.from - b.from || a.deco.startSide - b.deco.startSide || a.to - b.to)
   const builder = new RangeSetBuilder<Decoration>()
   for (const r of ranges) builder.add(r.from, r.to, r.deco)
   return builder.finish()

@@ -48,6 +48,9 @@ function fixture() {
     '',
     '![本地图片](pixel.png)',
     '',
+    // 链接里只包一张图：链接 mark 和图片 widget 盖同一段区间（#157）
+    '[![链接里的图](pixel.png)](https://example.com/img)',
+    '',
     '## 二级标题',
     '',
     '- 无序项一',
@@ -250,7 +253,15 @@ const MEASURE = `(() => {
         sample: tokens.slice(0, 6).map((t) => t.text + ' ' + t.color).join(' | '),
         bodyColor: colorOf(content),
         copyButton: q('.code-copy-btn').length,
-        langLabel: q('.cm-md-codeinfo').length
+        langLabel: q('.cm-md-codeinfo').length,
+        // #154：代码块的底色必须画在选区层下面。底色若压在上面，代码块里选中
+        // 看不到高亮，只有代码块两侧多出一条色带。
+        lineBg: (block[1] || block[0]) ? getComputedStyle(block[1] || block[0]).backgroundColor : null,
+        underBg: (block[1] || block[0]) ? getComputedStyle(block[1] || block[0], '::before').backgroundColor : null,
+        underZ: (block[1] || block[0]) ? getComputedStyle(block[1] || block[0], '::before').zIndex : null,
+        selLayerZ: document.querySelector('.cm-selectionLayer')
+          ? getComputedStyle(document.querySelector('.cm-selectionLayer')).zIndex
+          : null
       }
     })(),
     frontmatter: {
@@ -283,6 +294,8 @@ const MEASURE = `(() => {
         anchor: /<a[^>]+href/i.test(out),
         list: /<ul>|<ol>/i.test(out),
         code: /<pre><code>/i.test(out),
+        // 这段代码住在模板字符串里，反引号和反斜杠都得再转一层（下面 rgba 那条同理）
+        codeFenceFree: !/<pre><code>[\\s\\S]*?\`\`\`[\\s\\S]*?<\\/code><\\/pre>/i.test(out),
         table: /<table/i.test(out),
         quote: /<blockquote>/i.test(out),
         heading: /<h1>/i.test(out),
@@ -697,6 +710,12 @@ function main() {
         `token=${m.code.tokens} 颜色种类=${m.code.colors} 样例 ${m.code.sample}`)
       check('语言名压淡', m.code.langLabel >= 1, `语言名标注=${m.code.langLabel}`)
       check('代码块复制按钮', m.code.copyButton >= 1, `按钮数=${m.code.copyButton}`)
+      // #154：底色压在选区层上面，代码块里选中就看不到高亮。判据是层序：
+      // 行自己的底色必须透明，底色画在 z-index 更小（更靠下）的伪元素上。
+      check('代码块底色不压住选区（#154）',
+        m.code.lineBg === 'rgba(0, 0, 0, 0)' && m.code.underBg !== 'rgba(0, 0, 0, 0)' &&
+        Number(m.code.underZ) < Number(m.code.selLayerZ),
+        `行底色=${m.code.lineBg} 底层底色=${m.code.underBg} 底层 z=${m.code.underZ} 选区层 z=${m.code.selLayerZ}`)
       check('属性区阅读时不占位置', m.frontmatter.visible === 0,
         `属性区行数=${m.frontmatter.count} 有高度的=${m.frontmatter.visible}`)
       check('脚注渲染', m.footnote.refs >= 1, `refs=${m.footnote.refs} 露源码=${m.footnote.raw}`)
@@ -709,6 +728,7 @@ function main() {
         m.exportHtml.strong && m.exportHtml.em && m.exportHtml.anchor && m.exportHtml.list &&
         m.exportHtml.code && m.exportHtml.table && m.exportHtml.quote && m.exportHtml.heading,
         `strong=${m.exportHtml.strong} em=${m.exportHtml.em} a=${m.exportHtml.anchor} ul=${m.exportHtml.list} pre=${m.exportHtml.code} table=${m.exportHtml.table} quote=${m.exportHtml.quote} h1=${m.exportHtml.heading}`)
+      check('导出的 HTML 代码块不残留收尾反引号', m.exportHtml.codeFenceFree === true, 'pre code 里无 ``` 残留')
       check('导出的 HTML 不带编辑器结构',
         m.exportHtml.cmClass === false && m.exportHtml.cmLine === false && m.exportHtml.frontmatter === false,
         `cm-md 类名残留=${m.exportHtml.cmClass}[${m.exportHtml.cmClassNames}] cm-line 残留=${m.exportHtml.cmLine} 属性区残留=${m.exportHtml.frontmatter}`)
@@ -718,47 +738,89 @@ function main() {
 
       // #138-4：被替换掉的块（表格、图、图片、公式、HTML）点一下要能进去改。
       //
-      // 判据 2026-10-06 改过两次：以前是「点完那个替换块消失、源码露出来」。源码现在哪一行
-      // 都不露了（要改标记去源码模式），所以判的是「点一下排版还在」。
+      // 判据改过三次：2.6 是「点完替换块消失、源码露出来」；2026-10-06 改成「源码哪一行都
+      // 不露」，于是判成「点一下排版还在」；**2026-10-15 按 #153 定成：块级 widget 例外**。
+      // 表格、图、HTML 块、块公式是把**整段源码**换成渲染结果的，光标落进去之后打出来的字
+      // 写进的是被盖住的源码，不露出来就是盲打（#153 报的就是点表格打字把表格敲散）。
+      // 图片不在这一列：它的源码只有一行，本来就贴在眼前。
       // 三个坑都踩过了：①mermaid 是异步画的（走隐藏 iframe，还有 400ms 防抖）；
       // ②把字符打在点击处会把 markdown 语法敲坏（表格那一行就散了），所以先按 End 再打字，
       // 只动行尾；③**一边滚一边等会把它等死**——上面那几条断言做过导出，整篇重渲染过一遍，
       // mermaid 需要重新画，而每 250ms 滚 260px 会让那一行反复进出视口，防抖永远凑不满。
       // 这台机器的视口是 3600px 高，整篇都在里面，等就够了，不用滚。
-      // 只覆盖表格与图片：这两种块是同步建的，点一下之后一定还在。
       // mermaid 在这一步等不到（未查明：同一条流水线上它先是渲染好的，见「Mermaid 渲染」，
       // 走到这里却查不到，等 15 秒也不回来；单独开窗实测导出前后它都好好的，所以在夹具这个
       // 场景里是测试自身的问题）。它的渲染另有两条断言盯着，别在这里继续耗时间。
-      for (const [label, selector] of [
-        ['表格', '.cm-md-table-widget'],
-        ['图片', '.cm-md-image'],
-      ]) {
-        let appeared = false
+      const waitFor = async (selector) => {
         for (let i = 0; i < 30; i++) {
-          if (Number(await evaluate(renderer, `document.querySelectorAll('${selector}').length`)) > 0) { appeared = true; break }
+          if (Number(await evaluate(renderer, `document.querySelectorAll('${selector}').length`)) > 0) return true
           await sleep(500)
         }
-        const box = JSON.parse(await evaluate(renderer, `(() => {
-          const el = document.querySelector('${selector}')
-          if (!el) return JSON.stringify({ x: 0, y: 0 })
-          const r = el.getBoundingClientRect()
-          return JSON.stringify({ x: Math.round(r.left + 12), y: Math.round(r.top + 8) })
-        })()`))
+        return false
+      }
+      const clickBox = async (box) => {
         for (const type of ['mousePressed', 'mouseReleased']) {
           if (!box.x) break
           await renderer.send('Input.dispatchMouseEvent', { type, x: box.x, y: box.y, button: 'left', clickCount: 1 })
         }
         await sleep(400)
-        const afterClick = Number(await evaluate(renderer, `document.querySelectorAll('${selector}').length`))
+      }
+
+      // 表格：点第二行第二格 → 整块退回源码，而且光标就落在点到的那一格上（#153）。
+      const tableAppeared = await waitFor('.cm-md-table-widget')
+      await clickBox(JSON.parse(await evaluate(renderer, `(() => {
+        const table = document.querySelector('.cm-md-table-widget')
+        const cell = table ? (table.querySelectorAll('tr')[2] || {}).children : null
+        if (!cell || !cell[1]) return JSON.stringify({ x: 0, y: 0 })
+        const r = cell[1].getBoundingClientRect()
+        return JSON.stringify({ x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) })
+      })()`)))
+      const revealed = JSON.parse(await evaluate(renderer, `JSON.stringify({
+        widgets: document.querySelectorAll('.cm-md-table-widget').length,
+        rows: document.querySelectorAll('#editor .cm-md-table').length
+      })`))
+      check('点表格一格就退回源码（#153）',
+        tableAppeared && revealed.widgets === 0 && revealed.rows >= 4,
+        `表格出现=${tableAppeared} 点完渲染块=${revealed.widgets} 源码行=${revealed.rows}`)
+
+      // 打字改的是点到的格，不是表格开头。文件里那一行必须还是表格的一行。
+      await renderer.send('Input.insertText', { text: 'Z' })
+      await sleep(1600)
+      const typedCell = readFileSync(source, 'utf8').split('\n').find((l) => l.includes('乙三')) ?? ''
+      check('点哪一格，打字就改哪一格（#153）',
+        /Z\s*乙三/.test(typedCell) && typedCell.trim().startsWith('|') && typedCell.trim().endsWith('|'),
+        `点到的行=${JSON.stringify(typedCell)}`)
+      await pressKey(renderer, 'z', 'KeyZ', 90, 4)
+      await sleep(1600)
+      const undoneCell = readFileSync(source, 'utf8').split('\n').find((l) => l.includes('乙三')) ?? ''
+      check('撤销回到点之前', !/Z\s*乙三/.test(undoneCell), `撤销后=${JSON.stringify(undoneCell)}`)
+
+      // 点走：表格重新渲染回来（光标不在块里就不该再露源码）
+      await clickLine(renderer, '行内公式')
+      check('点走之后表格重新渲染', Number(await evaluate(renderer, `document.querySelectorAll('.cm-md-table-widget').length`)) === 1,
+        `点走后的渲染块=${await evaluate(renderer, `document.querySelectorAll('.cm-md-table-widget').length`)}`)
+
+      // 图片：点一下排版要还在（它的源码就一行，不露）
+      {
+        const appeared = await waitFor('.cm-md-image')
+        // 按点之前的张数比，不写死 1：固件里图片不止一张（#157 那个链接包图的回归样例）
+        const imagesBefore = Number(await evaluate(renderer, `document.querySelectorAll('.cm-md-image').length`))
+        await clickBox(JSON.parse(await evaluate(renderer, `(() => {
+          const el = document.querySelector('.cm-md-image')
+          if (!el) return JSON.stringify({ x: 0, y: 0 })
+          const r = el.getBoundingClientRect()
+          return JSON.stringify({ x: Math.round(r.left + 12), y: Math.round(r.top + 8) })
+        })()`)))
+        const afterClick = Number(await evaluate(renderer, `document.querySelectorAll('.cm-md-image').length`))
         await pressKey(renderer, 'End', 'End', 35)
         await renderer.send('Input.insertText', { text: 'Z' })
         await sleep(500)
-        const afterTyping = Number(await evaluate(renderer, `document.querySelectorAll('${selector}').length`))
+        const afterTyping = Number(await evaluate(renderer, `document.querySelectorAll('.cm-md-image').length`))
         await pressKey(renderer, 'z', 'KeyZ', 90, 4)
         await sleep(400)
-        check(`${label}点一下不再翻成源码`,
-          appeared && afterClick === 1 && afterTyping === 1,
-          `渲染块出现=${appeared} 点完=${afterClick} 行尾打字后=${afterTyping}`)
+        check('图片点一下不再翻成源码',
+          appeared && imagesBefore > 0 && afterClick === imagesBefore && afterTyping === imagesBefore,
+          `渲染块出现=${appeared} 点前=${imagesBefore} 点完=${afterClick} 行尾打字后=${afterTyping}`)
       }
 
       // 2026-10-08 报：鼠标拖选不到引用块和表格里的文字。这一组用真鼠标事件拖一遍，
