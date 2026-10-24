@@ -107,7 +107,6 @@ function enterPrintLayout(): () => void {
     overflow: 'visible',
   })
   override('#editor, .cm-editor, .cm-scroller', { height: 'auto', overflow: 'visible' })
-  override('#source-editor', { display: 'none' })
   return () => undo.forEach(({ el, cssText }) => (el.style.cssText = cssText))
 }
 
@@ -330,7 +329,7 @@ function createCapacitorAPI(): ElectronAPI {
   <style>${snapshot.styles || ''}
     html, body { height: auto; overflow: visible; }
     body { min-width: 320px; }
-    #titlebar, #file-panel, #source-editor { display: none !important; }
+    #titlebar, #file-panel { display: none !important; }
     #editor { height: auto !important; min-height: 100vh; overflow: visible !important; padding: 0 !important; }
   </style>
 </head>

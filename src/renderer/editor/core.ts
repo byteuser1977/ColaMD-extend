@@ -9,10 +9,10 @@
 // 这一层需要 DOM（EditorView 要做布局测量）。不依赖 DOM 的那一半在 state.ts 里，
 // 验收脚本直接消费那一半，所以保真的证明不需要真实浏览器。
 
-import { EditorState } from '@codemirror/state'
+import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import { EditorView, drawSelection, dropCursor, highlightSpecialChars, rectangularSelection, crosshairCursor } from '@codemirror/view'
 import { undo, redo } from '@codemirror/commands'
-import { livePreview, setEditorFocus } from './live-preview'
+import { livePreview, livePreviewField, setEditorFocus } from './live-preview'
 import { listInput } from './list-input'
 import { searchHighlightField } from './search-highlight'
 import { stateExtensions, editableCompartment, bodyStart } from './state'
@@ -29,6 +29,8 @@ export interface EditorOptions {
 
 /** 编辑器对外句柄。外壳只认这个，不认 CodeMirror。 */
 export interface EditorHandle {
+  /** 源码模式：关掉渲染装饰层，缓冲区只剩 markdown 语法高亮。 */
+  setSourceMode(source: boolean): void
   /** 当前缓冲区内容，即文件应有的字节。 */
   getText(): string
   /** 用新文本替换整个文档（换文件、外部改动）。会清空撤销栈。 */
@@ -54,10 +56,23 @@ export function getEditorHandle(): EditorHandle | null {
   return handle
 }
 
-export function createEditorCore(parent: HTMLElement, options: EditorOptions = {}): EditorHandle {
-  const changeListener = options.onChange
+/**
+ * 渲染装饰层的开关。源码模式就是把它换成空扩展：缓冲区不动，只是不再往上面画。
+ * 模式跟着 EditorState 走（每个标签的状态各自记着），所以换状态不会丢模式。
+ */
+const livePreviewCompartment = new Compartment()
 
-  const extension = [
+/** 这个状态是不是源码模式：装饰层的 field 在源码模式下不存在。 */
+function isSourceMode(state: EditorState): boolean {
+  return state.field(livePreviewField, false) === undefined
+}
+
+function editorExtensions(
+  sourceMode: boolean,
+  editable: boolean,
+  onChange?: (markdown: string) => void,
+): Extension {
+  return [
     // 状态层：语言、高亮、撤销栈、缩进、快捷键（无 DOM，可进 harness）
     stateExtensions(),
     // 以下是 view 层：选区绘制、拖放光标、特殊字符、主题
@@ -70,8 +85,9 @@ export function createEditorCore(parent: HTMLElement, options: EditorOptions = {
     crosshairCursor(),
     editorTheme,
     // 装饰层：把源码画成所见即所得。它只画不写，所以装在这里不会影响
-    // 「没改过的字节不许变」这条纪律。
-    livePreview,
+    // 「没改过的字节不许变」这条纪律。源码模式把它收起来，剩下的就是带 markdown
+    // 语法高亮的原文（高亮在 state.ts 的 markdown 扩展里，跟模式无关）。
+    livePreviewCompartment.of(sourceMode ? [] : livePreview),
     // 焦点变化要重算装饰：只有**正在编辑**的那一行才显示源码（见 live-preview 的 setEditorFocus）。
     // 用 DOM 事件而不是 EditorView.focusChangeEffect，是因为后者在创建时就已带焦点的编辑器上
     // 不会触发；下面创建完 view 之后补了一次初始值。
@@ -90,17 +106,22 @@ export function createEditorCore(parent: HTMLElement, options: EditorOptions = {
     // 检索高亮。面板靠 effect 改它，而 effect 得有 StateField 接住；
     // 不装这一条，检索面板会以为高亮画上了，实际什么也没发生。
     searchHighlightField,
-    editableCompartment.of(EditorView.editable.of(options.editable ?? true)),
+    editableCompartment.of(EditorView.editable.of(editable)),
     // 文档变化的唯一出口：把新文本交给外壳
     EditorView.updateListener.of((update) => {
-      if (update.docChanged && changeListener) {
-        changeListener(update.state.doc.toString())
+      if (update.docChanged && onChange) {
+        onChange(update.state.doc.toString())
       }
     }),
   ]
+}
+
+export function createEditorCore(parent: HTMLElement, options: EditorOptions = {}): EditorHandle {
+  const changeListener = options.onChange
+  const editableAtStart = options.editable ?? true
 
   const view = new EditorView({
-    state: EditorState.create({ doc: options.doc ?? '', extensions: extension }),
+    state: EditorState.create({ doc: options.doc ?? '', extensions: editorExtensions(false, editableAtStart, changeListener) }),
     parent,
   })
 
@@ -111,12 +132,22 @@ export function createEditorCore(parent: HTMLElement, options: EditorOptions = {
   const api: EditorHandle = {
     getText: () => view.state.doc.toString(),
 
+    setSourceMode(source: boolean): void {
+      view.dispatch({ effects: livePreviewCompartment.reconfigure(source ? [] : livePreview) })
+    },
+
     setText(text: string, clearHistory = false): void {
       if (view.state.doc.toString() === text) return
       // 换文件时必须把撤销栈清掉，否则撤销会跨文档串味。光标也要落到正文开头：
       // 属性区是收起来的，停在它里面敲出来的字会看不见（见 state.ts 的 bodyStart）。
+      // 模式要跟着带过去：新状态从扩展表重建，不显式给 Compartment 值就会回到渲染模式，
+      // 半兆以上的文档因此会先为整篇算一遍装饰。
       const next = clearHistory
-        ? EditorState.create({ doc: text, selection: { anchor: bodyStart(text) }, extensions: extension })
+        ? EditorState.create({
+            doc: text,
+            selection: { anchor: bodyStart(text) },
+            extensions: editorExtensions(isSourceMode(view.state), editableAtStart, changeListener),
+          })
         : view.state.update({ changes: { from: 0, to: view.state.doc.length, insert: text } }).state
       view.setState(next)
     },

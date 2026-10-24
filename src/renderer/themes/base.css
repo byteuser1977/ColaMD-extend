@@ -538,35 +538,6 @@ body.panel-motion-ready #editor-region {
   padding: 0 var(--panel-inset-right, 0px) 0 var(--panel-inset-left, 0px);
 }
 
-#source-editor {
-  display: none;
-  height: 100%;
-  width: 100%;
-  /* 跟渲染模式同一个阅读列宽，切模式时文字不会跳位置（#48），并且跟它落在
-     同一块可见区域里（#143）。
-     居中还是用 max-width + 自动外边距，不用内边距算：内边距里的百分比是按
-     **父容器**宽度解析的，不是元素自己的宽度，公式会算错（实测过）。 */
-  max-width: calc(var(--editor-column-width) + 80px + var(--panel-inset-left, 0px) + var(--panel-inset-right, 0px));
-  margin: 0 auto;
-  /* 面板那一列算进内边距：盒子按「列宽 + 两侧让位」居中，正文于是落在可见
-     区域中间，而不是整窗中间。面板在右时这两者差 110px，看得出来（实测）。 */
-  padding: calc(40px + var(--editor-top-gap, 0px)) calc(40px + var(--panel-inset-right, 0px)) 40px calc(40px + var(--panel-inset-left, 0px));
-  box-sizing: border-box;
-  border: none;
-  outline: none;
-  resize: none;
-  background: var(--bg-color);
-  color: var(--text-color);
-  font-family: 'SF Mono', 'Fira Code', Menlo, Monaco, monospace;
-  font-size: 14px;
-  line-height: 1.7;
-  tab-size: 2;
-}
-
-#source-editor.visible {
-  display: block;
-}
-
 /* Same-directory file panel */
 #file-panel {
   position: fixed;
@@ -913,10 +884,6 @@ body.panel-resizing {
    hover highlight and the shell's line rule. */
 #file-list button.parent {
   margin-bottom: 4px;
-}
-
-#editor.hidden {
-  display: none;
 }
 
 /* CodeMirror 的根节点。旧版这里是 Milkdown 的包装层 `.milkdown`，结构换成 CM6 之后
@@ -1321,14 +1288,6 @@ body.has-custom-font-size #editor .cm-content {
   font-size: var(--editor-font-size, 16px) !important;
 }
 
-body.has-custom-font #source-editor {
-  font-family: var(--editor-font) !important;
-}
-
-body.has-custom-font-size #source-editor {
-  font-size: var(--editor-font-size, 14px) !important;
-}
-
 /* Font settings modal (reuses math-modal shell) */
 .font-modal {
   width: 440px;
@@ -1436,7 +1395,6 @@ body.presenting {
 body.presenting #titlebar,
 body.presenting #file-panel,
 body.presenting #panel-resizer,
-body.presenting #source-editor,
 body.presenting #hover-tip,
 body.presenting #update-banner,
 body.presenting #editor .code-copy-btn,

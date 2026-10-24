@@ -3,7 +3,7 @@
 // 核心换成 CodeMirror 之后，这里的两件事跟着换：
 //   1. 高亮从 ProseMirror 的 DecorationSet 换成 CM6 的 Decoration
 //   2. 改写从 transaction 换成 changes
-// 源码模式那条路仍走 textarea，不受影响。
+// 源码模式与渲染模式共用同一个编辑器（源码模式只是关掉渲染装饰），所以这里只有一条路。
 //
 // 高亮的 StateField 在 search-highlight.ts：它要装进编辑器扩展，从这里定义会绕成
 // core → search-panel → editor → core 的循环依赖。
@@ -136,57 +136,31 @@ export class SearchPanel {
     this.matches = []
     this.currentIndex = -1
     this.countEl.textContent = ''
-    const sourceEditor = this.getSourceEditor()
-    if (sourceEditor) {
-      sourceEditor.focus()
-      return
-    }
     const view = getEditorView()
     if (view) view.focus()
   }
 
   private replaceCurrent(): void {
     if (this.currentIndex < 0 || this.currentIndex >= this.matches.length) return
-    const sourceEditor = this.getSourceEditor()
-    const replacement = this.replaceInput.value
-    if (sourceEditor) {
-      const match = this.matches[this.currentIndex]
-      sourceEditor.setRangeText(replacement, match.from, match.to, 'select')
-      sourceEditor.dispatchEvent(new Event('input', { bubbles: true }))
-      this.searchSourceEditor(this.input.value, sourceEditor)
-      return
-    }
     const view = getEditorView()
     if (!view) return
     const match = this.matches[this.currentIndex]
-    view.dispatch({ changes: { from: match.from, to: match.to, insert: replacement } })
+    view.dispatch({ changes: { from: match.from, to: match.to, insert: this.replaceInput.value } })
     this.search()
   }
 
   private replaceAll(): void {
     const query = this.input.value
     if (!query || this.matches.length === 0) return
-    const sourceEditor = this.getSourceEditor()
-    const replacement = this.replaceInput.value
-    if (sourceEditor) {
-      sourceEditor.value = sourceEditor.value.replace(new RegExp(this.escapeRegExp(query), 'gi'), () => replacement)
-      sourceEditor.dispatchEvent(new Event('input', { bubbles: true }))
-      this.searchSourceEditor(query, sourceEditor)
-      return
-    }
     const view = getEditorView()
     if (!view) return
     // 从后往前替，前面的改动就不会挪动后面匹配项的偏移量
     const changes = this.matches
       .slice()
       .sort((a, b) => b.from - a.from)
-      .map((match) => ({ from: match.from, to: match.to, insert: replacement }))
+      .map((match) => ({ from: match.from, to: match.to, insert: this.replaceInput.value }))
     view.dispatch({ changes })
     this.search()
-  }
-
-  private escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   }
 
   private btn(text: string, className: string, onClick: () => void): HTMLButtonElement {
@@ -199,12 +173,6 @@ export class SearchPanel {
 
   private search(): void {
     const query = this.input.value
-    const sourceEditor = this.getSourceEditor()
-    if (sourceEditor) {
-      this.searchSourceEditor(query, sourceEditor)
-      return
-    }
-
     const view = getEditorView()
     if (!view) return
 
@@ -230,36 +198,6 @@ export class SearchPanel {
       this.highlight(view, true)
     } else {
       this.clearDecorations()
-    }
-    this.updateCount()
-  }
-
-  private getSourceEditor(): HTMLTextAreaElement | null {
-    const sourceEditor = document.getElementById('source-editor') as HTMLTextAreaElement | null
-    return sourceEditor?.classList.contains('visible') ? sourceEditor : null
-  }
-
-  private searchSourceEditor(query: string, sourceEditor: HTMLTextAreaElement): void {
-    this.clearDecorations()
-    this.matches = []
-    this.currentIndex = -1
-
-    if (!query) {
-      this.updateCount()
-      return
-    }
-
-    const lowerQuery = query.toLowerCase()
-    const text = sourceEditor.value.toLowerCase()
-    let idx = 0
-    while ((idx = text.indexOf(lowerQuery, idx)) !== -1) {
-      this.matches.push({ from: idx, to: idx + query.length })
-      idx += 1
-    }
-
-    if (this.matches.length > 0) {
-      this.currentIndex = 0
-      this.selectSourceMatch(sourceEditor)
     }
     this.updateCount()
   }
@@ -293,13 +231,6 @@ export class SearchPanel {
   private next(): void {
     if (this.matches.length === 0) return
     this.currentIndex = (this.currentIndex + 1) % this.matches.length
-    const sourceEditor = this.getSourceEditor()
-    if (sourceEditor) {
-      this.selectSourceMatch(sourceEditor)
-      this.updateCount()
-      return
-    }
-
     const view = getEditorView()
     if (view) this.highlight(view, true)
     this.updateCount()
@@ -308,13 +239,6 @@ export class SearchPanel {
   private prev(): void {
     if (this.matches.length === 0) return
     this.currentIndex = (this.currentIndex - 1 + this.matches.length) % this.matches.length
-    const sourceEditor = this.getSourceEditor()
-    if (sourceEditor) {
-      this.selectSourceMatch(sourceEditor)
-      this.updateCount()
-      return
-    }
-
     const view = getEditorView()
     if (view) this.highlight(view, true)
     this.updateCount()
@@ -326,13 +250,5 @@ export class SearchPanel {
     } else {
       this.countEl.textContent = `${this.currentIndex + 1}/${this.matches.length}`
     }
-  }
-
-  private selectSourceMatch(sourceEditor: HTMLTextAreaElement): void {
-    if (this.currentIndex < 0 || this.currentIndex >= this.matches.length) return
-    const match = this.matches[this.currentIndex]
-    sourceEditor.focus()
-    sourceEditor.setSelectionRange(match.from, match.to)
-    this.input.focus()
   }
 }

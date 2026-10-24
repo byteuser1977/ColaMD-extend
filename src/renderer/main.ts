@@ -1,7 +1,6 @@
-import { createEditor, focusEditor, getMarkdown, getEditorView, getEditorScroller, onEditorJumpPhase, setMarkdown, setEditorEditable, getEditorState, restoreEditorState, applyMarkdownStyle, runFormatCommand, jumpToLine, jumpToHeading, setCleanExport, setDocumentFileUrl, type FormatCommandId } from './editor/editor'
+import { createEditor, focusEditor, getMarkdown, getEditorView, getEditorScroller, onEditorJumpPhase, setMarkdown, setEditorEditable, getEditorState, restoreEditorState, applyMarkdownStyle, runFormatCommand, jumpToLine, jumpToHeading, setCleanExport, setDocumentFileUrl, setSourceMode, type FormatCommandId } from './editor/editor'
 import { markdownForWord } from './editor/mermaid-export'
 import { withDiagramZoomPaused } from './editor/mermaid-bridge'
-import { jumpToSourceLine } from './editor/source-line'
 import { documentHTMLFrom } from './editor/clean-html'
 import { isPresenting, startSlideshow, stopSlideshow } from './slideshow'
 import { enterPrintLayout, exitPrintLayout } from './slides-export'
@@ -33,7 +32,6 @@ let sourceModeActive = false
 const editorEl = () => document.getElementById('editor') as HTMLElement
 // 正文的滚动在 .cm-scroller 上，不在 #editor 上；见 editor.ts 的 getEditorScroller。
 const editorScroller = () => getEditorScroller() ?? editorEl()
-const sourceEl = () => document.getElementById('source-editor') as HTMLTextAreaElement
 const filePanelEl = () => document.getElementById('file-panel') as HTMLElement
 const fileListEl = () => document.getElementById('file-list') as HTMLElement
 const outlineListEl = () => document.getElementById('outline-list') as HTMLElement
@@ -303,7 +301,6 @@ interface DocumentTab {
   dirty: boolean
   revision: number
   sourceMode: boolean
-  sourceText: string
   content: string
   frontmatter: string
   lineEnding: string
@@ -354,13 +351,10 @@ function captureActiveTab(): void {
   tab.frontmatter = activeFrontmatter
   tab.lineEnding = activeLineEnding
   tab.content = getFileContent()
-  if (sourceModeActive) {
-    tab.sourceText = sourceEl().value
-    tab.scrollTop = sourceEl().scrollTop
-  } else {
-    tab.editorState = getEditorState()
-    tab.scrollTop = editorScroller().scrollTop
-  }
+  // 源码模式与渲染模式现在共用一个编辑器：状态里自带模式（装饰层的 Compartment 值），
+  // 所以两种情况都存同一份 EditorState，不需要另存一份源码文本。
+  tab.editorState = getEditorState()
+  tab.scrollTop = editorScroller().scrollTop
 }
 
 // The bar only carries the unsaved mark that the tab already owns; the title bar
@@ -545,7 +539,6 @@ function showBlankDocument(): void {
   void refreshSiblings()
   scheduleOutlineUpdate()
   editorScroller().scrollTop = 0
-  sourceEl().scrollTop = 0
 }
 
 // Switching away must not lose work. A tab with a path is flushed through the
@@ -569,7 +562,6 @@ function ensureTab(): DocumentTab {
     dirty: false,
     revision: documentRevision,
     sourceMode: false,
-    sourceText: '',
     content: '',
     frontmatter: '',
     lineEnding: '\n',
@@ -592,7 +584,6 @@ async function openNewTab(): Promise<void> {
     dirty: false,
     revision: ++documentRevision,
     sourceMode: false,
-    sourceText: '',
     content: '',
     frontmatter: '',
     lineEnding: '\n',
@@ -663,10 +654,7 @@ async function activateTab(id: string): Promise<void> {
       setContent(disk!.content, true)
       clearDirty()
       clearSaveStatus()
-    } else if (target.sourceMode) {
-      enterSourceMode(target.sourceText, 0)
     } else if (target.editorState) {
-      exitSourceMode()
       // Swapping in the tab's own editor state is not a user edit. Without this
       // guard the listener fires, the tab flips to 「已编辑」, and an autosave
       // rewrites the file the user never touched.
@@ -676,6 +664,11 @@ async function activateTab(id: string): Promise<void> {
       } finally {
         applyingProgrammaticChange = false
       }
+      // 标签的状态里已经带着自己的模式（装饰层 Compartment 的值），外壳这边只把
+      // 按钮与 body 类对齐，不再重配一次编辑器。
+      applySourceModeUi(target.sourceMode)
+    } else if (target.sourceMode) {
+      enterSourceMode()
     }
     // The tab's own unsaved state decides, never the swap itself.
     dirty = target.dirty
@@ -692,8 +685,7 @@ async function activateTab(id: string): Promise<void> {
     void refreshSiblings()
     scheduleOutlineUpdate()
     const restoreScroll = (): void => {
-      if (target.sourceMode) sourceEl().scrollTop = target.scrollTop
-      else editorScroller().scrollTop = target.scrollTop
+      editorScroller().scrollTop = target.scrollTop
     }
     restoreScroll()
     requestAnimationFrame(restoreScroll)
@@ -800,11 +792,10 @@ function bindTabBar(api: import('../preload/index').ElectronAPI): void {
       requestAnimationFrame(() => requestAnimationFrame(() => {
         if (currentFilePath !== path) return
         if (line !== undefined) {
-          if (sourceModeActive) jumpToSourceLine(sourceEl(), line)
-          else jumpToLine(Math.min(line, getMarkdown().split('\n').length) - 1)
+          // 两种模式共用一个编辑器，行号跳转不需要再分路。
+          jumpToLine(Math.min(line, getMarkdown().split('\n').length) - 1)
           return
         }
-        if (sourceModeActive) exitSourceMode()
         jumpToHeading(fragment!)
       }))
     }).catch(() => { /* next file still opens */ })
@@ -1076,16 +1067,11 @@ function restoreScrollRatio(el: HTMLElement, ratio: number): void {
 }
 
 function toggleSourceMode(): void {
-  if (sourceModeActive) {
-    const ratio = scrollRatio(sourceEl())
-    // Source → WYSIWYG: re-parse the textarea content back into the editor
-    exitSourceMode()
-    setMarkdownProgrammatically(sourceEl().value)
-    restoreScrollRatio(editorScroller(), ratio)
-  } else {
-    // WYSIWYG → Source: serialize the current editor content into the textarea
-    enterSourceMode(getMarkdown(), scrollRatio(editorScroller()))
-  }
+  // 两种模式是同一个缓冲区、同一个滚动容器，只有排版高度不同，所以按比例还原位置。
+  const ratio = scrollRatio(editorScroller())
+  if (sourceModeActive) exitSourceMode()
+  else enterSourceMode()
+  restoreScrollRatio(editorScroller(), ratio)
   updateWordCount()
   scheduleOutlineUpdate()
 }
@@ -1202,10 +1188,7 @@ function sourceOutline(content: string): OutlineItem[] {
 //
 // 旧实现是查 `#editor .ProseMirror h1…h6`，因为 ProseMirror 会把标题渲成真的 <h1> 标签。
 // CodeMirror 不这样做：标题只是带上装饰的一行文本。从文本解析本来就更该是对的做法，
-// 它跟「怎么画」无关，读源码模式与视觉模式能用同一份逻辑。
-function visualOutline(): OutlineItem[] {
-  return sourceOutline(getMarkdown())
-}
+// 它跟「怎么画」无关，源码模式与渲染模式共用同一份逻辑（缓冲区也是同一份）。
 
 function outlineVisible(): boolean {
   return !manualHidden && panelMode === 'outline'
@@ -1217,7 +1200,7 @@ function renderOutline(): void {
   // teardown plus forced layout per frame for output nobody could see.
   if (!outlineVisible()) return
   const list = outlineListEl()
-  outlineItems = sourceModeActive ? sourceOutline(sourceEl().value) : visualOutline()
+  outlineItems = sourceOutline(getMarkdown())
   list.innerHTML = ''
   if (outlineItems.length === 0) {
     outlineActiveIndex = -1
@@ -1236,21 +1219,12 @@ function renderOutline(): void {
     button.addEventListener('click', () => {
       // Re-resolve the entry against the live text: cached references die when
       // the editor content is re-set (#64).
-      const current = (sourceModeActive ? sourceOutline(sourceEl().value) : visualOutline())[index]
-      if (!current) return
-      if (sourceModeActive) {
-        beginOutlineJump()
-        const source = sourceEl()
-        const lineHeight = Number.parseFloat(getComputedStyle(source).lineHeight) || 24
-        source.scrollTop = Math.max(0, (current.line ?? 0) * lineHeight - lineHeight)
-        source.focus()
-        revealSourceHeading(source, current.line ?? 0)
-      } else if (current.line !== undefined) {
-        // 视觉模式：交给编辑器自己跳，它会同时把光标放过去。
-        // flashHeadingOnArrival 的信号靠编辑器内部的落点装饰发出，这里只管跳。
-        beginOutlineJump()
-        jumpToLine(current.line)
-      }
+      const current = sourceOutline(getMarkdown())[index]
+      if (!current || current.line === undefined) return
+      // 两种模式共用一个编辑器：交给它自己跳，它会同时把光标放过去。
+      // flashHeadingOnArrival 的信号靠编辑器内部的落点装饰发出，这里只管跳。
+      beginOutlineJump()
+      jumpToLine(current.line)
       setActiveOutlineIndex(index)
     })
     entry.appendChild(button)
@@ -1289,7 +1263,7 @@ function revealOutlineEntry(button: HTMLButtonElement): void {
 function beginOutlineJump(): void {
   outlineJumping = true
   if (outlineJumpTimer) clearTimeout(outlineJumpTimer)
-  outlineJumpStartTop = (sourceModeActive ? sourceEl() : editorScroller()).scrollTop
+  outlineJumpStartTop = editorScroller().scrollTop
   // scrollend releases the lock earlier; this fallback exists for the
   // no-scroll case. Re-arming while the position keeps changing keeps long
   // smooth jumps locked for their whole duration (review on #68).
@@ -1298,7 +1272,7 @@ function beginOutlineJump(): void {
 
 function releaseOutlineJumpIfSettled(): void {
   if (!outlineJumping) return
-  const top = (sourceModeActive ? sourceEl() : editorScroller()).scrollTop
+  const top = editorScroller().scrollTop
   if (top !== outlineJumpStartTop) {
     outlineJumpStartTop = top
     outlineJumpTimer = setTimeout(releaseOutlineJumpIfSettled, 400)
@@ -1338,10 +1312,11 @@ function scheduleOutlineActiveSync(): void {
 // viewport so the outline tracks reading progress (#64).
 function syncOutlineActive(): void {
   if (outlineItems.length === 0) return
-  setActiveOutlineIndex(sourceModeActive ? sourceActiveIndex() : visualActiveIndex())
+  setActiveOutlineIndex(visualActiveIndex())
 }
 
-// 视觉模式下的阅读进度：拿每一条标题所在行在正文坐标系里的位置，跟视口顶部比。
+// 阅读进度：拿每一条标题所在行在正文坐标系里的位置，跟视口顶部比。两种模式共用同一个
+// 编辑器与滚动容器，所以这套算法对源码模式同样成立。
 //
 // 旧实现找的是 DOM 里的 <h1>…<h6> 元素（ProseMirror 会把标题渲成真标签）。CodeMirror 不产
 // 生这些元素，标题只是带装饰的一行文字，所以改成用编辑器自己的行位置来算：
@@ -1362,34 +1337,6 @@ function visualActiveIndex(): number {
     index = i
   }
   return index
-}
-
-function sourceActiveIndex(): number {
-  const source = sourceEl()
-  const lineHeight = Number.parseFloat(getComputedStyle(source).lineHeight) || 24
-  const firstLine = Math.round(source.scrollTop / lineHeight)
-  let index = -1
-  for (let i = 0; i < outlineItems.length; i += 1) {
-    if ((outlineItems[i].line ?? 0) > firstLine + 1) break
-    index = i
-  }
-  return index
-}
-
-// Source mode cannot render a heading band; selecting the heading line gives
-// the same "you have arrived" feedback as the visual flash (#64).
-function revealSourceHeading(source: HTMLTextAreaElement, line: number): void {
-  let start = 0
-  for (let i = 0; i < line; i += 1) {
-    const next = source.value.indexOf('\n', start)
-    if (next === -1) {
-      start = source.value.length
-      break
-    }
-    start = next + 1
-  }
-  const end = source.value.indexOf('\n', start)
-  source.setSelectionRange(start, end === -1 ? source.value.length : end)
 }
 
 function scheduleOutlineUpdate(): void {
@@ -1581,21 +1528,24 @@ async function refreshSiblings(): Promise<void> {
   if (files) renderFileList(files)
 }
 
-function enterSourceMode(content: string, ratio = 0): void {
-  sourceModeActive = true
-  editorEl().classList.add('hidden')
-  const ta = sourceEl()
-  ta.classList.add('visible')
-  ta.value = content
-  restoreScrollRatio(ta, ratio)
+// 源码模式不是第二个编辑器（见 editor/core.ts 的 livePreviewCompartment）：
+// 这里只同步外壳（按钮、body 类），真正的切换是关掉渲染装饰层。
+function applySourceModeUi(on: boolean): void {
+  if (sourceModeActive === on) return
+  sourceModeActive = on
+  document.body.classList.toggle('source-mode', on)
   updateSourceToggle()
 }
 
+function enterSourceMode(): void {
+  applySourceModeUi(true)
+  setSourceMode(true)
+}
+
 function exitSourceMode(): void {
-  sourceModeActive = false
-  editorEl().classList.remove('hidden')
-  sourceEl().classList.remove('visible')
-  updateSourceToggle()
+  if (!sourceModeActive) return
+  applySourceModeUi(false)
+  setSourceMode(false)
 }
 
 const LARGE_DOCUMENT_SOURCE_THRESHOLD = 512 * 1024
@@ -1612,21 +1562,20 @@ function takeFrontmatter(fileText: string): string {
 
 function setContent(content: string, flushHistory = false): void {
   const body = takeFrontmatter(content)
-  if (body.length >= LARGE_DOCUMENT_SOURCE_THRESHOLD) {
+  const large = body.length >= LARGE_DOCUMENT_SOURCE_THRESHOLD
+  if (large) {
     // 装饰层是**整篇**重算的（live-preview 的 StateField），半兆以上的文档每次敲键都要
     // 重算一遍全篇，打字会卡。所以超大文件仍然进源码模式——渲染不参与，编辑就快。
-    // （旧核心的理由是「ProseMirror 会把整篇渲染出来」，那条早就不成立了。）
-    enterSourceMode(body)
-    updateWordCount(body)
-    return
+    // 模式要在换文本之前切：换文本会按当前状态重建扩展表，模式跟着状态走，
+    // 这样不会先为整篇算一遍装饰。
+    enterSourceMode()
   }
-  exitSourceMode()
   setMarkdownProgrammatically(body, flushHistory)
+  if (!large) exitSourceMode()
   updateWordCount(body)
 }
 
 function getContent(): string {
-  if (sourceModeActive) return sourceEl().value
   return getMarkdown()
 }
 
@@ -1710,14 +1659,13 @@ function getExportSnapshot(content: string): {
 
 async function exportCurrentHTML(): Promise<void> {
   const wasSourceMode = sourceModeActive
-  const sourceScrollRatio = wasSourceMode ? scrollRatio(sourceEl()) : 0
+  const sourceScrollRatio = wasSourceMode ? scrollRatio(editorScroller()) : 0
   const content = getContent()
 
-  // Render the latest source text before taking the DOM snapshot, then restore
-  // source mode so exporting does not change the user's editing context.
+  // 导出拍的是渲染后的 DOM，所以先把源码模式切回来；缓冲区本来就是同一份，
+  // 不需要再把文本塞回去。导出后回到用户原来的编辑模式。
   if (wasSourceMode) {
     exitSourceMode()
-    setMarkdownProgrammatically(content)
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => resolve())
@@ -1728,18 +1676,18 @@ async function exportCurrentHTML(): Promise<void> {
   await withExportLayout(() => window.electronAPI.exportHTML(getExportSnapshot(content)))
 
   if (wasSourceMode) {
-    enterSourceMode(content, sourceScrollRatio)
+    enterSourceMode()
+    restoreScrollRatio(editorScroller(), sourceScrollRatio)
   }
 }
 
 async function exportCurrentImage(preset: 'desktop' | 'mobile'): Promise<void> {
   const wasSourceMode = sourceModeActive
-  const sourceScrollRatio = wasSourceMode ? scrollRatio(sourceEl()) : 0
+  const sourceScrollRatio = wasSourceMode ? scrollRatio(editorScroller()) : 0
   const content = getContent()
 
   if (wasSourceMode) {
     exitSourceMode()
-    setMarkdownProgrammatically(content)
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
     })
@@ -1747,7 +1695,10 @@ async function exportCurrentImage(preset: 'desktop' | 'mobile'): Promise<void> {
 
   await withExportLayout(() => window.electronAPI.exportImage(getExportSnapshot(content), preset))
 
-  if (wasSourceMode) enterSourceMode(content, sourceScrollRatio)
+  if (wasSourceMode) {
+    enterSourceMode()
+    restoreScrollRatio(editorScroller(), sourceScrollRatio)
+  }
 }
 
 // 导出幻灯片 PDF: the file and the dialog belong to the main process, so it
@@ -1757,9 +1708,7 @@ async function exportCurrentImage(preset: 'desktop' | 'mobile'): Promise<void> {
 window.__colamdSlidesExport = {
   enter: async () => {
     if (sourceModeActive) {
-      const content = getContent()
       exitSourceMode()
-      setMarkdownProgrammatically(content)
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       })
@@ -1795,21 +1744,18 @@ window.__colamdPrintExport = {
 }
 
 // 放映幻灯片: the pages are the editor's own blocks, so the document has to be
-// rendered before the deck starts. In source mode the rich text tree still holds
-// whatever was there before the textarea was touched, and presenting that would
-// be presenting the wrong document.
+// rendered before the deck starts. 源码模式只是把渲染装饰收起来了，切回来就行，
+// 缓冲区里一直是同一份文本。
 async function toggleSlideshow(): Promise<void> {
   if (isPresenting()) {
     stopSlideshow()
     return
   }
   const wasSourceMode = sourceModeActive
-  const sourceScrollRatio = wasSourceMode ? scrollRatio(sourceEl()) : 0
-  const content = getContent()
+  const sourceScrollRatio = wasSourceMode ? scrollRatio(editorScroller()) : 0
 
   if (wasSourceMode) {
     exitSourceMode()
-    setMarkdownProgrammatically(content)
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
     })
@@ -1823,12 +1769,18 @@ async function toggleSlideshow(): Promise<void> {
     onExit: () => {
       setEditorEditable(true)
       void window.electronAPI.setSlideshowFullscreen(false)
-      if (wasSourceMode) enterSourceMode(content, sourceScrollRatio)
+      if (wasSourceMode) {
+        enterSourceMode()
+        restoreScrollRatio(editorScroller(), sourceScrollRatio)
+      }
     }
   })
   // Nothing to present (an empty document has no page): put the user back where
   // they were instead of leaving them in a mode that did not open.
-  if (!started && wasSourceMode) enterSourceMode(content, sourceScrollRatio)
+  if (!started && wasSourceMode) {
+    enterSourceMode()
+    restoreScrollRatio(editorScroller(), sourceScrollRatio)
+  }
 }
 
 async function init(): Promise<void> {
@@ -1961,19 +1913,12 @@ async function init(): Promise<void> {
 
   sourceToggleBtnEl().addEventListener('click', toggleSourceMode)
   api.onToggleSourceMode(() => toggleSourceMode())
-  // Source-mode edits update the word count and mark the doc dirty in real time
-  sourceEl().addEventListener('input', () => {
-    setDirty()
-    updateWordCount()
-    scheduleOutlineUpdate()
-  })
   // The outline tracks scrolling in both modes so it doubles as a progress
   // view (#64); rAF keeps the rect reads to one batch per frame. `scrollend`
   // also releases the outline jump lock as soon as a jump scroll settles.
-  editorEl().addEventListener('scroll', scheduleOutlineActiveSync, { passive: true })
-  sourceEl().addEventListener('scroll', scheduleOutlineActiveSync, { passive: true })
-  editorEl().addEventListener('scrollend', endOutlineJump)
-  sourceEl().addEventListener('scrollend', endOutlineJump)
+  // 两种模式共用一个编辑器，滚动都发生在 CM6 的 .cm-scroller 上。
+  editorScroller().addEventListener('scroll', scheduleOutlineActiveSync, { passive: true })
+  editorScroller().addEventListener('scrollend', endOutlineJump)
   // Anchor-link jumps start inside the editor; the phase signal engages the
   // same jump lock the outline clicks use, so the highlight cannot be stolen
   // by sections passed along the way (review on #68).
@@ -2035,7 +1980,6 @@ async function init(): Promise<void> {
     setContent(data.content, true)
     const resetScroll = () => {
       editorScroller().scrollTop = 0
-      sourceEl().scrollTop = 0
     }
     resetScroll()
     requestAnimationFrame(resetScroll)
@@ -2051,13 +1995,10 @@ async function init(): Promise<void> {
       return
     }
     const body = takeFrontmatter(content)
-    if (sourceModeActive) {
-      sourceEl().value = body
-    } else {
-      // An external write is not something the reader can undo into; making it
-      // one undo step would also let a stray undo write stale content back.
-      setMarkdownProgrammatically(body, true)
-    }
+    // An external write is not something the reader can undo into; making it
+    // one undo step would also let a stray undo write stale content back.
+    // 两种模式共用一个缓冲区，这条路与模式无关。
+    setMarkdownProgrammatically(body, true)
     updateSourceToggle()
     updateWordCount()
     resetDirty()

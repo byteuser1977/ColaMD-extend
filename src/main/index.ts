@@ -1389,7 +1389,7 @@ ipcMain.handle('export-html', async (event, snapshot: {
   <style>${exportStyles}
     html, body { height: auto; overflow: visible; }
     body { min-width: 320px; }
-    #titlebar, #file-panel, #source-editor { display: none !important; }
+    #titlebar, #file-panel { display: none !important; }
     #editor { height: auto !important; min-height: 100vh; overflow: visible !important; padding: 0 !important; }
   </style>
 </head>

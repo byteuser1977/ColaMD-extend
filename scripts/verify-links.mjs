@@ -240,7 +240,9 @@ async function runtimeChecks() {
     await wait(`document.title==='lines.md' && document.querySelector('.cm-md-jump-flash')?.textContent==='Last line.'`, 'line past EOF')
     check('line past EOF clamps to last line', () => {})
     await openSource(); await click('源码行号')
-    await wait(`(() => { const s=document.querySelector('#source-editor'); return document.title==='large.md' && s.classList.contains('visible') && s.value.slice(s.selectionStart,s.selectionEnd)==='LARGE_147_TARGET' && s.scrollTop>0; })()`, 'source mode line')
+    // 源码模式与渲染模式共用一个 CM6 编辑器（源码模式只是关掉渲染装饰），所以这里看
+    // 编辑器自己的滚动与视口里的行，而不是曾经的 textarea。
+    await wait(`(() => { const s=document.querySelector('#editor .cm-scroller'); return document.title==='large.md' && document.body.classList.contains('source-mode') && !!s && s.scrollTop>0 && [...document.querySelectorAll('#editor .cm-line')].some(e=>e.textContent.includes('LARGE_147_TARGET') && e.getBoundingClientRect().top>=0 && e.getBoundingClientRect().bottom<=innerHeight); })()`, 'source mode line')
     check('large source document selects line after wrapped paragraphs', () => {})
     await openSource(); await click('网页'); await sleep(150)
     check('web link still uses the OS browser', () => assert.match(readFileSync(events, 'utf8'), /"external":"https:\/\/example.com"/))

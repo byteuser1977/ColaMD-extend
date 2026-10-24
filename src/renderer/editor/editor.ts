@@ -651,6 +651,17 @@ export function setEditorEditable(editable: boolean): void {
   handle?.setEditable(editable)
 }
 
+/**
+ * 源码模式开关。
+ *
+ * 源码模式不是第二个编辑器：缓冲区里本来就是文件的字节，渲染只是叠在上面的一层装饰
+ * （见 docs/editor-architecture.md）。把它收起来，剩下的就是带 markdown 语法高亮的原文，
+ * 高亮与正文共用 state.ts 的语言扩展和 source-theme.ts 的配色。
+ */
+export function setSourceMode(on: boolean): void {
+  handle?.setSourceMode(on)
+}
+
 // 多个标签共用一个编辑器实例。编辑器状态带着文档、选区和撤销栈，
 // 所以按标签把它存下来，才是每个标签各有各的撤销历史，而不是共用一个栈。
 export function getEditorState(): EditorState | null {

@@ -1200,13 +1200,12 @@ function main() {
       // "[object Object]"（第一次跑就是这么挂的）。
       const RENDER_STATE = `(() => {
         const content = document.querySelector('#editor .cm-content')
-        const source = document.getElementById('source-editor')
         return JSON.stringify({
           markers: document.querySelectorAll('#editor .cm-md-marker').length,
           editable: content ? content.isContentEditable : null,
           text: content ? content.textContent.length : -1,
-          sourceVisible: source ? source.classList.contains('visible') : null,
-          sourceText: source ? source.value : null,
+          sourceVisible: document.body.classList.contains('source-mode'),
+          sourceText: content ? content.textContent : null,
         })
       })()`
       // 光标落在带 **加粗** 的那一行：以前这一行会露源码，现在它也得是干净的。
