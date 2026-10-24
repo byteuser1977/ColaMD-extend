@@ -14,11 +14,20 @@ import './themes/base.css'
 import './themes/premium.css'
 import './themes/editor-preview.css'
 import './themes/document.css'
-import { installCapacitorAPI, startIntentPolling } from './capacitor-api'
+import { installCapacitorAPI, isAndroidApp, startIntentPolling } from './capacitor-api'
 
 // 移动端（Capacitor WebView）挂替身；Electron 桌面 no-op。必须在任何 electronAPI 触达之前。
 installCapacitorAPI()
 startIntentPolling()
+
+// Android 顶栏：没有系统菜单栏，菜单按钮常显（点开 HTML 菜单浮层）；手机宽度放不下
+// 文件列表开关，那个按钮不显示。放在模块顶部同步执行，不依赖 init 的异步流程。
+if (isAndroidApp()) {
+  document.body.classList.add('platform-android')
+  document.getElementById('app-menu-btn')?.removeAttribute('hidden')
+  const fileToggleBtn = document.getElementById('file-toggle-btn')
+  if (fileToggleBtn) fileToggleBtn.hidden = true
+}
 
 let sourceModeActive = false
 const editorEl = () => document.getElementById('editor') as HTMLElement
@@ -62,7 +71,9 @@ let applyingProgrammaticChange = false
 let editorReady = false
 // Fresh installs start focused on the document. Once changed, the user's
 // explicit panel preference is preserved.
-let manualHidden = localStorage.getItem('file-panel-hidden') !== '0'
+// Android 不显示文件列表开关（顶栏按钮与菜单项都去掉了），面板也不再从上次的
+// 偏好里恢复：否则它可能停在打开状态，没有任何控件能把它收起来。
+let manualHidden = isAndroidApp() || localStorage.getItem('file-panel-hidden') !== '0'
 let panelMode: 'files' | 'outline' = 'files'
 // The panel has to stay in the DOM for the last part of its closing motion.
 // `hidden` still carries the semantic state once that motion finishes, so a
@@ -215,6 +226,25 @@ function clearSaveStatus(): void {
     el.style.cursor = ''
     el.onclick = null
   }
+}
+
+// 移动端没有菜单栏和状态栏，保存这类动作需要一个短暂的确认，
+// 否则写进 Documents/colamd 之后界面上什么都看不出来。桌面端不显示。
+function showMobileToast(message: string): void {
+  if (!isAndroidApp()) return
+  const el = document.createElement('div')
+  el.textContent = message
+  el.style.cssText = 'position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));'
+    + 'transform:translateX(-50%);z-index:2147483600;max-width:80vw;padding:10px 16px;'
+    + 'border-radius:10px;background:var(--chrome-bg,#f2f2f2);color:var(--text-color,#222);'
+    + 'font-size:14px;line-height:1.4;box-shadow:0 6px 20px rgba(0,0,0,0.22);'
+    + 'opacity:0;transition:opacity 180ms ease;pointer-events:none'
+  document.body.appendChild(el)
+  requestAnimationFrame(() => { el.style.opacity = '1' })
+  window.setTimeout(() => {
+    el.style.opacity = '0'
+    window.setTimeout(() => el.remove(), 220)
+  }, 1600)
 }
 
 // After the disk version is loaded, the dropped version still exists in
@@ -934,7 +964,10 @@ async function saveCurrent(saveAs = false): Promise<boolean> {
   const path = await enqueueSave(() => saveAs
     ? window.electronAPI.saveFileAs(content, expectedPath ?? '')
     : window.electronAPI.saveFile(content, expectedPath ?? '', true))
-  if (!path || currentFilePath !== expectedPath) return false
+  if (!path || currentFilePath !== expectedPath) {
+    showMobileToast(isChinese() ? '保存失败' : 'Save failed')
+    return false
+  }
 
   if (path !== expectedPath) void refreshDocumentFileUrl()
   currentFilePath = path
@@ -945,6 +978,9 @@ async function saveCurrent(saveAs = false): Promise<boolean> {
   if (revision === documentRevision) {
     clearDirty()
     showSaveStatus('saved')
+    showMobileToast(isChinese()
+      ? `已保存：${path.split('/').pop() ?? path}`
+      : `Saved: ${path.split('/').pop() ?? path}`)
     return true
   }
   if (dirty) scheduleAutosave()
@@ -1950,7 +1986,10 @@ async function init(): Promise<void> {
     renderFileList(files)
   })
   updatePanelVisibility()
-  await refreshSiblings()
+  // 文件列表只是面板内容，读失败不该打断后面保存、打开、导出等菜单动作的注册。
+  // 之前这里 await，一旦列出目录卡住/报错，init 后半段全部不注册，表现就是
+  // 「菜单点了没反应」。
+  void refreshSiblings().catch((e) => reportRuntimeError('refreshSiblings', e))
 
   api.onMenuOpen(async () => {
     // 'file-opened' event drives the content load (and file-panel refresh)

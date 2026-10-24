@@ -29,11 +29,12 @@
 </head>
 <body>
   <div id="titlebar">
-    <!-- The menu button is Windows-only (hidden everywhere else; macOS has the menu
-         bar). On Windows a menu or options control belongs at the row's left end,
-         before the document's own strip: that is where a Windows user looks for
-         it, and the right end is taken by the three window buttons the system
-         paints there. -->
+    <!-- The menu button is hidden on macOS (it has the menu bar) and shown on
+         Windows and Android, where no menu bar exists. On Windows a menu or options
+         control belongs at the row's left end, before the document's own strip: that
+         is where a Windows user looks for it, and the right end is taken by the
+         three window buttons the system paints there. Android keeps it in the same
+         place for the same reason. -->
     <button id="app-menu-btn" hidden aria-label="菜单">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
         <line x1="2.5" y1="4.8" x2="13.5" y2="4.8"/>

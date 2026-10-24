@@ -1514,3 +1514,12 @@ body.presenting #editor .cm-content svg {
     display: none !important;
   }
 }
+
+/* Android 是单文档：手机上没有第二篇文档可切，页签条只会挤占顶行；
+   文件列表面板也只属于桌面，导航开关已经移除，这里把面板和它的拖拽把手
+   一起藏掉，避免留下一个打不开又关不掉的界面。 */
+body.platform-android #tab-bar,
+body.platform-android #file-panel,
+body.platform-android #panel-resizer {
+  display: none;
+}

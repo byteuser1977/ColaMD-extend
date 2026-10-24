@@ -21,3 +21,4 @@ android/build/
 
 # tsc -b 的增量缓存（项目的类型检查走 tsc -p <cfg> --noEmit，不会产出它）
 *.tsbuildinfo
+*.drawio

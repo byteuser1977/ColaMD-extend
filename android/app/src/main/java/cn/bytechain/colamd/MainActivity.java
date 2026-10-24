@@ -1,11 +1,13 @@
 package cn.bytechain.colamd;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.print.PageRange;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
+import android.util.Log;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
@@ -13,7 +15,8 @@ import android.webkit.WebSettings;
 
 import com.getcapacitor.BridgeActivity;
 
-import java.io.BufferedReader;
+import org.json.JSONObject;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
@@ -24,8 +27,12 @@ import java.io.InputStreamReader;
  */
 public class MainActivity extends BridgeActivity {
 
-    private String pendingFileName = null;
-    private String pendingFileContent = null;
+    private static final String LOG_TAG = "ColaMD";
+
+    // JS 桥方法在 JavaBridge 线程上执行，UI 线程写入的字段必须 volatile，
+    // 否则 release 包里 JIT 可能让桥线程一直读到旧值（暂存的文件取不出来）。
+    private volatile String pendingFileName = null;
+    private volatile String pendingFileContent = null;
 
     /**
      * 活动创建时的初始化方法。
@@ -68,16 +75,16 @@ public class MainActivity extends BridgeActivity {
             webView.addJavascriptInterface(new ColaMDNativeBridge(), "ColaMDNative");
         }
 
-        if (savedInstanceState == null) {
-            handleIntent(getIntent());
-        }
+        // Capacitor 的 BridgeActivity.load() 会在 super.onCreate 里回调 onNewIntent，
+        // 这里再取一次：页面加载、进程被回收后重建这两种情况下都能拿到启动 Intent。
+        handleIntent(getIntent());
     }
 
     /**
      * 处理新 Intent（singleTask 下再次打开文件时触发）。
      */
     @Override
-    protected void onNewIntent(android.content.Intent intent) {
+    protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
         handleIntent(intent);
@@ -86,37 +93,54 @@ public class MainActivity extends BridgeActivity {
     /**
      * 解析 Intent 中的文件数据并缓存。
      */
-    private void handleIntent(android.content.Intent intent) {
-        if (intent == null || !android.content.Intent.ACTION_VIEW.equals(intent.getAction())) return;
-
-        android.net.Uri uri = intent.getData();
-        if (uri == null) return;
+    private void handleIntent(Intent intent) {
+        if (intent == null) return;
+        String action = intent.getAction();
+        // 文件管理器普遍用 ACTION_VIEW + data 打开；也有走 ACTION_SEND + EXTRA_STREAM
+        // 的（"分享到"），两种都把 URI 当文件读，内容一样。
+        android.net.Uri uri = null;
+        if (Intent.ACTION_VIEW.equals(action)) {
+            uri = intent.getData();
+            if (uri == null) uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        } else if (Intent.ACTION_SEND.equals(action)) {
+            uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        }
+        if (uri == null) {
+            Log.i(LOG_TAG, "handleIntent ignored, action=" + action);
+            return;
+        }
 
         try {
             String content = readContentFromUri(uri);
-            if (content != null && !content.isEmpty()) {
+            if (content != null) {
                 pendingFileName = getFileName(uri);
                 pendingFileContent = content;
+                Log.i(LOG_TAG, "handleIntent cached " + pendingFileName + " (" + content.length() + " chars)");
+            } else {
+                Log.w(LOG_TAG, "handleIntent: could not read " + uri);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.w(LOG_TAG, "handleIntent failed for " + uri, e);
         }
     }
 
     /**
      * 从 content URI 读取文件文本内容（UTF-8）。
+     * 按字符流原样读回，不用 readLine：后者会给没有行尾换行的文件补一个 \n，
+     * 用户下次保存时文件就被改动了。
      */
     private String readContentFromUri(android.net.Uri uri) {
         StringBuilder sb = new StringBuilder();
         try (InputStream is = getContentResolver().openInputStream(uri);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line).append("\n");
+             InputStreamReader reader = new InputStreamReader(is, java.nio.charset.StandardCharsets.UTF_8)) {
+            char[] buffer = new char[8192];
+            int count;
+            while ((count = reader.read(buffer)) != -1) {
+                sb.append(buffer, 0, count);
             }
             return sb.toString();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.w(LOG_TAG, "readContentFromUri failed", e);
             return null;
         }
     }
@@ -131,7 +155,8 @@ public class MainActivity extends BridgeActivity {
                     uri, new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null)) {
                 if (cursor != null && cursor.moveToFirst()) {
                     int idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
-                    if (idx >= 0) name = cursor.getString(idx);
+                    String displayName = idx >= 0 ? cursor.getString(idx) : null;
+                    if (displayName != null && !displayName.isEmpty()) name = displayName;
                 }
             } catch (Exception e) { /* ignore */ }
         }
@@ -146,18 +171,31 @@ public class MainActivity extends BridgeActivity {
 
         /** JS 主动调用检查是否有待打开的文件 */
         @JavascriptInterface
-        public String checkPendingFile() {
-            if (pendingFileName != null && pendingFileContent != null) {
-                String name = pendingFileName;
-                String content = pendingFileContent;
-                pendingFileName = null;
-                pendingFileContent = null;
-                // 返回 JSON，JS 端解析
-                String escapedName = name.replace("\\", "\\\\").replace("\"", "\\\"");
-                String escapedContent = content.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
-                return "{\"name\":\"" + escapedName + "\",\"content\":\"" + escapedContent + "\"}";
+        public synchronized String checkPendingFile() {
+            if (pendingFileName == null || pendingFileContent == null) return "null";
+            String name = pendingFileName;
+            String content = pendingFileContent;
+            pendingFileName = null;
+            pendingFileContent = null;
+            try {
+                // 用 JSONObject 序列化：手拼字符串不会转义制表符等控制字符，
+                // 文件里只要有一个 tab，JSON.parse 就会失败，整篇内容被丢掉。
+                JSONObject payload = new JSONObject();
+                payload.put("name", name);
+                payload.put("content", content);
+                String json = payload.toString();
+                Log.i(LOG_TAG, "checkPendingFile delivered " + name + " (" + content.length() + " chars)");
+                return json;
+            } catch (Exception e) {
+                Log.w(LOG_TAG, "checkPendingFile could not serialise payload", e);
+                return "null";
             }
-            return "null";
+        }
+
+        /** 渲染层日志 / 错误转发到 logcat：release 包没有控制台。 */
+        @JavascriptInterface
+        public void log(String message) {
+            Log.e(LOG_TAG, message == null ? "null" : message);
         }
 
         /** 调用系统打印对话框（含"保存为PDF"选项） */
