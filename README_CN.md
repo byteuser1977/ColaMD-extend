@@ -12,10 +12,10 @@ ColaMD 是一款开源、免费、优雅的 Markdown 编辑器，用于写作、
 
 无论是什么在写这个文件（Claude Code、Codex 这类 AI Agent，一个脚本，或另一个编辑器），ColaMD 都会立刻显示最新内容，不用重开文件，也不用手动刷新。
 
-**本仓库（ColaMD-extend）是 [marswaveai/ColaMD](https://github.com/marswaveai/colamd) 的扩展版**，当前基于上游 v2.7.6。上游的全部功能都在；扩展版在此之上陆续移植自有功能，见[扩展版功能](#扩展版功能)与[移植路线图](#移植路线图扩展版)。
+**本仓库（ColaMD-extend）是 [marswaveai/ColaMD](https://github.com/marswaveai/colamd) 的扩展版**，当前基于上游 v2.7.7。上游的全部功能都在；扩展版在此之上陆续移植自有功能，见[扩展版功能](#扩展版功能)与[移植路线图](#移植路线图扩展版)。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Upstream](https://img.shields.io/badge/upstream-v2.7.6-blue)](https://github.com/marswaveai/colamd)
+[![Upstream](https://img.shields.io/badge/upstream-v2.7.7-blue)](https://github.com/marswaveai/colamd)
 [![GitHub release](https://img.shields.io/github/release/byteuser1977/ColaMD-extend.svg)](https://github.com/byteuser1977/ColaMD-extend/releases)
 
 [下载](#下载) | [功能](#功能)
@@ -47,13 +47,13 @@ ColaMD 是一款开源、免费、优雅的 Markdown 编辑器，用于写作、
 
 * **文件与大纲**: 浏览所选目录中的 Markdown 文件，或切换为文档大纲，专注在标题之间导航。
 
-* **源码模式**: 需要查看或直接修改原始 Markdown 时，一键切换源码编辑。
+* **源码模式**: 需要查看或直接修改原始 Markdown 时，一键切换源码编辑；源码按当前主题做 markdown 语法高亮，切回时保留光标、撤销历史与滚动位置。
 
 * **待办列表**: 直接点击复选框完成任务，也支持快捷键。
 
 * **高亮与 LaTeX**: 使用 `==高亮文本==`，并通过 KaTeX 渲染数学公式。
 
-* **Mermaid 图表**: Mermaid 代码块在独立隐藏 iframe 中渲染为图表；点击图表即可编辑源码。
+* **Mermaid 图表**: Mermaid 代码块渲染为图表，比阅读列宽的图可以放大（Ctrl/⌘ + 滚轮，或图角上的按钮）并按住拖动平移；渲染引擎只在文档里有图时按需加载，点击图表即可编辑源码。
 
 * **查找与替换**: 使用 ⌘/Ctrl+F 快速查找内容，支持替换当前匹配项或全部替换。
 
@@ -88,13 +88,13 @@ ColaMD 是一款开源、免费、优雅的 Markdown 编辑器，用于写作、
 
 ## 扩展版功能
 
-扩展版计划在上游之上提供以下能力（移植进度见[移植路线图](#移植路线图扩展版)）：
+扩展版在上游之上提供以下能力（移植进度见[移植路线图](#移植路线图扩展版)）：
 
 * **显示插件系统**: 统一管理数学公式、Mermaid 图表的样式，剪贴板复制与导出（PDF / HTML / Word）自动适配
 * **更多自定义主题**: academic-paper（GB/T 7713 学术规范）、Swiss Design、Forest Ink、归藏、Pixso Design——以可导入的主题文件随包发布，Mermaid 配色适配陆续进行
 * **国际化补齐**: 在上游语言切换的基础上，补齐菜单与界面的简中/英文覆盖
 * **npm 库构建**: 把编辑器核心打包为 npm 包，供 VSCode 扩展等外部项目集成
-* **移动端**: 基于 Capacitor 的 Android / iOS 适配
+* **移动端**: 基于 Capacitor 的 Android 版已可用：在系统文件管理器里直接打开 `.md`、跟随主题的原生菜单、手机宽度布局。`npm run dist:android` 打出 APK，产物落在 `release/`；iOS 尚未开始。
 
 ## 分支说明
 
@@ -129,7 +129,7 @@ develop（v1.5.2）的功能基于上游 1.x 旧架构，不能直接合并，�
 2. 插件样式管理: 上游 2.x 已内置 KaTeX 与 Mermaid，重点是统一样式注入与导出适配
 3. 国际化补齐: 对比上游已有的语言切换，补齐覆盖面
 4. npm 库构建: 编辑器核心打包为可复用的 npm 包
-5. 移动端: 基于 Capacitor 的 Android / iOS 适配（工作量最大，最后做）
+5. 移动端: Android 已可用（系统文件管理器打开文件、原生菜单、手机宽度布局，APK 由 `scripts/cap-android.mjs` 产出）；iOS 待做
 
 ### 上游路线图
 

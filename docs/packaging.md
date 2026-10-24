@@ -45,6 +45,17 @@ CI 上的 mac job（universal 加签名、公证、dmg 压缩）实测 7 分 20 
 - **打包前先杀掉真机测试残留的应用实例**：曾经有一个测试实例（从 `release/mac-arm64/ColaMD.app` 启动、`--user-data-dir` 指向 `/tmp`）忘了关，`electron-builder` 卡在 `packaging platform=darwin` 不动，CPU 0%、日志无报错、八分钟不结束。原因是它要覆盖一个正在被使用的 app bundle。测试结束后用 `pgrep -fl 'user-data-dir=/tmp|/Applications/ColaMD'` 确认残留；只杀 `/tmp` 测试实例，不要动用户正在用的 `/Applications/ColaMD.app`
 - **同一个位置卡住过两次**：另一次没有残留实例，日志停在 `downloaded label=electron progress=100%` 之后的 `packaging`，同样 0% CPU、无报错。原因未确认（当时机器上有网络抖动，`git push` 也超时过）。处理办法是杀掉重跑，或者按上一条改用 `npx electron .` 验证
 
+## Android APK
+
+Android 版是 Capacitor 壳里的同一个渲染层（`src/renderer`），构建与桌面分开，由 `scripts/cap-android.mjs` 一条龙调度：`npm run build` → `cap sync android` → `gradlew assemble[Debug|Release]`。
+
+- `npm run cap:build:android`：debug APK，留在 Gradle 输出目录（`android/app/build/outputs/apk/debug/app-debug.apk`）
+- `npm run dist:android`（与 `cap:build:android:release` 等价）：release APK，产物归一到 `release/colamd-<版本>-android.apk`，与桌面安装包同处一个目录
+- `npm run cap:sync`：只构建渲染层并同步进 `android/` 工程，不调 Gradle
+- `npm run cap:open:android`：用 Android Studio 打开工程
+
+前提是本机有 Android SDK 和 `JAVA_HOME`（JDK 17+，推荐 21；没设会在脚本里直接报错退出）。`gradlew` 单独起 shell 调用：node 自身的路径常带空格，直接拼进命令会被截断。
+
 ## 不必要做的优化
 
 这里曾经列了两条优化（`npmRebuild: false`、跳过扩展属性清理），前提是「打包要 6 到 8 分钟」。重新测量后本地打包是**十几秒级**，这个前提不成立，所以不做。先测量再优化，不要凭印象预防性地折腾构建配置。

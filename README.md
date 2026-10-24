@@ -10,10 +10,10 @@ It offers true WYSIWYG editing, 12 built-in themes, rich-text copy, smart line b
 
 Whatever writes the file (an AI agent such as Claude Code or Codex, a script, or another editor), ColaMD shows the new content right away. No reopening, no manual refresh.
 
-**This repository (ColaMD-extend) is an extended fork of [marswaveai/ColaMD](https://github.com/marswaveai/colamd)**, currently based on upstream v2.7.6. Everything upstream offers is here; the fork ports its own features on top, see [Extend Features](#extend-features) and the [porting roadmap](#porting-roadmap-extend).
+**This repository (ColaMD-extend) is an extended fork of [marswaveai/ColaMD](https://github.com/marswaveai/colamd)**, currently based on upstream v2.7.7. Everything upstream offers is here; the fork ports its own features on top, see [Extend Features](#extend-features) and the [porting roadmap](#porting-roadmap-extend).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Upstream](https://img.shields.io/badge/upstream-v2.7.6-blue)](https://github.com/marswaveai/colamd)
+[![Upstream](https://img.shields.io/badge/upstream-v2.7.7-blue)](https://github.com/marswaveai/colamd)
 [![GitHub release](https://img.shields.io/github/release/byteuser1977/ColaMD-extend.svg)](https://github.com/byteuser1977/ColaMD-extend/releases)
 
 [Download](#download) | [Features](#features)
@@ -42,7 +42,7 @@ Twelve built-in themes, six light, six dark, inspired by Bear, Notion, iA Writer
 - **Always in Sync**: Whenever the file changes on disk (an AI agent, a script, another editor), the editor updates immediately. No reopening, no manual refresh.
 - **True WYSIWYG Editing**: Type Markdown and see rich text directly. No split-pane preview.
 - **Files & Outline**: Browse Markdown files in the selected folder, or switch to a document outline for focused heading navigation.
-- **Source Mode**: Switch to the raw Markdown source whenever you need to inspect or edit it directly.
+- **Source Mode**: Switch to the raw Markdown source whenever you need to inspect or edit it directly. The source is syntax-highlighted in the current theme, and switching modes keeps your caret, undo history and scroll position.
 - **Task Lists**: Click checkboxes to complete tasks, or use the keyboard shortcut.
 - **Highlights & LaTeX**: Write `==highlighted text==` and render mathematical formulas with KaTeX.
 - **Mermaid Diagrams**: Mermaid code blocks render as diagrams, and a diagram wider than the reading column can be zoomed (Ctrl/⌘ + scroll wheel, or the buttons in its corner) and dragged to pan. The renderer is loaded only when a document contains one, and clicking a diagram opens its source.
@@ -64,13 +64,13 @@ Twelve built-in themes, six light, six dark, inspired by Bear, Notion, iA Writer
 
 ## Extend Features
 
-Planned on top of upstream (progress in the [porting roadmap](#porting-roadmap-extend)):
+Built and planned on top of upstream (progress in the [porting roadmap](#porting-roadmap-extend)):
 
 - **Display plugin system**: unified style management for math and Mermaid diagrams, applied consistently to clipboard copy and exports (PDF / HTML / Word)
 - **More custom themes**: academic-paper (GB/T 7713), Swiss Design, Forest Ink, Guizang, Pixso Design — shipped as importable theme files, each with Mermaid color adaptation planned
 - **i18n completion**: fill the remaining menu and UI coverage on top of upstream language switching
 - **npm library build**: package the editor core as an npm package for external integrations such as the VSCode extension
-- **Mobile**: Capacitor-based Android / iOS support
+- **Mobile**: a Capacitor-based Android build is in place: open a `.md` from the system file manager, a native menu that follows the theme, and a phone-width layout. Build an APK with `npm run dist:android`; it lands in `release/`. iOS is not started.
 
 ## Branches
 
@@ -105,7 +105,7 @@ develop (v1.5.2) features are built on the old 1.x architecture and cannot be me
 2. Plugin style management: upstream 2.x already ships KaTeX and Mermaid; focus on unified style injection and export adaptation
 3. i18n completion: compare with upstream language switching and fill the gaps
 4. npm library build: package the editor core as a reusable npm package
-5. Mobile: Capacitor-based Android / iOS support (largest effort, last)
+5. Mobile: Android is usable (system file-manager opening, native menu, phone-width layout, APK produced by `scripts/cap-android.mjs`); iOS is not started
 
 ### Upstream roadmap
 
