@@ -7,6 +7,11 @@ import { appendFile, readFile, writeFile, readdir, copyFile, mkdir, stat } from 
 import { watch, FSWatcher, existsSync, readdirSync, readFileSync, writeFileSync, statSync } from 'fs'
 import { resolveMarkdownLink } from './markdown-link'
 
+// The npm package name is scoped (@bytechain.cn/colamd), but the app itself stays
+// "colamd": it decides userData (window state, language, release notice) and the
+// Linux WM_CLASS that electron-builder.yml's StartupWMClass expects.
+app.setName('colamd')
+
 const startupStartedAt = performance.now()
 const startupTraceEnabled = process.env.COLAMD_STARTUP_TRACE === '1'
 const startupMarks: Record<string, number> = { 'main-loaded': 0 }

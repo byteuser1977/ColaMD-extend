@@ -1,17 +1,30 @@
 {
-  "name": "colamd",
+  "name": "@bytechain.cn/colamd",
   "version": "2.7.7",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": [
+    "dist/main",
+    "dist/preload",
+    "dist/renderer",
+    "themes",
+    "README.md",
+    "README_CN.md",
+    "LICENSE"
+  ],
   "description": "A free, elegant Markdown editor for macOS, Windows and Linux. Simple by design, always in sync with the file on disk.",
   "main": "dist/main/index.js",
   "author": {
-    "name": "marswave.ai",
-    "email": "hello@marswave.ai"
+    "name": "byteuser1977",
+    "email": "byteuser@qq.com"
   },
   "license": "MIT",
-  "homepage": "https://github.com/marswaveai/colamd",
+  "homepage": "https://github.com/byteuser1977/ColaMD-extend",
   "repository": {
     "type": "git",
-    "url": "https://github.com/marswaveai/colamd.git"
+    "url": "https://github.com/byteuser1977/ColaMD-extend.git"
   },
   "scripts": {
     "dev": "electron-vite dev",
@@ -48,8 +61,12 @@
     "@capawesome/capacitor-file-picker": "^6.2.0",
     "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language": "^6.12.3",
     "@codemirror/language-data": "^6.5.2",
-    "@codemirror/search": "^6.7.2",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.13",
+    "@lezer/common": "^1.5.1",
+    "@lezer/highlight": "^1.2.3",
     "@lezer/markdown": "^1.7.2",
     "docx": "^9.7.1",
     "electron-updater": "^6.8.9",
