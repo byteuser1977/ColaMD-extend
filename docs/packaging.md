@@ -83,5 +83,6 @@ Android 版是 Capacitor 壳里的同一个渲染层（`src/renderer`），构�
 
 - 发版流程与资产核对清单：`PRINCIPLES.md` 第 9 节
 - 当前版本改动与验证记录：`docs/release-2.7.8-rc.2.md`
+- Word 导出实现方案：`docs/word-export.md`
 - CI 配置：`.github/workflows/release.yml`
 - 打包配置：`electron-builder.yml`
