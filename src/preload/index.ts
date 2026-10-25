@@ -11,6 +11,63 @@ type ImageExportPreset = 'desktop' | 'mobile'
 type ImageExportSnapshot = { html: string; styles: string; bodyClass: string; background: string }
 export type FileManagerName = 'finder' | 'explorer' | 'file-manager'
 
+// 交给 Word 导出的主题令牌。颜色不带 `#`，字体是 CSS 字体栈，由主进程挑一个
+// Word 认得的名字。形状与 src/main/docx-export.ts 的 DocxStyle 保持一致。
+export interface DocxStyle {
+  text: string
+  secondaryText: string
+  link: string
+  bodyFontStack: string
+  monoFontStack: string
+  bodySize: number
+  lineHeight: number
+  inlineCodeBackground: string
+  codeBlockBackground: string
+  codeBlockText: string
+  highlightBackground: string
+  blockquoteBorder: string
+  blockquoteBackground: string | null
+  border: string
+  tableHeaderBackground: string
+}
+
+export interface MathFormula {
+  html: string
+  block: boolean
+}
+
+export interface MathScreenshot {
+  dataURL: string
+  width: number
+  height: number
+}
+
+export interface MathShotPayload {
+  formulas: MathFormula[]
+  styles: string
+  color: string
+  background: string
+}
+
+export interface HtmlShotItem {
+  html: string
+  width: number
+}
+
+export interface HtmlShotPayload {
+  items: HtmlShotItem[]
+  styles: string
+  color: string
+  background: string
+}
+
+export interface DocxExportPayload {
+  content: string
+  images: Record<string, string>
+  imageSizes?: Record<string, { width: number; height: number }>
+  style?: DocxStyle
+}
+
 const pendingFileOpened: FileOpenedData[] = []
 let fileOpenedHandler: ((data: FileOpenedData) => void) | null = null
 
@@ -44,7 +101,9 @@ export interface ElectronAPI {
   saveFileAs: (content: string, expectedPath?: string) => Promise<string | null>
   exportPDF: () => Promise<boolean>
   exportHTML: (snapshot: { content: string; document: string; html: string; styles: string; bodyClass: string }) => Promise<boolean>
-  exportDOCX: (payload: { content: string; images: Record<string, string> }) => Promise<boolean>
+  exportDOCX: (payload: DocxExportPayload) => Promise<boolean>
+  renderMathImages: (payload: MathShotPayload) => Promise<Array<MathScreenshot | null>>
+  renderHtmlImages: (payload: HtmlShotPayload) => Promise<Array<MathScreenshot | null>>
   exportImage: (snapshot: ImageExportSnapshot, preset: ImageExportPreset) => Promise<boolean>
   getLanguage: () => Promise<'zh' | 'en'>
   onLanguageChanged: (callback: (language: 'zh' | 'en') => void) => void
@@ -131,7 +190,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveFileAs: (content: string, expectedPath?: string) => ipcRenderer.invoke('save-file-as', content, expectedPath),
   exportPDF: () => ipcRenderer.invoke('export-pdf'),
   exportHTML: (snapshot: { content: string; document: string; html: string; styles: string; bodyClass: string }) => ipcRenderer.invoke('export-html', snapshot),
-  exportDOCX: (payload: { content: string; images: Record<string, string> }) => ipcRenderer.invoke('export-docx', payload),
+  exportDOCX: (payload: DocxExportPayload) => ipcRenderer.invoke('export-docx', payload),
+  renderMathImages: (payload: MathShotPayload) => ipcRenderer.invoke('render-math-images', payload),
+  renderHtmlImages: (payload: HtmlShotPayload) => ipcRenderer.invoke('render-html-images', payload),
   exportImage: (snapshot: ImageExportSnapshot, preset: ImageExportPreset) => ipcRenderer.invoke('export-image', snapshot, preset),
   getLanguage: () => ipcRenderer.invoke('get-language') as Promise<'zh' | 'en'>,
   onLanguageChanged: (callback: (language: 'zh' | 'en') => void) => {

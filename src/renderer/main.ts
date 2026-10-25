@@ -1,5 +1,8 @@
 import { createEditor, focusEditor, getMarkdown, getEditorView, getEditorScroller, onEditorJumpPhase, setMarkdown, setEditorEditable, getEditorState, restoreEditorState, applyMarkdownStyle, runFormatCommand, jumpToLine, jumpToHeading, setCleanExport, setDocumentFileUrl, setSourceMode, type FormatCommandId } from './editor/editor'
 import { markdownForWord } from './editor/mermaid-export'
+import { markdownWithMathImages } from './editor/math-export'
+import { markdownWithHtmlImages } from './editor/html-export'
+import { readDocxStyle } from './editor/docx-style'
 import { withDiagramZoomPaused } from './editor/mermaid-bridge'
 import { documentHTMLFrom } from './editor/clean-html'
 import { isPresenting, startSlideshow, stopSlideshow } from './slideshow'
@@ -1949,8 +1952,17 @@ async function init(): Promise<void> {
     // Diagrams are drawn again for the page rather than reused from the screen
     // (src/renderer/editor/mermaid-export.ts), so this awaits a render per
     // diagram before the save dialog opens.
-    const payload = await markdownForWord(getContent(), isChinese())
-    await api.exportDOCX(payload)
+    const style = readDocxStyle()
+    // HTML 块先截成图片；之后的公式扫描基于替换过的文本，偏移量才不会错位。
+    const html = await markdownWithHtmlImages(getContent(), `#${style.text}`)
+    const math = await markdownWithMathImages(html.content, isChinese(), `#${style.text}`)
+    const payload = await markdownForWord(math.content, isChinese())
+    await api.exportDOCX({
+      content: payload.content,
+      images: { ...html.images, ...math.images, ...payload.images },
+      imageSizes: { ...html.sizes, ...math.sizes },
+      style,
+    })
   })
   api.onMenuExportImage((preset) => { void exportCurrentImage(preset) })
   api.onMenuPlaySlideshow(() => { void toggleSlideshow() })

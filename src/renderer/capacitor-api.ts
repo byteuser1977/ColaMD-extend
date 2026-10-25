@@ -348,6 +348,8 @@ function createCapacitorAPI(): ElectronAPI {
       return true
     },
     exportDOCX: async () => false, // 移动端第一版不做 Word 导出
+    renderMathImages: async () => [],
+    renderHtmlImages: async () => [],
     exportImage: async (_snapshot, _preset) => {
       const bridge = nativeBridge()
       if (!bridge) return false

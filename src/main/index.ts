@@ -1164,6 +1164,8 @@ ipcMain.handle('export-docx', async (event, payload: unknown) => {
   const win = getWinFromEvent(event)
   const content = typeof payload === 'object' && payload !== null ? (payload as { content?: unknown }).content : payload
   const images = typeof payload === 'object' && payload !== null ? (payload as { images?: unknown }).images : undefined
+  const style = typeof payload === 'object' && payload !== null ? (payload as { style?: unknown }).style : undefined
+  const imageSizes = typeof payload === 'object' && payload !== null ? (payload as { imageSizes?: unknown }).imageSizes : undefined
   if (!win || typeof content !== 'string') return false
   win.show()
   win.focus()
@@ -1181,7 +1183,7 @@ ipcMain.handle('export-docx', async (event, payload: unknown) => {
   if (result.canceled || !result.filePath) return false
   try {
     const { markdownToDocx } = await import('./docx-export')
-    await writeFile(result.filePath, await markdownToDocx({ content, sourcePath: getState(win).filePath, images: diagramImages }))
+    await writeFile(result.filePath, await markdownToDocx({ content, sourcePath: getState(win).filePath, images: diagramImages, style, imageSizes }))
     shell.showItemInFolder(result.filePath)
     return true
   } catch (error) {
@@ -1193,6 +1195,53 @@ ipcMain.handle('export-docx', async (event, payload: unknown) => {
       detail: error instanceof Error ? error.message : String(error),
     })
     return false
+  }
+})
+
+ipcMain.handle('render-math-images', async (_event, payload: unknown) => {
+  if (!payload || typeof payload !== 'object') return []
+  const source = payload as { formulas?: unknown; styles?: unknown; color?: unknown; background?: unknown }
+  if (!Array.isArray(source.formulas) || typeof source.styles !== 'string') return []
+  const formulas = source.formulas
+    .filter((item): item is { html: string; block: boolean } => (
+      typeof item === 'object' && item !== null
+      && typeof (item as { html?: unknown }).html === 'string'
+      && typeof (item as { block?: unknown }).block === 'boolean'
+    ))
+    .map((item) => ({ html: item.html, block: item.block }))
+  if (formulas.length === 0) return []
+  const color = typeof source.color === 'string' ? source.color : '#24292f'
+  const background = typeof source.background === 'string' ? source.background : '#ffffff'
+  try {
+    const { renderMathImages } = await import('./math-export')
+    return await renderMathImages(formulas, source.styles, color, background)
+  } catch (error) {
+    console.error('Math export failed', error)
+    return formulas.map(() => null)
+  }
+})
+
+ipcMain.handle('render-html-images', async (_event, payload: unknown) => {
+  if (!payload || typeof payload !== 'object') return []
+  const source = payload as { items?: unknown; styles?: unknown; color?: unknown; background?: unknown }
+  if (!Array.isArray(source.items) || typeof source.styles !== 'string') return []
+  const items = source.items
+    .filter((item): item is { html: string; width: number } => (
+      typeof item === 'object' && item !== null
+      && typeof (item as { html?: unknown }).html === 'string'
+      && typeof (item as { width?: unknown }).width === 'number'
+      && (item as { width: number }).width > 0
+    ))
+    .map((item) => ({ html: item.html, width: Math.round(item.width) }))
+  if (items.length === 0) return []
+  const color = typeof source.color === 'string' ? source.color : '#24292f'
+  const background = typeof source.background === 'string' ? source.background : '#ffffff'
+  try {
+    const { renderHtmlImages } = await import('./math-export')
+    return await renderHtmlImages(items, source.styles, color, background)
+  } catch (error) {
+    console.error('HTML export failed', error)
+    return items.map(() => null)
   }
 })
 
