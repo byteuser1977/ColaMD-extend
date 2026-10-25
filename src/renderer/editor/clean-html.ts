@@ -29,7 +29,7 @@ const DROP_CLASSES = new Set([
   'cm-md-marker',
 ])
 
-type LineKind = 'code' | 'li' | 'quote' | 'hr' | 'table' | 'empty' | 'p' | `h${1 | 2 | 3 | 4 | 5 | 6}`
+type LineKind = 'code' | 'li' | 'quote' | 'hr' | 'table' | 'mermaid' | 'math' | 'empty' | 'p' | `h${1 | 2 | 3 | 4 | 5 | 6}`
 
 function escapeText(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -44,6 +44,10 @@ function lineKind(line: HTMLElement): LineKind {
   for (let level = 1; level <= 6; level++) {
     if (classes.contains(`cm-md-atxheading${level}`)) return `h${level}` as LineKind
   }
+  // 图与块公式是**整块替换**：源码行上可能还留着代码块/行类的 class，先认出 widget，
+  // 否则它们会被当成空代码块，导出时整张图丢掉。
+  if (line.querySelector('.cm-md-mermaid')) return 'mermaid'
+  if (line.querySelector('.cm-md-math-block')) return 'math'
   if (classes.contains('cm-md-codeblock')) return 'code'
   if (classes.contains('cm-md-blockquote')) return 'quote'
   if (classes.contains('cm-md-hr')) return 'hr'
@@ -188,6 +192,15 @@ function renderCode(lines: HTMLElement[]): string {
 
 function renderGroup(kind: LineKind, lines: HTMLElement[]): string {
   if (kind === 'code') return renderCode(lines)
+  // 图与块公式已经把源码换成了独立的 HTML，整块带走；包一层 div 让它在流里独占一行。
+  if (kind === 'mermaid') {
+    const widget = lines[0].querySelector('.cm-md-mermaid')
+    return widget ? `<div>${widget.innerHTML}</div>` : ''
+  }
+  if (kind === 'math') {
+    const widget = lines[0].querySelector('.cm-md-math-block')
+    return widget ? `<div>${widget.innerHTML}</div>` : ''
+  }
   if (kind === 'li') return renderList(lines)
   if (kind === 'quote') {
     return `<blockquote>${lines.map((line) => `<p>${lineHTML(line)}</p>`).join('')}</blockquote>`

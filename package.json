@@ -1,6 +1,6 @@
 {
   "name": "@bytechain.cn/colamd",
-  "version": "2.7.7",
+  "version": "2.7.8-rc.1",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -9,13 +9,29 @@
     "dist/main",
     "dist/preload",
     "dist/renderer",
+    "dist/lib",
     "themes",
+    "scripts/verify-themes-cli.mjs",
+    "scripts/theme-verify-core.mjs",
+    "scripts/offscreen-window.cjs",
     "README.md",
     "README_CN.md",
     "LICENSE"
   ],
   "description": "A free, elegant Markdown editor for macOS, Windows and Linux. Simple by design, always in sync with the file on disk.",
   "main": "dist/main/index.js",
+  "exports": {
+    ".": "./dist/main/index.js",
+    "./renderer": "./dist/lib/colamd-renderer.js",
+    "./themes/contract.json": "./themes/contract.json",
+    "./themes/*": "./themes/*",
+    "./dist/*": "./dist/*",
+    "./scripts/*": "./scripts/*",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "colamd-verify-themes": "scripts/verify-themes-cli.mjs"
+  },
   "author": {
     "name": "byteuser1977",
     "email": "byteuser@qq.com"
@@ -29,6 +45,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "build:lib": "vite build --config vite.lib.config.ts",
     "preview": "electron-vite preview",
     "dist": "electron-vite build && electron-builder",
     "dist:mac": "electron-vite build && electron-builder --mac",
@@ -44,6 +61,9 @@
     "verify:image-export": "node scripts/verify-image-export.mjs",
     "verify:export-pdf": "node scripts/verify-export-pdf.mjs",
     "verify:themes": "node scripts/verify-themes.mjs",
+    "verify:themes:cli": "node scripts/verify-themes-cli.mjs",
+    "verify:theme-contract": "node scripts/verify-theme-contract.mjs",
+    "verify:lib": "node scripts/verify-lib.mjs",
     "cap:sync": "npm run build && npx cap sync android",
     "cap:build:android": "node scripts/cap-android.mjs debug",
     "cap:build:android:release": "node scripts/cap-android.mjs release",

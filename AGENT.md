@@ -99,13 +99,17 @@ src/
 │   └── index.ts    # 窗口管理、文件 I/O、菜单、文件监听
 ├── preload/        # 安全 IPC 桥接
 │   └── index.ts
-└── renderer/       # 渲染进程
-    ├── index.html
-    ├── main.ts     # 入口，连接编辑器和 IPC
-    ├── editor/     # CodeMirror 6 编辑器核心（文本优先）
-    ├── themes/     # CSS 主题 + 主题管理器
-    └── env.d.ts
+├── renderer/       # 渲染进程
+│   ├── index.html
+│   ├── main.ts     # 入口，连接编辑器和 IPC
+│   ├── editor/     # CodeMirror 6 编辑器核心（文本优先）
+│   ├── themes/     # CSS 主题 + 主题管理器
+│   └── env.d.ts
+├── lib/            # 浏览器 ESM 库（2.x 渲染器，供外部导出工具链）
+└── web/            # 网页体验版入口
 ```
+
+`themes/contract.json` 是主题契约的机器可读版本（活/死变量、死选择器、编辑器钩子、Pele 变量），随 npm 包发布；修改主题变量或编辑器钩子后跑 `npm run verify:theme-contract`。
 
 ## 开发规范
 
@@ -124,7 +128,10 @@ src/
   - `npm run verify:features`：界面功能逐条断言，正文里能看见的东西最多的一条网
   - `npm run verify:scroll-render`：滚到没解析过的地方，那几行也必须渲染过
   - `npm run verify:themes`：主题 CSS 的每条规则都要命中真实元素并改变计算样式
+  - `npm run verify:themes:cli -- themes/*.css`：同一套主题命中检查的独立入口，外部主题仓库可直接用
+  - `npm run verify:theme-contract`：`themes/contract.json` 与源码是否漂移
   - `npm run check:theme-colors`：12 套内置主题与独立主题文件的变量契约
   - `npm run verify:links`、`npm run verify:image-export`、`npm run verify:export-pdf`：链接跳转与两种导出的真机验证
-  - 四份类型检查：`npx tsc -p tsconfig.main.json --noEmit`，`preload` / `renderer` / `web` 同理
+  - `npm run build:lib` 后跑 `npm run verify:lib`：库导出产物（语义文档、公式、图表、`:root` 活变量），优先用本机 Chrome/Edge 的 headless 模式
+  - 五份类型检查：`npx tsc -p tsconfig.main.json --noEmit`，`preload` / `renderer` / `web` / `lib` 同理
 - 已知缺口（2026-10-06）：块级渲染块（表格 / 图片 / 公式）的「点一下把光标放进源码」只断言了「排版不被翻成源码」，没断言光标真的落进那块源码里。要补就得读文档源码找落点（比如表格那行结尾必须变成 `|Z`），不能只断言「文档变了」。mermaid 没进这一批：它在 `verify:features` 的夹具里走到这一步就查不到了（等 15 秒也不回来），单独开窗实测导出前后都正常，是测试自身的问题，未查明。同一批还欠：`verify:image-export` 的 long/mobile 两档、`verify:export-pdf` 从未跑通。

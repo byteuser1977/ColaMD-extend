@@ -45,6 +45,25 @@ CI 上的 mac job（universal 加签名、公证、dmg 压缩）实测 7 分 20 
 - **打包前先杀掉真机测试残留的应用实例**：曾经有一个测试实例（从 `release/mac-arm64/ColaMD.app` 启动、`--user-data-dir` 指向 `/tmp`）忘了关，`electron-builder` 卡在 `packaging platform=darwin` 不动，CPU 0%、日志无报错、八分钟不结束。原因是它要覆盖一个正在被使用的 app bundle。测试结束后用 `pgrep -fl 'user-data-dir=/tmp|/Applications/ColaMD'` 确认残留；只杀 `/tmp` 测试实例，不要动用户正在用的 `/Applications/ColaMD.app`
 - **同一个位置卡住过两次**：另一次没有残留实例，日志停在 `downloaded label=electron progress=100%` 之后的 `packaging`，同样 0% CPU、无报错。原因未确认（当时机器上有网络抖动，`git push` 也超时过）。处理办法是杀掉重跑，或者按上一条改用 `npx electron .` 验证
 
+## npm 库构建（2.x 渲染器）
+
+`npm run build:lib` 走独立的 `vite.lib.config.ts`，产物固定为两个文件，不生成额外 chunk 或相对资源：
+
+| 文件 | 说明 |
+| --- | --- |
+| `dist/lib/colamd-renderer.js` | 浏览器 ESM，导出 `createColaMDEditor` 等公开 API，约 3.4 MB |
+| `dist/lib/colamd.css` | 同一份主题与排版 CSS；KaTeX 的 60 个字体已内联为 data URL，约 1.5 MB |
+
+这样定是因为下游（ColaMD-themes 的本机 HTTP 服务）只暴露这两个路径。构建配置里 `inlineDynamicImports` 把 `pele/lazy` 收进单文件，`assetsInlineLimit` 保证字体不落成需要另行服务的静态资源。
+
+发布相关：
+
+- `package.json` 的 `exports["./renderer"]` 指向 `dist/lib/colamd-renderer.js`；`files` 收录 `dist/lib`、`themes/contract.json`、`themes/*.css` 以及 `scripts/verify-themes-cli.mjs` / `scripts/theme-verify-core.mjs` / `scripts/offscreen-window.cjs`
+- `bin` 里的 `colamd-verify-themes` 让外部主题仓库可以跑 `npx colamd-verify-themes themes/*.css`
+- **发 npm 包时先跑 `npm run build && npm run build:lib`**：`npm run build` 只产出 main / preload / renderer，不会产出 `dist/lib`
+- **发桌面安装包时不要先跑 `build:lib`**：`electron-builder.yml` 的 `files` 是 `dist/**/*`，会把约 5 MB 的库产物也装进 asar。桌面版只跑 `npm run build`；本地验证库时单独跑 `build:lib`
+- `npm run verify:lib` 优先用本机 Chrome / Edge 的 headless 模式验收；找不到浏览器时才退回 Electron 离屏窗口
+
 ## Android APK
 
 Android 版是 Capacitor 壳里的同一个渲染层（`src/renderer`），构建与桌面分开，由 `scripts/cap-android.mjs` 一条龙调度：`npm run build` → `cap sync android` → `gradlew assemble[Debug|Release]`。
@@ -63,5 +82,6 @@ Android 版是 Capacitor 壳里的同一个渲染层（`src/renderer`），构�
 ## 参考
 
 - 发版流程与资产核对清单：`PRINCIPLES.md` 第 9 节
+- 当前版本改动与验证记录：`docs/release-2.7.8-rc.1.md`
 - CI 配置：`.github/workflows/release.yml`
 - 打包配置：`electron-builder.yml`

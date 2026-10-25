@@ -55,6 +55,11 @@ is reserved for subdued icons and disabled states. Search highlights derive
 from `--link-color` automatically and can be overridden with
 `--search-match-bg` and `--search-match-current-bg` when needed.
 
+The machine-readable version of this contract lives in [contract.json](contract.json):
+live and dead variables, dead selectors, editor hooks, Mermaid theme variables and
+the unit/padding constraints. Theme tooling can read it instead of diffing source
+on every release.
+
 ### Direct Selectors
 
 For more control, target the editor's own class names. The editor keeps the file's
@@ -90,7 +95,9 @@ Use `padding-left` / `padding-right` for breathing room instead.
 A selector that matches nothing is a silent no-op, which is how the built-in themes
 once shipped rules for an editor they no longer ran on. `npm run verify:themes` in the
 repository fails on exactly that: every rule has to hit a real element and change at
-least one computed style.
+least one computed style. Outside this repository, install the ColaMD package and run
+`npx colamd-verify-themes themes/*.css` (it needs a ColaMD build and Electron), so a
+theme repository can gate merges on the same check.
 
 ### Tips
 

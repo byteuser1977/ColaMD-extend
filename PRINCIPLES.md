@@ -58,7 +58,7 @@
 **改动落地前**
 
 1. 先列出这一次要提交的文件清单，逐个确认。不要依赖脚本或命令里旧的清单：静默沿用会导致漏提文件
-2. 本地跑三份类型检查（main / preload / renderer）和构建
+2. 本地跑五份类型检查（main / preload / renderer / web / lib）和构建
 3. 涉及 UI 或交互的改动，必须在**真机真窗口**里点一遍。浏览器复现页只能验证 CSS 机制，验证不了 Electron 的运行时行为：v2.0.5 的「打开所在文件夹」按钮一度被判定为「标题栏拖拽区不派发 hover」，真因是按钮的渲染层接线被删、一直停在 `disabled`，而显隐规则是 `#titlebar:hover #reveal-file-btn:not(:disabled)`。现象一样，结论完全相反
 4. 排查「某个控件不工作」时，先确认它有没有被正确初始化（元素引用、状态、事件绑定、`disabled`），再怀疑运行时或框架行为
 5. 脚本批量重写文件后，必须与合并前的基线 `git diff` 一遍，确认没有夹带删除。v2.0.5 的按钮接线就是因为脚本重写 `main.ts` 时带回了旧快照而被静默删掉
@@ -70,6 +70,7 @@
 11. 改动编辑器核心跑 `npm run verify:markdown`：**用户没改过的字节不许变**，`save(open(x)) === x` 是 CI 断言。它把「打开一个 markdown 文件、不做任何修改、保存」逐字节比对一遍，表格分隔行被压缩、`*` 与 `$` 与 `_` 被加反斜杠这类看着不严重的问题都会被点名，退出码非零可以直接卡住 CI
     - 只允许 `scripts/verify-markdown.mjs` 的 `KNOWN_NORMALIZATIONS` 里登记过的差异（每条都要写清理由）。想往里加一条，先证明它对用户的文件无害，再改清单；默认是拒绝而不是放过
     - `--report` 只报告不判失败，用来看全景；确认某条差异该被接受，再收进清单
+12. 动过主题变量、编辑器钩子或 `themes/contract.json` 跑 `npm run verify:theme-contract`；动过库入口或导出翻译跑 `npm run build:lib && npm run verify:lib`。后者的导出产物验收优先用本机 Chrome / Edge 的 headless 模式，找不到浏览器才退回 Electron
 
 **发版**
 

@@ -1,8 +1,10 @@
 # ColaMD CSS 主题定义范式 v3.0
 
+> **注意（2026-10-25）**：本文档记录的是 1.x / ProseMirror 时代的主题范式，**已不适用于 2.7.x 编辑器**。文中的 `body.theme-custom`、`--mermaid-*`、`.ProseMirror` 等写法在 2.7.x 不生效。当前可用的变量、死变量、49 个 `.cm-md-*` 编辑器钩子与约束，以 [`themes/contract.json`](../themes/contract.json) 和 [`themes/README.md`](../themes/README.md) 为准；`npm run verify:theme-contract` 会检查这份契约与源码是否漂移。
+
 **适用范围**：ColaMD `themes/*.css` 用户主题文件的编写与 AI 辅助生成  
 **最后更新**：2026-05-23  
-**关联文件**：`themes/template.css`（范式配套模板）
+**关联文件**：`themes/template.css`（范式配套模板）、`themes/contract.json`（2.7.x 机器可读契约）
 
 ---
 

@@ -93,7 +93,7 @@ ColaMD 是一款开源、免费、优雅的 Markdown 编辑器，用于写作、
 * **显示插件系统**: 统一管理数学公式、Mermaid 图表的样式，剪贴板复制与导出（PDF / HTML / Word）自动适配
 * **更多自定义主题**: academic-paper（GB/T 7713 学术规范）、Swiss Design、Forest Ink、归藏、Pixso Design——以可导入的主题文件随包发布，Mermaid 配色适配陆续进行
 * **国际化补齐**: 在上游语言切换的基础上，补齐菜单与界面的简中/英文覆盖
-* **npm 库构建**: 把编辑器核心打包为 npm 包，供 VSCode 扩展等外部项目集成
+* **库渲染器与主题契约**: `@bytechain.cn/colamd/renderer` 把 2.x 渲染器发布为浏览器 ESM（`createColaMDEditor`、`applyTheme`、`setMarkdown`、`ensureAllPluginsRendered`、`buildExportHTML`），主题导出等外部工具因此使用与应用同一套编辑器与 CSS；`themes/contract.json` 发布机器可读的主题契约，`npx colamd-verify-themes themes/*.css` 可在仓库外跑选择器命中检查
 * **移动端**: 基于 Capacitor 的 Android 版已可用：在系统文件管理器里直接打开 `.md`、跟随主题的原生菜单、手机宽度布局。`npm run dist:android` 打出 APK，产物落在 `release/`；iOS 尚未开始。
 
 ## 分支说明
@@ -128,7 +128,7 @@ develop（v1.5.2）的功能基于上游 1.x 旧架构，不能直接合并，�
 1. ✅ 自定义主题: 5 套纯 CSS 主题（academic-paper、Swiss Design、Forest Ink、归藏、Pixso Design）随应用发布于 `templates/themes`，通过「主题 > 导入主题」加载（不注册进菜单）
 2. 插件样式管理: 上游 2.x 已内置 KaTeX 与 Mermaid，重点是统一样式注入与导出适配
 3. 国际化补齐: 对比上游已有的语言切换，补齐覆盖面
-4. npm 库构建: 编辑器核心打包为可复用的 npm 包
+4. ✅ npm 库构建: `dist/lib/colamd-renderer.js` 与 `colamd.css` 通过 `exports["./renderer"]` 发布；同一个包里还带 `themes/contract.json` 与 `colamd-verify-themes` bin
 5. 移动端: Android 已可用（系统文件管理器打开文件、原生菜单、手机宽度布局，APK 由 `scripts/cap-android.mjs` 产出）；iOS 待做
 
 ### 上游路线图

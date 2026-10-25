@@ -69,7 +69,7 @@ Built and planned on top of upstream (progress in the [porting roadmap](#porting
 - **Display plugin system**: unified style management for math and Mermaid diagrams, applied consistently to clipboard copy and exports (PDF / HTML / Word)
 - **More custom themes**: academic-paper (GB/T 7713), Swiss Design, Forest Ink, Guizang, Pixso Design — shipped as importable theme files, each with Mermaid color adaptation planned
 - **i18n completion**: fill the remaining menu and UI coverage on top of upstream language switching
-- **npm library build**: package the editor core as an npm package for external integrations such as the VSCode extension
+- **Library renderer & theme contract**: `@bytechain.cn/colamd/renderer` ships the 2.x renderer as a browser ESM build (`createColaMDEditor`, `applyTheme`, `setMarkdown`, `ensureAllPluginsRendered`, `buildExportHTML`), so external tools such as theme exporters render with the same editor and CSS as the app. `themes/contract.json` publishes the machine-readable theme contract, and `npx colamd-verify-themes themes/*.css` runs the selector-hit check outside this repository
 - **Mobile**: a Capacitor-based Android build is in place: open a `.md` from the system file manager, a native menu that follows the theme, and a phone-width layout. Build an APK with `npm run dist:android`; it lands in `release/`. iOS is not started.
 
 ## Branches
@@ -104,7 +104,7 @@ develop (v1.5.2) features are built on the old 1.x architecture and cannot be me
 1. ✅ Custom themes: 5 pure-CSS themes (academic-paper, Swiss Design, Forest Ink, Guizang, Pixso Design) ship with the app under `templates/themes` and are loaded via Theme > Import Theme (no menu registration)
 2. Plugin style management: upstream 2.x already ships KaTeX and Mermaid; focus on unified style injection and export adaptation
 3. i18n completion: compare with upstream language switching and fill the gaps
-4. npm library build: package the editor core as a reusable npm package
+4. ✅ npm library build: `dist/lib/colamd-renderer.js` plus `colamd.css` are published through `exports["./renderer"]`; `themes/contract.json` and the `colamd-verify-themes` bin ship in the same package
 5. Mobile: Android is usable (system file-manager opening, native menu, phone-width layout, APK produced by `scripts/cap-android.mjs`); iOS is not started
 
 ### Upstream roadmap

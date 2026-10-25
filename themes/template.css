@@ -7,10 +7,11 @@
 
    1. 变量写在 :root 里。没写的变量会继承 Light 主题的默认值，所以只想改配色的话，
       下面这一段往往就够了，选择器那一段可以整段删掉。
-   2. 选择器写错不会报错，只是**不生效**。仓库里 `npm run verify:themes` 会逐条检查
-      「这条规则命中到真实元素了吗、真的改变了样式吗」，自己加规则时可以用它兜底。
-      可用的钩子（`.cm-md-atxheading1`、`.cm-md-strong` 这些）在 themes/README.md 里
-      有一张表。
+   2. 选择器写错不会报错，只是**不生效**。仓库里 `npm run verify:themes`、仓库外
+      `npx colamd-verify-themes themes/*.css` 都会逐条检查「这条规则命中到真实元素了
+      吗、真的改变了样式吗」，自己加规则时可以用它兜底。可用的钩子
+      （`.cm-md-atxheading1`、`.cm-md-strong` 这些）在 themes/README.md 里有一张表，
+      机器可读的契约在 themes/contract.json。
 
    这一份故意不是一套好看的配色，它是**照着改的起点**。 */
 
