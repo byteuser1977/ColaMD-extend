@@ -48,22 +48,24 @@
 
 `imageParagraph` 原本只给 `colamd-math-block-` / `colamd-html-` 前缀的截图图片居中，普通 `![]()` 块级图片都是左对齐。现在所有块级图片统一 `AlignmentType.CENTER`，并补前后留白 `emTwips(bodySize, 1.2)`。
 
-### 3. 行间距主题联动（rc.2 回归）
+### 3. 行间距主题联动 + CSS 对齐（rc.2 回归）
 
-此前多处 spacing 硬编码，主题 `lineHeight` 变化时脱节。现在全部跟随主题：
+此前多处 spacing 硬编码，主题 `lineHeight` 变化时脱节。现在全部跟随主题，且**行距从 AUTO 倍数改为 AT_LEAST 绝对值**：AUTO 是「单倍行距的倍数」，会把字体自身度量（雅黑约 1.32em）再乘一遍，1.75 倍在 Word 里相当于编辑器 CSS 行高的 2.1 倍以上。行距数值直接从 `themes/document.css` 换算（1px = 15 twips），与 HTML/PDF 导出同源：
 
-| 段落类型 | 改前（硬编码） | 改后（主题联动） | 默认值（bodySize=16, lineHeight=1.75） |
+| 段落类型 | 改前（硬编码） | 改后（CSS 对齐） | 默认值（bodySize=16, lineHeight=1.75） |
 |----------|---------------|-----------------|--------------------------------------|
 | 正文默认 after | 180 | `emTwips(bodySize, 0.75)` | 180 |
 | 正文默认 before | 无 | `after × 0.33` | 60 |
-| 标题 line | 324 | `paragraphLine × 1.35/1.75` | 324 |
-| 脚注 line | 336 | `paragraphLine × 1.4/1.75` | 336 |
-| 代码块 line | 384 | `paragraphLine × 0.9`（≥240） | 378 |
+| 正文 line | 420 AUTO | `lineHeight × bodySize` 换算 twips，AT_LEAST | 420（28px） |
+| 标题 line | 324 AUTO | `emTwips(标题px, 1.35)`，AT_LEAST | h1 616 |
+| 脚注 line | 336 AUTO | `0.875em × 1.6`，AT_LEAST | 336 |
+| 代码块 line | 384 AUTO | `0.875em × 1.6`（对齐 `pre code`），AT_LEAST | 336 |
 | 代码块 before/after | 180 | `emTwips(bodySize, 1.0)` | 240 |
-| 列表项 after | 60 | `emTwips(bodySize, 0.5)` | 120 |
+| 列表项 after | 60 | `emTwips(bodySize, 0.3)`（对齐 `li margin`） | 72 |
+| 列表项 before/line | 继承默认 | 显式 `before: 0` + 显式行距，挡住默认样式泄漏 | 0 / 420 |
 | 引用 after | 120 | `emTwips(bodySize, 0.5)` | 120 |
 
-正文新增 `before: after × 0.33`，段间不再是「前紧后松」的不均匀。标题/脚注的行距保留了原来相对正文的比例（标题 line 约为正文的 77%、脚注约为 80%），只是不再跟主题 `lineHeight` 脱节。
+正文新增 `before: after × 0.33`，段间不再是「前紧后松」的不均匀。列表项此前只写 `after`，`before` 与 `line` 从文档默认样式逐属性继承，吃到了松行距还每项多出段前 60 twips；现在显式声明全部三项。行距用 AT_LEAST 而非 EXACT：行内图片等内容能撑开行高，不会被裁切。
 
 ### 4. 图片导出与上游 2.7.7 一致性核对
 

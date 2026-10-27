@@ -110,7 +110,7 @@ show:false + sandbox:true + backgroundThrottling:false 的 BrowserWindow
 
 | Markdown | docx 结构 | 关键点 |
 |---|---|---|
-| 正文 | 默认样式 `Paragraph` | 行距 `paragraphLine = lineHeight × 240`，段后 `emTwips(bodySize, 0.75)` |
+| 正文 | 默认样式 `Paragraph` | 行距 `paragraphLine = lineHeight × bodySize` 换算 twips（AT_LEAST），段后 `emTwips(bodySize, 0.75)` |
 | 标题 h1–h6 | `HeadingLevel.HEADING_1…6` | 字号 `HEADING_SCALE = [1.9, 1.55, 1.3, 1.12, 1, 1]`，与 HTML 导出一致 |
 | 有序/无序列表 | `numbering` 引用 | 见下节 |
 | 任务项 | 普通段落 + `☑ `/`☐ ` 字形 | 不参与编号 |
@@ -148,29 +148,30 @@ Word 的编号是「编号定义 + 实例」两层。同一份 `ordered-1` 定�
 
 ### 代码块：`<w:br/>` 是硬要求
 
-把整段代码塞进一个 `w:t` 时 Word **不按行渲染**（L2 实测 br 数量为 0，整块粘成一行）。所以每行单独一个 run，`break: index > 0 ? 1 : undefined` 显式换行；空行是 `text: ''` + break。底色、等宽字体、字号都来自主题，行距是正文行距 × 0.9（等宽字形更方，同样百分比下视觉更松，收一点）。
+把整段代码塞进一个 `w:t` 时 Word **不按行渲染**（L2 实测 br 数量为 0，整块粘成一行）。所以每行单独一个 run，`break: index > 0 ? 1 : undefined` 显式换行；空行是 `text: ''` + break。底色、等宽字体、字号都来自主题，行距对齐编辑器 `pre code` 的 0.875em × 1.6。
 
 ### 引用块：为什么内部要逐块输出
 
 早期实现把整块 `textContent` 塞进一个 run，两个引用段落会粘成一句（L2 实测）。现在 `blockquoteNodes()` 逐个子块输出：段落照常、列表项各自成段（带自己的缩进与序号）、代码块走 `codeParagraph(child, context, quote)`。注意属性展开顺序——代码块的 spacing/shading 写在 `...extra` **之后**，否则引用的样式会把代码块的底色行距盖掉。
 
-### 行距与间距：全部跟主题联动
+### 行距与间距：全部跟主题与 CSS 联动
 
-所有间距都从 `bodySize`（字号）或 `paragraphLine`（主题行高 × 240）推导，没有一个独立于主题的硬编码数字：
+所有间距都从 `bodySize`（字号）或 `paragraphLine` 推导，没有一个独立于主题的硬编码数字。**行距的计量规则**：OOXML 里 `lineRule: AUTO` 是「单倍行距的倍数」，会把字体自身的度量（雅黑约 1.32em）再乘一遍，1.75 倍在 Word 里相当于编辑器 CSS 行高的 2.1 倍以上，导出明显偏松。所以行距一律用 `AT_LEAST` 绝对 twips（1px = 15），数值直接从 `themes/document.css` 换算；AT_LEAST 而非 EXACT 是为了行内图片等内容能撑开行高，不会被裁切。
 
 | 位置 | 公式 | 默认值（16px / 1.75） |
 |---|---|---|
-| 正文段前 | 段后 × 0.33 | 60 twips |
-| 正文段后 | `emTwips(bodySize, 0.75)` | 180 |
-| 标题行距 | `paragraphLine × 1.35/1.75` | 324 |
-| 脚注行距 | `paragraphLine × 1.4/1.75` | 336 |
-| 代码块行距 | `paragraphLine × 0.9`，下限 240 | 378 |
+| 正文行距 | `lineHeight × bodySize` px → twips，AT_LEAST | 420（28px） |
+| 标题行距 | `emTwips(标题px, 1.35)`，AT_LEAST | h1 616 |
+| 脚注行距 | `0.875em × 1.6`，AT_LEAST | 336 |
+| 代码块行距 | `0.875em × 1.6`，AT_LEAST | 336 |
 | 代码块上下 | `emTwips(bodySize, 1.0)` | 240 |
-| 列表项段后 | `emTwips(bodySize, 0.5)` | 120 |
+| 列表项段后 | `emTwips(bodySize, 0.3)`，显式 `before: 0` + 显式行距 | 72 |
 | 引用段后 | `emTwips(bodySize, 0.5)` | 120 |
 | 图片前后 | `emTwips(bodySize, 1.2)` | 288 |
 
-调整任何一项时先想清楚它相对正文的比例是不是本来就该变——这些比例是从 Word 实际观感反推的，不是随手写的。
+列表项显式写 `before: 0` 与行距是有意的：OOXML 样式合并按属性逐个继承，只写 `after` 会让文档默认样式的段前 60 twips 与松行距泄漏到每个列表项上。CSS 侧的对应物是 `li { margin: 0.3em 0 }` 与继承的 1.75 行高。
+
+调整任何一项时先想清楚它对应的 CSS 值是不是本来就该变——这些换算全部以编辑器渲染（HTML/PDF 导出同源）为基准，不是随手写的。
 
 ## IPC 与主进程收尾
 

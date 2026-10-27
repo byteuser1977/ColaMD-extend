@@ -551,14 +551,14 @@ function codeParagraph(node: MarkdownNode, context: DocxContext, extra: IParagra
           color: context.style.codeBlockText,
         })
   ))
-  // 代码块的行距略紧于正文（等宽字体字形更方，同样的百分比行距下视觉上显得更松）。
-  const codeLine = Math.max(240, Math.round(context.paragraphLine * 0.9))
+  // 行距对齐编辑器 pre code：字号 0.875em、行高 1.6（themes/document.css）。
+  const codeLine = Math.round(context.style.bodySize * 0.875 * 1.6 * 15)
   const codePad = emTwips(context.style.bodySize, 1.0)
   return new Paragraph({
     // 引用里的代码块要保留自己的底色与行距，所以代码块的属性写在 extra 之后。
     ...extra,
     shading: { fill: context.style.codeBlockBackground },
-    spacing: { before: codePad, after: codePad, line: codeLine, lineRule: LineRuleType.AUTO },
+    spacing: { before: codePad, after: codePad, line: codeLine, lineRule: LineRuleType.AT_LEAST },
     children,
   })
 }
@@ -702,7 +702,14 @@ function blockNodes(
       const start = node.start ?? 1
       for (const item of (node.children ?? [])) {
         const first = item.children?.find((child) => child.type === 'paragraph')
-        const itemPad = emTwips(context.style.bodySize, 0.5)
+        // 对齐编辑器 li：margin 0.3em、行距与正文一致。before 显式清零，
+        // 否则文档默认样式的段前 60 twips 会泄漏到每个列表项上，项间变松。
+        const itemSpacing = {
+          before: 0,
+          after: emTwips(context.style.bodySize, 0.3),
+          line: context.paragraphLine,
+          lineRule: LineRuleType.AT_LEAST,
+        }
         if (typeof item.checked === 'boolean') {
           // 任务项不参与编号，勾选框直接用编辑器里那两个字形。
           output.push(new Paragraph({
@@ -714,7 +721,7 @@ function blockNodes(
               ...inlineRuns(first?.children, context),
             ],
             indent: { left: 360 + listDepth * 360, hanging: 240 },
-            spacing: { after: itemPad },
+            spacing: itemSpacing,
           }))
         } else {
           output.push(new Paragraph({
@@ -722,7 +729,7 @@ function blockNodes(
             numbering: node.ordered
               ? { reference: `ordered-${start}`, level: listDepth, instance: node.instance ?? 0 }
               : { reference: 'bullet', level: listDepth, instance: 0 },
-            spacing: { after: itemPad },
+            spacing: itemSpacing,
           }))
         }
         output.push(...blockNodes(item.children?.filter((child) => child !== first), context, listDepth + 1))
@@ -777,9 +784,9 @@ function documentStyles(context: DocxContext) {
     eastAsia: context.bodyFont,
     cs: context.bodyFont,
   }
-  // 标题/脚注行距都基于正文主题行距的相对比例，避免主题 lineHeight 变化时脱节。
-  const headingLine = Math.round(context.paragraphLine * (1.35 / 1.75))
-  const footnoteLine = Math.round(context.paragraphLine * (1.4 / 1.75))
+  // 标题/脚注行距同样按 CSS 换算成绝对 twips：标题行高 1.35、脚注字号 0.875em
+  // 行高 1.6（恰为正文字号 × 1.4），都来自 themes/document.css。
+  const footnoteLine = Math.round(context.style.bodySize * 0.875 * 1.6 * 15)
   const bodyPadAfter = emTwips(context.style.bodySize, 0.75)
   const bodyPadBefore = Math.round(bodyPadAfter * 0.33)
   const heading = (level: number) => {
@@ -793,8 +800,8 @@ function documentStyles(context: DocxContext) {
         spacing: {
           before: emTwips(px, 1.4),
           after: emTwips(px, 0.6),
-          line: headingLine,
-          lineRule: LineRuleType.AUTO,
+          line: emTwips(px, 1.35),
+          lineRule: LineRuleType.AT_LEAST,
         },
       },
     }
@@ -807,7 +814,7 @@ function documentStyles(context: DocxContext) {
         paragraph: {
           spacing: {
             line: context.paragraphLine,
-            lineRule: LineRuleType.AUTO,
+            lineRule: LineRuleType.AT_LEAST,
             before: bodyPadBefore,
             after: bodyPadAfter,
           },
@@ -822,7 +829,7 @@ function documentStyles(context: DocxContext) {
       footnoteText: {
         run: { size: context.codeSizeHalf, color: context.style.secondaryText },
         paragraph: {
-          spacing: { after: 60, line: footnoteLine, lineRule: LineRuleType.AUTO },
+          spacing: { after: 60, line: footnoteLine, lineRule: LineRuleType.AT_LEAST },
         },
       },
     },
@@ -850,7 +857,10 @@ export async function markdownToDocx(input: DocxExportInput): Promise<Buffer> {
     bodyFont: fontName(style.bodyFontStack, false),
     monoFont: fontName(style.monoFontStack, true),
     bodySizeHalf: halfPoints(style.bodySize),
-    paragraphLine: Math.round(style.lineHeight * 240),
+    // 行距按编辑器 CSS 换算成绝对 twips（lineHeight × 字号 px，1px = 15 twips），
+    // 全部配合 AT_LEAST 使用。AUTO 是「单倍行距的倍数」，会把字体自身的度量
+    // （雅黑约 1.32em）再乘一遍，1.75 倍在 Word 里相当于编辑器的 2.1 倍以上。
+    paragraphLine: Math.round(style.lineHeight * style.bodySize * 15),
     codeSizeHalf: halfPoints(style.bodySize * 0.875),
     footnoteIds,
     sourcePath: input.sourcePath,
