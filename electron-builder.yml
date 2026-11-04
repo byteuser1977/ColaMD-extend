@@ -87,6 +87,9 @@ win:
   icon: resources/icon.png
 
 linux:
+  # package.json's name is "@bytechain.cn/colamd"; the default executableName
+  # derived from it ("@bytechain.cncolamd") is rejected by AppImage packaging.
+  executableName: colamd
   target:
     - AppImage
     - deb
@@ -101,6 +104,11 @@ linux:
   desktop:
     entry:
       StartupWMClass: colamd
+
+# Default deb name derives from package.json's name ("@bytechain.cn/colamd"),
+# which yields an output path under a non-existent "release/@bytechain.cn/".
+deb:
+  artifactName: '${productName}-${version}-${arch}.${ext}'
 
 nsis:
   # No spaces: the default "${productName} Setup ${version}.exe" gets sanitized
