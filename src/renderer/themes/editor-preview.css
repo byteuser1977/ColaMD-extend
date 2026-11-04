@@ -132,8 +132,8 @@
 }
 
 .cm-content .cm-md-strike {
+  /* 删除线本身已经在说「这行被划掉了」，不必再换一种颜色。 */
   text-decoration: line-through;
-  color: var(--text-muted);
 }
 
 /* 行内代码：底色与圆角，跟旧版一致（2px 6px、圆角 3px、0.875em）。 */
@@ -166,10 +166,24 @@
 /* ======= 引用块 ======= */
 
 .cm-content .cm-md-blockquote {
-  color: var(--text-secondary, var(--text-muted));
+  position: relative;
+  /* 引用只用左边的竖线和底色区别于正文，文字仍是正文色。
+   * 文字颜色越少越干净：同一种字灰一档，读起来像是被打了个「次要」的标签（2026-10-25 定）。 */
+  color: var(--text-color);
   border-left: 4px solid var(--blockquote-border);
   padding-left: 16px;
   padding-right: 16px;
+}
+
+/* 引用底色和代码块一样放在选区下方，不能直接画在文字行上。
+ * 引用内的代码行使用代码块自己的底色。 */
+.cm-content .cm-md-blockquote:not(.cm-md-codeblock)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background: var(--blockquote-bg, transparent);
+  pointer-events: none;
 }
 
 /* ======= 列表 ======= */
@@ -186,11 +200,19 @@
 .cm-content .cm-md-li-5 { padding-left: 9em; }
 .cm-content .cm-md-li-6 { padding-left: 10.5em; }
 
-/* 无序列表的圆点。宽度与 `- ` 接近，避免换掉标记时行内文字抖动。 */
+/* 无序列表的圆点。宽度与 `- ` 接近，避免换掉标记时行内文字抖动。
+ *
+ * 圆点和序号是排版的一部分，用正文色，不跟 `#`、`>` 那些标记一起压灰（2026-10-25：
+ * 十二套主题量下来，圆点与序号全部是 --text-muted，整段列表看着发灰）。 */
 .cm-content .cm-md-li-bullet {
-  color: var(--text-muted);
+  color: var(--text-color);
   display: inline-block;
   width: 0.8em;
+}
+
+/* 有序列表的序号。行首那个数被替换成了重排后的编号，它是内容，不是标记。 */
+.cm-content .cm-md-li .cm-md-listmark {
+  color: var(--text-color);
 }
 
 /* ======= 代码块 ======= */
@@ -234,6 +256,19 @@
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 6px;
   padding-bottom: 0.8em;
+}
+
+/* 引用里的代码块：这些行同时带着引用和代码块的类。
+ *
+ * 雅致、Sepia 等主题把引用的底色直接画在行上，而代码块的深色底在 z-index -3 的伪元素上
+ * （为了让选区高亮落在它上面，见上面那条），行自己的底色反过来把它盖住，浅色的代码字落在
+ * 浅色的引用底上几乎看不见（v2.7.7 用户报的）。nord、dracula 等主题给引用设的文字色，选择器
+ * 比代码块的重，代码字也会被染成引用色。所以这些行不要引用底色，字色回到代码块的；
+ * 引用左边的竖线留着，代码块贴着它画。选择器带 #editor，独立主题文件里的引用规则也压得住。 */
+#editor .cm-content .cm-md-blockquote.cm-md-codeblock {
+  background: transparent;
+  color: var(--code-block-text, var(--text-color));
+  font-style: normal;
 }
 
 /* 围栏上的语言名。压淡到与底色同族的灰，别抢代码正文的注意力。 */
@@ -578,17 +613,6 @@ body.theme-writer .cm-content {
 }
 
 /* 加粗的颜色 */
-body.theme-elegant .cm-content .cm-md-strong { color: #c44b2b; }
-body.theme-bear .cm-content .cm-md-strong { color: #d43d2a; }
-body.theme-solarized-dark .cm-content .cm-md-strong { color: #cb4b16; }
-body.theme-nord .cm-content .cm-md-strong { color: #8fbcbb; }
-body.theme-gruvbox .cm-content .cm-md-strong { color: #fe8019; }
-body.theme-dracula .cm-content .cm-md-strong { color: #ff79c6; }
-body.theme-sepia .cm-content .cm-md-strong { color: #7a5a33; }
-body.theme-dark .cm-content .cm-md-strong { color: #e6edf3; }
-body.theme-notion .cm-content .cm-md-strong { color: #37352f; }
-body.theme-midnight .cm-content .cm-md-strong { color: #e8e8e8; }
-body.theme-writer .cm-content .cm-md-strong { color: #2f2f2c; }
 
 /* 行内代码的字色 */
 body.theme-elegant .cm-content .cm-md-inlinecode { color: #c44b2b; }
@@ -658,23 +682,10 @@ body.theme-bear .cm-content .cm-md-atxheading1 {
 }
 
 /* 引用块 */
-body.theme-elegant .cm-content .cm-md-blockquote {
-  background: var(--blockquote-bg);
-}
-
-body.theme-sepia .cm-content .cm-md-blockquote {
-  background: var(--blockquote-bg);
-}
-
 body.theme-writer .cm-content .cm-md-blockquote {
   border-left-width: 3px;
   font-style: normal;
 }
-
-body.theme-nord .cm-content .cm-md-blockquote { color: #aeb9c9; }
-body.theme-gruvbox .cm-content .cm-md-blockquote { color: #bdae93; }
-body.theme-dracula .cm-content .cm-md-blockquote { color: #c3c8e0; }
-body.theme-midnight .cm-content .cm-md-blockquote { color: #9a9a9a; }
 
 /* 表格 */
 body.theme-elegant .cm-content .cm-md-table-widget th,

@@ -21,7 +21,10 @@ export const markdownHighlightStyle = HighlightStyle.define([
   { tag: t.emphasis, fontStyle: 'italic' },
   { tag: t.strikethrough, textDecoration: 'line-through' },
   { tag: t.link, color: 'var(--link-color)' },
-  { tag: [t.processingInstruction, t.contentSeparator, t.list], color: 'var(--text-muted)' },
+  // 标记字符（`#`、`>`、`***`、围栏）压淡；**正文不许跟着淡**。
+  // `t.list` 曾经也在这条里，它盖住的是列表项里的文字，不只是 `-`、`1.` 那两个字符：
+  // 整个列表都发灰（2026-10-25 报的）。列表的圆点与序号由 editor-preview.css 单独管。
+  { tag: [t.processingInstruction, t.contentSeparator], color: 'var(--text-muted)' },
 
   /* 代码块里的语法着色。解析器在 state.ts 里通过 `codeLanguages` 接进来（装了哪些
      语言就认哪些），这里只决定怎么画。
@@ -56,6 +59,8 @@ export const editorTheme = EditorView.theme({
      一旦在这里写 padding，引用块、列表、代码块的内边距会被整片吃掉（实测全为 0px）。
      归零与块级内边距都写在 editor-preview.css 里，用同样两个类的选择器，靠文件顺序决胜。 */
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--text-color)' },
+  /* 代码块可能是深底（雅致、熊红），光标在里面要跟代码文字同色才看得见。类由 cursor-colors 挂。 */
+  '&.cm-cursor-in-code .cm-cursor-primary, &.cm-drop-in-code .cm-dropCursor': { borderLeftColor: 'var(--code-block-text, var(--text-color))' },
   /* 选中色只在这里管原生选区。真正画出来的那条色带（.cm-selectionBackground）写在
      themes/editor-preview.css：baseTheme 给它的选择器有四个类，这里写不进去；
      同优先级时 baseTheme 总在后面。 */

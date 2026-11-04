@@ -47,20 +47,16 @@
   color: #1b4f72;
 }
 
-/* 加粗与行内代码。这两个是最常调的两笔颜色。 */
-#editor .cm-content .cm-md-strong {
-  color: #2f6f9f;
-}
-
+/* 加粗只用字重，不给颜色：文字颜色越少越干净。想改的是行内代码的颜色，往下一条。 */
 #editor .cm-content .cm-md-inlinecode {
   color: #b0543a;
 }
 
 /* 引用块。
+   底色只改上面的 --blockquote-bg，编辑器会把它画在选区下方。
    注意：引用和代码块在编辑器里是**一行一个 div**，不是包住整块的一个盒子。
    所以纵向内边距会每一行加一遍，看上去会散架。要留呼吸感只给左右。 */
 #editor .cm-content .cm-md-blockquote {
-  background: rgba(47, 111, 159, 0.05);
   padding-left: 20px;
   padding-right: 16px;
 }

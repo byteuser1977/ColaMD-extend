@@ -20,10 +20,6 @@
   --highlight-bg: #ffe9a8;
 }
 
-#editor .cm-content .cm-md-strong {
-  color: #d43d2a;
-}
-
 #editor .cm-content .cm-md-inlinecode {
   color: #d43d2a;
 }

@@ -7,12 +7,14 @@
 //
 // 用法: npm run verify:features（先 npm run build）
 // 只验 Mermaid 点击往返：npm run verify:features -- --mermaid-only
+// 只验代码块与正文的光标颜色：npm run verify:features -- --cursor-only
+// 只验列表中表格导出：npm run verify:features -- --list-export-only
 // 窗口放在屏幕外，不占用屏幕；一次启动跑完所有断言。
 //
 // 注意：页面侧表达式写在模板字符串里，反斜杠会被模板字符串吃掉一次，
 // 所以那边一律用 includes() 而不是正则；非要匹配反引号时写 \x60。
 import { spawn } from 'node:child_process'
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
@@ -95,6 +97,10 @@ function fixture() {
     '| *真斜体* | snake_case_name |',
     '',
     '行内公式 $a^2+b^2=c^2$ 与价格 $349。',
+    '',
+    '> ```bash',
+    '> npm run quoted',
+    '> ```',
     '',
     '$$',
     '\\int_0^1 x^2 dx',
@@ -182,6 +188,18 @@ const MEASURE = `(() => {
   const text = (el) => (el ? el.textContent : null)
   const has = (el, frag) => (el ? el.textContent.includes(frag) : null)
   const colorOf = (el) => (el ? getComputedStyle(el).color : null)
+  // 文字实际落在哪个元素上就量哪个：行元素一直报正文色，真正发灰的是行里被语法
+  // 高亮包起来的那层 span（2026-10-25 踩过：只量行元素，断言全绿，列表还是灰的）。
+  const textColorOf = (needle) => {
+    const line = lineOf(needle)
+    if (!line) return '缺'
+    const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT)
+    let node
+    while ((node = walker.nextNode())) {
+      if (node.textContent.includes(needle)) return getComputedStyle(node.parentElement).color
+    }
+    return '没找到'
+  }
 
   return JSON.stringify({
     headings: {
@@ -193,6 +211,9 @@ const MEASURE = `(() => {
       strong: q('.cm-md-strong').length,
       em: q('.cm-md-em').length,
       strike: q('.cm-md-strike').length,
+      // 加粗只用字重、删除线只用划线，都不换颜色（2026-10-25 定：文字颜色要少）
+      strongColor: (() => { const el = q('.cm-md-strong')[0]; return el ? getComputedStyle(el).color : null })(),
+      strikeColor: (() => { const el = q('.cm-md-strike')[0]; return el ? getComputedStyle(el).color : null })(),
       code: q('.cm-md-inlinecode').length,
       highlight: q('.cm-md-highlight').length,
       raw: has(lineOf('普通段落'), '**') || has(lineOf('普通段落'), '==') || has(lineOf('普通段落'), '~~')
@@ -227,7 +248,20 @@ const MEASURE = `(() => {
       nested: q('.cm-md-li-1').length,
       tasks: q('.cm-md-task').length,
       checked: q('.cm-md-task-checked').length,
-      ordered: text(lineOf('有序项一'))
+      ordered: text(lineOf('有序项一')),
+      // 列表的文字、圆点、序号都必须是正文色。
+      // 量的是**文字所在的那个元素**，不是行元素：行元素一直报正文色，真正发灰的是
+      // 行里被语法高亮包起来的那层 span（2026-10-25 踩过：只量行元素，断言全绿，
+      // 屏幕上整段列表还是灰的）。
+      bodyColor: getComputedStyle(q('#editor .cm-content')[0]).color,
+      ulTextColor: textColorOf('无序项一'),
+      olTextColor: textColorOf('有序项一'),
+      bulletColor: (() => { const b = q('.cm-md-li-bullet')[0]; return b ? getComputedStyle(b).color : null })(),
+      markColor: (() => {
+        const line = lines.find((l) => l.textContent.includes('有序项一'))
+        const mark = line && line.querySelector('.cm-md-listmark')
+        return mark ? getComputedStyle(mark).color : null
+      })()
     },
     table: {
       tables: q('.cm-md-table-widget').length,
@@ -241,7 +275,12 @@ const MEASURE = `(() => {
       ems: q('.cm-md-table-widget em').map((e) => e.textContent),
       cellTexts: q('.cm-md-table-widget td').map((td) => td.textContent)
     },
-    quote: { count: q('.cm-md-blockquote').length, raw: (text(lineOf('引用文字')) || '').startsWith('>') },
+    quote: {
+      count: q('.cm-md-blockquote').length,
+      raw: (text(lineOf('引用文字')) || '').startsWith('>'),
+      // 引用只用竖线和底色区分，文字仍是正文色：文字颜色越少越干净（2026-10-25 定）
+      textColor: textColorOf('引用文字')
+    },
     hr: { count: q('.cm-md-hr').length },
     math: { katex: q('.katex').length, block: q('.cm-md-math-block').length, error: q('.cm-md-math-error').length },
     mermaid: { ready: q('.cm-md-mermaid-ready').length, svg: q('.cm-md-mermaid svg').length, failed: q('.cm-md-mermaid-failed').length },
@@ -296,9 +335,20 @@ const MEASURE = `(() => {
         : ''
       return {
         size: out.length,
+        codeColor: (() => {
+          const article = document.createElement('article')
+          article.className = 'colamd-document'
+          article.innerHTML = '<pre><code>const answer = 42</code></pre>'
+          document.body.appendChild(article)
+          const exported = getComputedStyle(article.querySelector('code')).color
+          const editor = getComputedStyle(document.querySelector('.cm-md-codeblock')).color
+          article.remove()
+          return { exported, editor }
+        })(),
         strong: /<strong>/i.test(out),
         em: /<em>/i.test(out),
         img: /<img[^>]+src/i.test(out),
+        mermaid: q('.cm-md-mermaid-ready svg').some((svg) => out.includes(svg.outerHTML)),
         anchor: /<a[^>]+href/i.test(out),
         list: /<ul>|<ol>/i.test(out),
         code: /<pre><code>/i.test(out),
@@ -499,6 +549,99 @@ function reportChecks() {
   if (failed.length) process.exitCode = 1
 }
 
+/** 复用当前窗口逐主题截图取色，检查选区是否真的画在引用和代码背景之上。 */
+async function checkSelectionVisibility(renderer) {
+  const doc = [
+    '> 引用文字 ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789',
+    '> 引用第二行 ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789', '',
+    '> ```text', '> quoted_code ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789',
+    '> second_code ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789', '> ```', '',
+    '> > 嵌套引用 ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789', '',
+    '```text', 'plain_code ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789', '```', '',
+    '> 自动换行引用文字 ' + 'ABCDEFGHIJKLMN '.repeat(12), '', '末尾正文',
+  ].join('\n')
+  const scenarios = [
+    ['引用文字', '引用文字', '0123456789'],
+    ['引用多行', '引用文字', '引用第二行 ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789'],
+    ['引用内代码', 'quoted_code', 'second_code ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789'],
+    ['跨引用与代码', '引用文字', 'second_code ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789'],
+    ['嵌套引用', '嵌套引用', '0123456789'],
+    ['普通代码', 'plain_code', '0123456789'],
+    ['自动换行引用', '自动换行引用文字', 'ABCDEFGHIJKLMN '.repeat(12).trim()],
+    ['鼠标拖选引用', '引用文字', '0123456789', 'mouse'],
+    ['失焦引用内代码', 'quoted_code', 'second_code ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789', 'blur'],
+  ]
+  const themes = [
+    ...['light', 'dark', 'elegant', 'sepia', 'notion', 'bear', 'writer', 'solarized-dark', 'nord', 'gruvbox', 'dracula', 'midnight']
+      .map(name => ({ name, className: `theme-${name}` })),
+    ...readdirSync(join(APP, 'themes')).filter(name => name.endsWith('.css')).sort()
+      .map(name => ({ name, className: 'theme-custom', css: readFileSync(join(APP, 'themes', name), 'utf8') })),
+  ]
+  const pixels = async (bands) => {
+    const { data } = await renderer.send('Page.captureScreenshot', { format: 'png' })
+    return evaluate(renderer, `(async () => {
+      const image = new Image(); image.src = 'data:image/png;base64,${data}'; await image.decode()
+      const canvas = new OffscreenCanvas(image.width, image.height), ctx = canvas.getContext('2d')
+      ctx.drawImage(image, 0, 0)
+      const sx = image.width / innerWidth, sy = image.height / innerHeight
+      return ${JSON.stringify(bands)}.map(r => {
+        const x = Math.ceil((r.x + 2) * sx), end = Math.floor((r.x + r.width - 2) * sx)
+        return [...ctx.getImageData(x, Math.ceil((r.y + 2) * sy), end - x, 1).data]
+      })
+    })()`)
+  }
+  const saved = await evaluate(renderer, `(() => {
+    window.__selectionView = document.querySelector('.cm-content').cmTile.root.view
+    window.__selectionState = __selectionView.state
+    return {className:document.body.className,width:innerWidth,height:innerHeight,scroll:__selectionView.scrollDOM.scrollTop}
+  })()`)
+  try {
+    await renderer.send('Emulation.setFocusEmulationEnabled', { enabled: true })
+    await renderer.send('Emulation.setDeviceMetricsOverride', { width: 1100, height: 1200, deviceScaleFactor: 1, mobile: false })
+    await evaluate(renderer, `__selectionView.setState(__selectionState.constructor.create({doc:${JSON.stringify(doc)},extensions:__selectionState.config.base}))`)
+    for (const theme of themes) {
+      await evaluate(renderer, `(() => {
+        document.getElementById('selection-theme')?.remove(); document.body.className = ${JSON.stringify(theme.className)}
+        const style = document.createElement('style'); style.id = 'selection-theme'; style.textContent = ${JSON.stringify(theme.css || '')}; document.head.append(style)
+        __selectionView.dispatch({selection:{anchor:0}}); __selectionView.focus(); __selectionView.scrollDOM.scrollTop = 0
+      })()`)
+      await sleep(60)
+      for (const [name, start, end, mode] of scenarios) {
+        const from = doc.indexOf(start), to = doc.indexOf(end, from) + end.length
+        await evaluate(renderer, `__selectionView.dispatch({selection:{anchor:${mode === 'mouse' ? 0 : from},head:${mode === 'mouse' ? 0 : to}}}); __selectionView.focus()`)
+        if (mode === 'mouse') {
+          const [a, b] = await evaluate(renderer, `[__selectionView.coordsAtPos(${from}),__selectionView.coordsAtPos(${to})].map(r=>({x:r.left,y:(r.top+r.bottom)/2}))`)
+          for (const [type, point] of [['mousePressed', a], ['mouseMoved', b], ['mouseReleased', b]]) {
+            await renderer.send('Input.dispatchMouseEvent', { type, ...point, button: 'left', buttons: type === 'mouseReleased' ? 0 : 1, clickCount: 1 })
+          }
+        }
+        if (mode === 'blur') await evaluate(renderer, '__selectionView.contentDOM.blur()')
+        await sleep(40)
+        const selectedRange = await evaluate(renderer, '[__selectionView.state.selection.main.from,__selectionView.state.selection.main.to]')
+        const bands = await evaluate(renderer, `[...document.querySelectorAll('.cm-selectionBackground')].map(el=>{
+          const r=el.getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height}
+        }).filter(r=>r.width>4 && r.height>4)`)
+        const selected = await pixels(bands)
+        await evaluate(renderer, '__selectionView.dispatch({selection:{anchor:0}})')
+        await sleep(30)
+        const collapsed = await pixels(bands)
+        const deltas = selected.map((row, band) => {
+          let total = 0
+          for (let i = 0; i < row.length; i += 4) total += Math.max(...[0, 1, 2].map(c => Math.abs(row[i + c] - collapsed[band][i + c])))
+          return Math.round(total / (row.length / 4) * 10) / 10
+        })
+        check(`${theme.name} ${name}选区可见`, selectedRange[0] === from && selectedRange[1] === to && deltas.length > 0 && deltas.every(delta => delta >= 8),
+          `选区=${selectedRange} 选中前后像素差=${deltas}`)
+      }
+    }
+    check('逐主题选区验收不修改文档', await evaluate(renderer, '__selectionView.state.doc.toString()') === doc)
+  } finally {
+    await evaluate(renderer, `document.getElementById('selection-theme')?.remove(); document.body.className=${JSON.stringify(saved.className)};
+      __selectionView.setState(__selectionState); __selectionView.scrollDOM.scrollTop=${saved.scroll}; delete window.__selectionState; delete window.__selectionView`)
+    await renderer.send('Emulation.setDeviceMetricsOverride', { width: saved.width, height: saved.height, deviceScaleFactor: 1, mobile: false })
+  }
+}
+
 /** 点一下某一行（把光标放进去），返回它的坐标。 */
 async function clickLine(renderer, fragment) {
   const box = JSON.parse(await evaluate(renderer, `(() => {
@@ -535,6 +678,62 @@ async function pressKey(renderer, key, code, keyCode, modifiers = 0) {
     await renderer.send('Input.dispatchKeyEvent', { type, key, code, windowsVirtualKeyCode: keyCode, modifiers })
   }
   await sleep(200)
+}
+
+async function checkSourceShortcut(renderer) {
+  await renderer.send('Emulation.setFocusEmulationEnabled', { enabled: true })
+  await evaluate(renderer, `document.querySelector('#editor .cm-content').focus()`)
+  await pressKey(renderer, '/', 'Slash', 191, 4)
+  const source = await evaluate(renderer, `(() => {
+    const el = document.getElementById('source-editor')
+    return { visible: el.classList.contains('visible'), focused: document.activeElement === el, text: el.value }
+  })()`)
+  check('源码快捷键切换并聚焦源码', source.visible && source.focused, JSON.stringify(source))
+  check('源码快捷键不插入注释', source.text === fixture(), `长度=${source.text.length}`)
+  await renderer.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'a', code: 'KeyA', modifiers: 4, commands: ['selectAll'] })
+  const allSource = await evaluate(renderer, `(() => {
+    const el = document.getElementById('source-editor')
+    return el.selectionStart === 0 && el.selectionEnd === el.value.length && document.activeElement === el
+  })()`)
+  check('切换源码后全选只选编辑区', allSource, String(allSource))
+  await pressKey(renderer, '/', 'Slash', 191, 4)
+  const visual = await evaluate(renderer, `document.activeElement === document.querySelector('#editor .cm-content')`)
+  check('切回渲染后聚焦编辑区', visual, String(visual))
+  await evaluate(renderer, SELECT_ALL)
+  const copied = JSON.parse(await evaluate(renderer, COPY_PROBE))
+  check('切换往返后全选复制原文', copied.text === fixture(), `长度=${copied.text.length}`)
+  await evaluate(renderer, `document.querySelector('#editor .cm-content').dispatchEvent(new KeyboardEvent('keydown', {
+    key: '/', code: 'Slash', ctrlKey: true, bubbles: true, cancelable: true
+  }))`)
+  const ctrlSource = await evaluate(renderer, `document.getElementById('source-editor').classList.contains('visible')`)
+  check('Ctrl 源码快捷键接入切换', ctrlSource, String(ctrlSource))
+  if (ctrlSource) await pressKey(renderer, '/', 'Slash', 191, 4)
+  // 光标跟着切换走：两边是同一份字节，偏移应当一一对应，而不是落到文末或文首
+  const into = await evaluate(renderer, `(() => {
+    const view = document.querySelector('.cm-content').cmTile.root.view
+    const from = view.state.doc.toString().indexOf('二级标题')
+    view.dispatch({ selection: { anchor: from, head: from + 2 } })
+    view.focus()
+    return from
+  })()`)
+  await pressKey(renderer, '/', 'Slash', 191, 4)
+  const sourceCaret = await evaluate(renderer, `(() => {
+    const el = document.getElementById('source-editor')
+    return [el.selectionStart, el.selectionEnd]
+  })()`)
+  check('切到源码时保留光标位置', sourceCaret[0] === into && sourceCaret[1] === into + 2, JSON.stringify({ into, sourceCaret }))
+  const back = await evaluate(renderer, `(() => {
+    const el = document.getElementById('source-editor')
+    const at = el.value.indexOf('普通段落')
+    el.setSelectionRange(at, at)
+    return at
+  })()`)
+  await pressKey(renderer, '/', 'Slash', 191, 4)
+  const visualCaret = await evaluate(renderer, `(() => {
+    const main = document.querySelector('.cm-content').cmTile.root.view.state.selection.main
+    return [main.anchor, main.head]
+  })()`)
+  check('切回渲染时保留源码里的光标位置', visualCaret[0] === back && visualCaret[1] === back, JSON.stringify({ back, visualCaret }))
 }
 
 /** 图表退出源码后必须原地恢复，不能靠滚动重建视口才出现。 */
@@ -613,6 +812,54 @@ async function checkMermaidRestoration(renderer) {
   const copied = JSON.parse(await evaluate(renderer, COPY_PROBE))
   check('Mermaid 点击往返不改文档字节', copied.text === fixture(), `复制长度=${copied.text.length} 原文长度=${fixture().length}`)
   await clickLine(renderer, '普通段落')
+}
+
+async function checkCodeCursor(renderer) {
+  await renderer.send('Emulation.setFocusEmulationEnabled', { enabled: true })
+  const saved = await evaluate(renderer, 'document.body.className')
+  for (const theme of ['light', 'dark', 'elegant', 'sepia', 'notion', 'bear', 'writer', 'solarized-dark', 'nord', 'gruvbox', 'dracula', 'midnight']) {
+    for (const code of [true, false]) {
+      await evaluate(renderer, `(() => {
+        document.body.className = ${JSON.stringify(`theme-${theme}`)}
+        const view = document.querySelector('.cm-content').cmTile.root.view
+        const from = view.state.doc.toString().indexOf(${JSON.stringify(code ? 'const answer' : '普通段落')})
+        view.dispatch({ selection: { anchor: from }, scrollIntoView: true })
+        view.focus()
+      })()`)
+      await sleep(100)
+      const colors = await evaluate(renderer, `(() => {
+        const line = [...document.querySelectorAll('.cm-line')].find(el => el.textContent.includes(${JSON.stringify(code ? 'const answer' : '普通段落')}))
+        return { cursor: getComputedStyle(document.querySelector('.cm-cursor-primary')).borderLeftColor,
+          text: getComputedStyle(line).color }
+      })()`)
+      check(`${theme} ${code ? '代码块' : '正文'}光标使用对应文字色`, colors.cursor === colors.text, JSON.stringify(colors))
+      // 拖放的插入竖线：走浏览器的拖拽事件，拖到这一行上不松手，取消后竖线和标记都要撤掉
+      const point = await evaluate(renderer, `(() => {
+        const line = [...document.querySelectorAll('.cm-line')].find(el => el.textContent.includes(${JSON.stringify(code ? 'const answer' : '普通段落')}))
+        const r = line.getBoundingClientRect()
+        return { x: Math.round(r.left + 30), y: Math.round(r.top + r.height / 2) }
+      })()`)
+      const data = { items: [{ mimeType: 'text/plain', data: 'x' }], dragOperationsMask: 1 }
+      await renderer.send('Input.dispatchDragEvent', { type: 'dragEnter', ...point, data })
+      await renderer.send('Input.dispatchDragEvent', { type: 'dragOver', ...point, data })
+      await sleep(150)
+      const drop = await evaluate(renderer, `(() => {
+        const marker = document.querySelector('.cm-dropCursor')
+        const line = [...document.querySelectorAll('.cm-line')].find(el => el.textContent.includes(${JSON.stringify(code ? 'const answer' : '普通段落')}))
+        return { cursor: marker ? getComputedStyle(marker).borderLeftColor : null, text: getComputedStyle(line).color }
+      })()`)
+      check(`${theme} ${code ? '代码块' : '正文'}拖放竖线使用对应文字色`, drop.cursor === drop.text, JSON.stringify(drop))
+      // CDP 的 dragCancel 不给页面发 dragleave，补一个，等同于拖出编辑区
+      await renderer.send('Input.dispatchDragEvent', { type: 'dragCancel', ...point, data })
+      await evaluate(renderer, `document.querySelector('.cm-content').dispatchEvent(new DragEvent('dragleave', { bubbles: true }))`)
+      await sleep(100)
+      if (code) {
+        const leftover = JSON.parse(await evaluate(renderer, `JSON.stringify({ cursor: !!document.querySelector('.cm-dropCursor'), mark: !!document.querySelector('.cm-drop-in-code') })`))
+        check(`${theme} 拖出代码块后不残留插入竖线与代码块标记`, !leftover.cursor && !leftover.mark, JSON.stringify(leftover))
+      }
+    }
+  }
+  await evaluate(renderer, `document.body.className = ${JSON.stringify(saved)}`)
 }
 
 /** 语法速查：单独开一次窗口量一遍（它和夹具不是同一份文档）。 */
@@ -739,6 +986,150 @@ async function checkCheatsheet() {
   }
 }
 
+/**
+ * 引用里的代码块：引用的底色和字色不能盖住代码块（v2.7.7 雅致主题里浅字落在浅底上，几乎看不见）。
+ * 每套内置主题都量代码字与代码块底色的对比度，至少 4.5:1。
+ */
+async function checkQuotedCodeBlock(renderer) {
+  const saved = await evaluate(renderer, 'document.body.className')
+  for (const theme of ['light', 'dark', 'elegant', 'sepia', 'notion', 'bear', 'writer', 'solarized-dark', 'nord', 'gruvbox', 'dracula', 'midnight']) {
+    const result = JSON.parse(await evaluate(renderer, `(async () => {
+      document.body.className = ${JSON.stringify(`theme-${theme}`)}
+      await new Promise((resolve) => setTimeout(resolve, 80))
+      const line = [...document.querySelectorAll('#editor .cm-line')].find((el) => el.textContent.includes('npm run quoted'))
+      if (!line) return JSON.stringify({ missing: true })
+      const rgb = (value) => value.match(/[\\d.]+/g).slice(0, 3).map(Number)
+      const lum = (value) => { const [r, g, b] = rgb(value).map((c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4 }); return 0.2126 * r + 0.7152 * g + 0.0722 * b }
+      const text = getComputedStyle(line).color
+      const lineBg = getComputedStyle(line).backgroundColor
+      const codeBg = getComputedStyle(line, '::before').backgroundColor
+      const [hi, lo] = [lum(text), lum(codeBg)].sort((a, b) => b - a)
+      return JSON.stringify({ text, codeBg, lineBg, quote: line.classList.contains('cm-md-blockquote'), contrast: Math.round((hi + 0.05) / (lo + 0.05) * 10) / 10 })
+    })()`))
+    check(`${theme} 引用里的代码块看得清`,
+      !result.missing && result.quote && result.lineBg === 'rgba(0, 0, 0, 0)' && result.contrast >= 4.5, JSON.stringify(result))
+  }
+  await evaluate(renderer, `document.body.className = ${JSON.stringify(saved)}`)
+}
+
+/** 列表里的表格属于原列表项，空行和续段不能另起项目。 */
+async function checkListTableExport(renderer) {
+  const table = prefix => ['| 任务 | 状态 |', '| --- | --- |', '| 整理文档 | 已完成 |']
+    .map(line => prefix + line).join('\n')
+  const cases = [
+    { name: '有序列表项包含说明、表格和续段', source: `7. 项目计划\n\n${table('   ')}\n\n   以上任务将在周五统一验收。\n`, tag: 'OL', start: 7, items: 1, owner: '项目计划', tail: '以上任务将在周五统一验收。' },
+    { name: '有序列表保留下一项', source: `7. 前文\n\n${table('   ')}\n\n   后文\n\n8. 下一项\n`, tag: 'OL', start: 7, items: 2, owner: '前文', tail: '后文' },
+    { name: '表格是列表项首块', source: `7. ${table('').replaceAll('\n', '\n   ')}\n\n   后文\n\n8. 下一项\n`, tag: 'OL', start: 7, items: 2, tail: '后文' },
+    { name: '无序列表中的表格', source: `- 前文\n\n${table('  ')}\n\n  后文\n\n- 下一项\n`, tag: 'UL', items: 2, owner: '前文', tail: '后文' },
+    { name: '嵌套列表结束后返回父项', source: `7. 父项\n\n   - 子项前文\n\n${table('     ')}\n\n     子项后文\n\n   父项后文\n\n8. 下一项\n`, tag: 'OL', start: 7, items: 2, owner: '子项前文', tail: '子项后文', parentTail: '父项后文' },
+    { name: '引用中的有序列表', source: `> 7. 前文\n>\n${table('>    ')}\n>\n>    后文\n`, tag: 'OL', start: 7, items: 1, owner: '前文', tail: '后文', quote: true },
+    { name: '引用中的说明和列表', source: `> 引用前文\n>\n> 7. 前文\n>\n${table('>    ')}\n>\n>    后文\n>\n> 引用后文\n`, tag: 'OL', start: 7, items: 1, owner: '前文', tail: '后文', quote: true, quoteText: ['引用前文', '引用后文'] },
+    { name: '同项代码块和表格', source: `7. 前文\n\n   \x60\x60\x60js\n   const a = 1\n   \x60\x60\x60\n\n${table('   ')}\n\n   后文\n`, tag: 'OL', start: 7, items: 1, owner: '前文', tail: '后文', code: true },
+    { name: '未缩进正文退出列表', source: `7. 前文\n\n${table('   ')}\n\n列表外正文\n`, tag: 'OL', start: 7, items: 1, owner: '前文', outside: '列表外正文' },
+    { name: '同项两个表格', source: `7. 前文\n\n${table('   ')}\n\n   中段\n\n${table('   ')}\n\n   后文\n`, tag: 'OL', start: 7, items: 1, owner: '前文', tail: '后文', tables: 2 },
+    { name: '同级列表切换类型', source: `7. 前文\n\n${table('   ')}\n\n- 无序下一组\n`, tag: 'OL', start: 7, items: 1, owner: '前文', nextList: true },
+    { name: '表格内格式和空格子', source: '7. 前文\n\n   | 内容 | 备注 |\n   | :--- | ---: |\n   | **粗体** 与 [链接](https://example.com) | `代码` |\n   | a\\|b |  |\n\n   后文\n', tag: 'OL', start: 7, items: 1, owner: '前文', tail: '后文', format: true },
+  ]
+  await evaluate(renderer, `window.__listExportView = document.querySelector('#editor .cm-content').cmTile.root.view; window.__listExportState = __listExportView.state; true`)
+  try {
+    for (const sample of cases) {
+      await evaluate(renderer, `(() => {
+        const v = __listExportView
+        v.setState(v.state.constructor.create({doc:${JSON.stringify(sample.source)},extensions:v.state.config.base}))
+        v.dispatch({selection:{anchor:v.state.doc.length}})
+        return true
+      })()`)
+      await sleep(120)
+      const result = JSON.parse(await evaluate(renderer, `(() => {
+        const v = __listExportView, original = v.state.doc.toString()
+        const html = window.__colamdExportDocumentHTML()
+        const root = document.createElement('div'); root.innerHTML = html
+        const list = root.querySelector(${JSON.stringify(sample.tag.toLowerCase())})
+        const tables = [...root.querySelectorAll('table')]
+        const owner = tables[0]?.closest('li')
+        const ownText = element => { if (!element) return ''; const copy = element.cloneNode(true); copy.querySelectorAll('ul,ol,table,pre').forEach(node=>node.remove()); return copy.textContent.trim() }
+        const outside = [...root.querySelectorAll('p')].find(node=>node.textContent.includes(${JSON.stringify(sample.outside ?? '\u0000')}))
+        v.dispatch({selection:{anchor:0,head:v.state.doc.length}})
+        const selected = JSON.stringify(v.state.selection.toJSON())
+        const clipboard = new DataTransfer()
+        v.contentDOM.dispatchEvent(new ClipboardEvent('copy',{clipboardData:clipboard,bubbles:true,cancelable:true}))
+        const copied = document.createElement('div'); copied.innerHTML = clipboard.getData('text/html')
+        return JSON.stringify({html,tag:list?.tagName,start:Number(list?.getAttribute('start')??1),items:list?.querySelectorAll(':scope > li').length,
+          tables:tables.length,allOwned:tables.every(node=>!!node.closest('li')),owner:ownText(owner),
+          order:!!owner && owner.innerHTML.indexOf('<table') < owner.innerHTML.lastIndexOf(${JSON.stringify(sample.tail ?? '</table>')}),
+          parent:ownText(owner?.parentElement?.closest('li')),quoted:!!list?.closest('blockquote'),quoteText:list?.closest('blockquote')?.textContent??'',
+          code:!!owner?.querySelector('pre > code'),codeText:owner?.querySelector('pre > code')?.textContent,
+          empty:[...root.querySelectorAll('li')].filter(node=>!node.textContent.trim()&&!node.querySelector('table,img,pre')).length,
+          outside:!!outside && !outside.closest('li'),nextList:root.lastElementChild?.tagName === 'UL',
+          format:!!owner?.querySelector('td strong')&&!!owner?.querySelector('td a[href="https://example.com"]')&&!!owner?.querySelector('td code')&&owner.textContent.includes('a|b'),
+          copiedTables:copied.querySelectorAll('table').length,copiedOwned:[...copied.querySelectorAll('table')].every(node=>!!node.closest('li')),
+          copyUnchanged:v.state.doc.toString()===original&&JSON.stringify(v.state.selection.toJSON())===selected,
+          sourceUnchanged:v.state.doc.toString()===${JSON.stringify(sample.source)}
+        })
+      })()`))
+      check(`${sample.name}：列表类型和项目数量`, result.tag === sample.tag && result.items === sample.items && (!sample.start || result.start === sample.start), JSON.stringify(result))
+      check(`${sample.name}：表格保持原项目归属`, result.tables === (sample.tables ?? 1) && result.allOwned && (!sample.owner || result.owner.includes(sample.owner)) && (!sample.tail || result.owner.includes(sample.tail)) && (!sample.tail || result.order), result.html)
+      check(`${sample.name}：不生成空项目、不改源码`, result.empty === 0 && result.sourceUnchanged, result.html)
+      check(`${sample.name}：整段复制保留表格归属`, result.copiedTables === (sample.tables ?? 1) && result.copiedOwned && result.copyUnchanged, result.html)
+      if (sample.parentTail) check(`${sample.name}：续文回到父项目`, result.parent.includes(sample.parentTail) && !result.owner.includes(sample.parentTail), result.html)
+      if (sample.quote) check(`${sample.name}：引用层级保留`, result.quoted && (sample.quoteText ?? []).every(text=>result.quoteText.includes(text)), result.html)
+      if (sample.code) check(`${sample.name}：代码仍为代码块`, result.code && result.codeText.includes('const a = 1') && !result.codeText.includes('\x60\x60\x60'), result.html)
+      if (sample.outside) check(`${sample.name}：列表外正文不被吞入`, result.outside, result.html)
+      if (sample.nextList) check(`${sample.name}：新列表独立`, result.nextList, result.html)
+      if (sample.format) check(`${sample.name}：单元格格式保持`, result.format, result.html)
+    }
+    const nested = '7. 父项\n   - 子项甲\n   - 子项乙\n\n8. 下一项\n'
+    for (const reverse of [false, true]) {
+      const from = nested.indexOf('子项乙'), to = nested.indexOf('下一项') + 3
+      const result = JSON.parse(await evaluate(renderer, `(() => {
+        const v = __listExportView
+        v.setState(v.state.constructor.create({doc:${JSON.stringify(nested)},extensions:v.state.config.base}))
+        v.dispatch({selection:{anchor:${reverse ? to : from},head:${reverse ? from : to}}})
+        const selection = JSON.stringify(v.state.selection.toJSON())
+        const data = new DataTransfer()
+        v.contentDOM.dispatchEvent(new ClipboardEvent('copy',{clipboardData:data,bubbles:true,cancelable:true}))
+        const root = document.createElement('div'); root.innerHTML = data.getData('text/html')
+        const list = root.querySelector(':scope > ol')
+        return JSON.stringify({html:root.innerHTML,start:Number(list?.getAttribute('start')),items:list?.querySelectorAll(':scope > li').length,
+          nested:!!list?.firstElementChild?.querySelector('ul > li'),unselected:root.textContent.includes('父项')||root.textContent.includes('子项甲'),
+          unchanged:v.state.doc.toString()===${JSON.stringify(nested)}&&JSON.stringify(v.state.selection.toJSON())===selection})
+      })()`))
+      check(`从子项目跨到父级下一项${reverse ? '反向' : '正向'}复制保留结构但不补文字`, result.start === 7 && result.items === 2 && result.nested && !result.unselected && result.unchanged, result.html)
+    }
+    const continuation = '- 甲\n  续行\n- 乙\n'
+    await evaluate(renderer, `(() => {
+      const v = __listExportView
+      v.setState(v.state.constructor.create({doc:${JSON.stringify(continuation)},extensions:v.state.config.base}))
+      v.dispatch({selection:{anchor:2,head:v.state.doc.length}})
+      return true
+    })()`)
+    const continuationResult = JSON.parse(await evaluate(renderer, `(() => {
+      const root = document.createElement('div'); root.innerHTML = window.__colamdExportDocumentHTML()
+      const data = new DataTransfer()
+      __listExportView.contentDOM.dispatchEvent(new ClipboardEvent('copy',{clipboardData:data,bubbles:true,cancelable:true}))
+      const copied = document.createElement('div'); copied.innerHTML = data.getData('text/html')
+      return JSON.stringify({html:root.innerHTML,copy:copied.innerHTML,
+        exported:root.querySelectorAll('ul > li').length===2&&!!root.querySelector('ul > li > br'),
+        copied:copied.querySelectorAll('ul > li').length===2&&!!copied.querySelector('ul > li > br')})
+    })()`))
+    check('同一列表项的续行导出保留换行', continuationResult.exported, continuationResult.html)
+    check('续行跨到下一项复制保留换行', continuationResult.copied, continuationResult.copy)
+    const ordinary = '  保留段首空格\n\n> 引用第一行\n> 引用第二行\n'
+    const ordinaryResult = JSON.parse(await evaluate(renderer, `(() => {
+      const v = __listExportView
+      v.setState(v.state.constructor.create({doc:${JSON.stringify(ordinary)},extensions:v.state.config.base}))
+      v.dispatch({selection:{anchor:v.state.doc.length}})
+      const root = document.createElement('div'); root.innerHTML = window.__colamdExportDocumentHTML()
+      return JSON.stringify({html:root.innerHTML,paragraph:root.querySelector(':scope > p')?.textContent,
+        quoted:[...root.querySelectorAll('blockquote > p')].map(node=>node.textContent),unchanged:v.state.doc.toString()===${JSON.stringify(ordinary)}})
+    })()`))
+    check('列表外段落保留行首空格', ordinaryResult.paragraph === '  保留段首空格' && ordinaryResult.unchanged, ordinaryResult.html)
+    check('普通引用保留段落边界', JSON.stringify(ordinaryResult.quoted) === JSON.stringify(['引用第一行','引用第二行']), ordinaryResult.html)
+  } finally {
+    await evaluate(renderer, `__listExportView.setState(__listExportState); delete window.__listExportState; delete window.__listExportView; true`)
+  }
+}
+
 function main() {
   return (async () => {
     mkdirSync(WORK, { recursive: true })
@@ -770,9 +1161,20 @@ function main() {
         await sleep(250)
       }
       check('夹具已加载', loaded, `编辑器里有没有这份夹具：${loaded}`)
+      await checkCodeCursor(renderer)
+      if (process.argv.includes('--cursor-only')) {
+        reportChecks()
+        return
+      }
+      if (process.argv.includes('--list-export-only')) {
+        await checkListTableExport(renderer)
+        reportChecks()
+        return
+      }
       // mermaid 是异步画的，多等一会儿
       await sleep(2500)
 
+      await checkSourceShortcut(renderer)
       await checkMermaidRestoration(renderer)
       if (process.argv.includes('--mermaid-only')) {
         reportChecks()
@@ -788,11 +1190,16 @@ function main() {
       check('==高亮== 渲染', m.inline.highlight >= 1, `highlight=${m.inline.highlight}`)
       check('时间戳不被当成 emoji 染色', m.timestamp.colors.length === 1,
         `颜色=${JSON.stringify(m.timestamp.colors)} 片段=${JSON.stringify(m.timestamp.spans)}`)
+      await checkQuotedCodeBlock(renderer)
       check('链接可点（带地址）', m.link.anchors >= 1, `带 data-href 的元素=${m.link.anchors}`)
       check('链接不露源码', m.link.brackets === false, `行内容: ${m.link.url}`)
       check('本地图片渲染', m.image.imgs >= 1 && m.image.naturalWidth > 0,
         `img=${m.image.imgs} naturalWidth=${m.image.naturalWidth} src=${m.image.src}`)
       check('列表圆点', m.list.bullets >= 3, `bullets=${m.list.bullets}`)
+      check('列表的文字、圆点和序号都是正文色，不压灰',
+        m.list.ulTextColor === m.list.bodyColor && m.list.olTextColor === m.list.bodyColor &&
+          m.list.bulletColor === m.list.bodyColor && m.list.markColor === m.list.bodyColor,
+        `无序文字=${m.list.ulTextColor} 有序文字=${m.list.olTextColor} 圆点=${m.list.bulletColor} 序号=${m.list.markColor} 正文=${m.list.bodyColor}`)
       check('嵌套列表缩进', m.list.nested >= 1, `嵌套行=${m.list.nested}`)
       check('嵌套行只带自己那一层的类',
         (m.list.nestedClass ?? '').includes('cm-md-li-1') && !(m.list.nestedClass ?? '').includes('cm-md-li-0'),
@@ -811,6 +1218,11 @@ function main() {
           && cellTexts.some((t) => t.includes('snake_case_name')),
         `斜体=${JSON.stringify(ems)} 格子=${JSON.stringify(cellTexts.filter((t) => t.includes('_')).slice(0, 3))}`)
       check('引用渲染', m.quote.count >= 1 && m.quote.raw === false, `count=${m.quote.count} 露 >: ${m.quote.raw}`)
+      check('引用文字用正文色，不压灰', m.quote.textColor === m.list.bodyColor,
+        `引用=${m.quote.textColor} 正文=${m.list.bodyColor}`)
+      check('加粗与删除线不换颜色，跟正文同色',
+        m.inline.strongColor === m.list.bodyColor && m.inline.strikeColor === m.list.bodyColor,
+        `加粗=${m.inline.strongColor} 删除线=${m.inline.strikeColor} 正文=${m.list.bodyColor}`)
       check('分隔线渲染', m.hr.count >= 1, `hr=${m.hr.count}`)
       check('公式渲染', m.math.katex >= 2, `katex=${m.math.katex} block=${m.math.block} error=${m.math.error}`)
       check('Mermaid 渲染', m.mermaid.ready >= 1 && m.mermaid.svg >= 1,
@@ -843,7 +1255,10 @@ function main() {
       check('导出的 HTML 不带编辑器结构',
         m.exportHtml.cmClass === false && m.exportHtml.cmLine === false && m.exportHtml.frontmatter === false,
         `cm-md 类名残留=${m.exportHtml.cmClass}[${m.exportHtml.cmClassNames}] cm-line 残留=${m.exportHtml.cmLine} 属性区残留=${m.exportHtml.frontmatter}`)
+      check('导出的 HTML 保留 Mermaid 图表', m.exportHtml.mermaid === true, 'HTML 中缺少编辑器已渲染的 SVG')
       check('导出的 HTML 带图片', m.exportHtml.img === true, `img=${m.exportHtml.img} 长度=${m.exportHtml.size}`)
+      check('HTML 导出代码文字沿用编辑器配色', m.exportHtml.codeColor.exported === m.exportHtml.codeColor.editor,
+        `导出=${m.exportHtml.codeColor.exported} 编辑器=${m.exportHtml.codeColor.editor}`)
 
       // ─── #138 那一批：阅读体验的退化 ─────────────────────────────────────────
 
@@ -1309,6 +1724,31 @@ function main() {
         backIndent === beforeIndent && !(backClass ?? '').includes('cm-md-li-1'),
         `退回后=${JSON.stringify(backIndent)} 类=${backClass}`)
 
+      // 缩进出来的子列表要**从 1 重新数**（#2026-10-25：Tab 缩进有序项，序号跟着父级
+      // 往下数，屏幕上先是 1. 2. 3. 然后突然接 3. 4.）。
+      // 用「起点为五/六」这一组：外层起始编号是 5，缩进再退回去正好原地往返，
+      // 不会把别的断言依赖的文本改掉。
+      // 缩进出来的子列表要**从 1 重新数**，而且必须真的缩成子列表（#2026-10-25：Tab 缩进有序项，
+      // 序号跟着父级往下数，屏幕上先是 1. 2. 3. 然后突然接 3. 4.）。两个原因叠在一起：
+      // 子列表的序号得从 1 起，而且 `1. ` 占三列，只插两个空格的子列表在 markdown 里
+      // 压根没成层（还是同一个列表的第二项）。
+      // 用「起点为五/六」这一组：外层起始编号是 5，缩进再退回去正好原地往返，
+      // 不会把别的断言依赖的文本改掉。
+      await clickLine(renderer, '起点为六')
+      const orderedBefore = await lineText(renderer, '起点为六')
+      await pressKey(renderer, 'Tab', 'Tab', 9)
+      const orderedNested = await lineText(renderer, '起点为六')
+      const orderedClass = await lineClass(renderer, '起点为六')
+      check('缩进进子列表时序号从 1 重新数',
+        orderedNested === '   1. 起点为六' && (orderedClass ?? '').includes('cm-md-li-1'),
+        `缩进前=${JSON.stringify(orderedBefore)} 缩进后=${JSON.stringify(orderedNested)}`)
+      await pressKey(renderer, 'Tab', 'Tab', 9, 8)
+      const orderedBack = await lineText(renderer, '起点为六')
+      await clickLine(renderer, '起点为五')
+      check('退回一级后序号跟着外层排好',
+        orderedBack === orderedBefore,
+        `退回后=${JSON.stringify(orderedBack)} 期望=${JSON.stringify(orderedBefore)}`)
+
       // 深色主题下选中文字不能被选区色盖住（2026-10-04 报的）。
       await clickLine(renderer, '待办未完成')
       await pressKey(renderer, 'Home', 'Home', 36)
@@ -1405,6 +1845,8 @@ function main() {
         afterReset.contentFont === beforeZoom.contentFont && afterReset.contentFamily === beforeZoom.contentFamily,
         `字号 ${afterZoom.contentFont} → ${afterReset.contentFont}（默认 ${beforeZoom.contentFont}），字体族 ${JSON.stringify(afterReset.contentFamily)}`)
 
+      await checkListTableExport(renderer)
+      await checkSelectionVisibility(renderer)
       reportChecks()
     } finally {
       stopVerifyApp(udd)

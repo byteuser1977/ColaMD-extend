@@ -64,7 +64,7 @@ text as text and draws the formatting on top of it, so there are no `<h1>` or
 
 ```css
 #editor .cm-content { font-family: Georgia, serif; }
-#editor .cm-content .cm-md-strong { color: #c44b2b; }
+#editor .cm-content .cm-md-inlinecode { color: #c44b2b; }
 #editor .cm-content .cm-md-atxheading1 { letter-spacing: -0.01em; }
 #editor .cm-content .cm-md-codeblock { background: #2c2c2c; color: #e0dcd7; }
 ```
