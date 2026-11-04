@@ -231,6 +231,16 @@ Rule kept: exactly nine cards. The order is documented in an HTML comment above 
 
 ## Candidates
 
+### 右键菜单：插入表格、待办、列表、标题层级 (#163)
+
+**Source:** [#163](https://github.com/marswaveai/ColaMD/issues/163)
+
+**Need:** 写项目文档时表格用得多，但画一张表只能手敲 `|---|---|`。要的是编辑器里的右键菜单：插入表格（能选几行几列）、待办、有序/无序列表，以及把当前行调成某一级标题。参考对象是 Typora 的右键菜单。
+
+**Scope:** 菜单挂在正文上，条目跟光标所在的块走（在表格里给表格相关的操作，在列表里给列表的）。插入表格要能继续填格子，不是只塞进一行语法。不新增常驻工具栏。
+
+**Status:** Candidate, not scheduled.
+
 ### 公众号排版模式（WeChat article formatting）
 
 **Source:** User request (2026-10-06).

@@ -734,8 +734,15 @@ function alignOf(delimiter: string): string {
  * 换行，把格子里的 `![](x.png)` 画成图片；2.6 也这样，换内核后这两样都退成了纯文字。
  * 行内 HTML 里只有 `<br>` 被认：它是最常跟表格一起用的一个，而其它标签（尤其是带
  * 事件或样式的）放进表格只会多一个要防的口子。
+ *
+ * 下划线强调要卡词边界（#161）。CommonMark 与 GFM 里 `_` 不能跨在词中间生效，
+ * 所以 `local_upload / external_api` 是两个普通单词，`snake_case_name` 也一样；
+ * 这里早期只写了 `_` 配对，会把中间那段吃掉变成斜体，连下划线本身也不见了。
+ * `*` 不受这条限制（`a*b*c` 在 CommonMark 里确实是斜体），所以两个分支分开写。
+ * 边界用 Unicode 字母与数字，中文也算词字符。
  */
-const INLINE_RE = /(\*\*|__)(.+?)\1|(\*|_)(.+?)\3|`([^`]+)`|~~(.+?)~~|!\[([^\]]*)\]\(\s*(<[^>]*>|[^)\s]+)[^)]*\)|\[([^\]]*)\]\(([^)]*)\)|<br\s*\/?>/gi
+const INLINE_RE =
+  /\*\*(?<strong>.+?)\*\*|(?<![\p{L}\p{N}_])__(?<strongU>(?=\S).+?(?<=\S))__(?![\p{L}\p{N}_])|\*(?<em>.+?)\*|(?<![\p{L}\p{N}_])_(?<emU>(?=\S).+?(?<=\S))_(?![\p{L}\p{N}_])|`(?<code>[^`]+)`|~~(?<strike>.+?)~~|!\[(?<alt>[^\]]*)\]\(\s*(?<src><[^>]*>|[^)\s]+)[^)]*\)|\[(?<linkText>[^\]]*)\]\((?<href>[^)]*)\)|<br\s*\/?>/giu
 
 function appendInline(parent: HTMLElement, text: string, base: string | null): void {
   INLINE_RE.lastIndex = 0
@@ -743,31 +750,32 @@ function appendInline(parent: HTMLElement, text: string, base: string | null): v
   let match: RegExpExecArray | null
   while ((match = INLINE_RE.exec(text)) !== null) {
     if (match.index > last) parent.appendChild(document.createTextNode(text.slice(last, match.index)))
-    if (match[2] !== undefined) {
+    const g = match.groups ?? {}
+    if (g.strong !== undefined || g.strongU !== undefined) {
       const el = document.createElement('strong')
-      el.textContent = match[2]
+      el.textContent = g.strong ?? g.strongU ?? ''
       parent.appendChild(el)
-    } else if (match[4] !== undefined) {
+    } else if (g.em !== undefined || g.emU !== undefined) {
       const el = document.createElement('em')
-      el.textContent = match[4]
+      el.textContent = g.em ?? g.emU ?? ''
       parent.appendChild(el)
-    } else if (match[5] !== undefined) {
+    } else if (g.code !== undefined) {
       const el = document.createElement('code')
-      el.textContent = match[5]
+      el.textContent = g.code
       parent.appendChild(el)
-    } else if (match[6] !== undefined) {
+    } else if (g.strike !== undefined) {
       const el = document.createElement('s')
-      el.textContent = match[6]
+      el.textContent = g.strike
       parent.appendChild(el)
-    } else if (match[7] !== undefined) {
+    } else if (g.alt !== undefined) {
       const img = document.createElement('img')
-      img.src = resolveImageSrc(match[8] ?? '', base)
-      img.alt = match[7]
+      img.src = resolveImageSrc(g.src ?? '', base)
+      img.alt = g.alt
       parent.appendChild(img)
-    } else if (match[9] !== undefined) {
+    } else if (g.linkText !== undefined) {
       const el = document.createElement('a')
-      el.textContent = match[9] || match[10] || ''
-      const href = (match[10] ?? '').trim()
+      el.textContent = g.linkText || g.href || ''
+      const href = (g.href ?? '').trim()
       if (/^https?:\/\//i.test(href)) el.setAttribute('href', href)
       parent.appendChild(el)
     } else if (/^<br/i.test(match[0])) {
@@ -1148,6 +1156,12 @@ function collectInline(state: EditorState, ranges: DecorationRange[], front: Ran
         case 'EmphasisMark':
         case 'StrikethroughMark':
         case 'CodeMark': {
+          const fence = node.node.parent
+          // 整块 Mermaid 替换与围栏空替换同起点时，增量更新会只留下空块。
+          if (node.name === 'CodeMark' && fence?.name === 'FencedCode' &&
+              !isBlockActive(state, fence.from, fence.to) &&
+              /^(`{3,}|~{3,})\s*mermaid\s*$/.test(state.doc.sliceString(fence.from, state.doc.lineAt(fence.from).to).trim()) &&
+              codeInsideFence(state, fence).trim()) break
           ranges.push({ from, to, deco: active ? MARK({ class: 'cm-md-marker' }) : hide(from, to) })
           break
         }
