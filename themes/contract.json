@@ -1,5 +1,5 @@
 {
-  "contractVersion": "2.7.8-rc.2",
+  "contractVersion": "2.7.9",
   "liveVariables": [
     "--bg-color",
     "--text-color",
@@ -79,6 +79,7 @@
     "cm-md-image-failed",
     "cm-md-inlinecode",
     "cm-md-jump-flash",
+    "cm-md-li",
     "cm-md-li-0",
     "cm-md-li-1",
     "cm-md-li-2",
