@@ -696,6 +696,8 @@ async function checkSourceShortcut(renderer) {
   check('源码快捷键切换并聚焦编辑区', source.visible && source.focused, JSON.stringify({ visible: source.visible, focused: source.focused }))
   check('源码快捷键不插入注释', source.text === fixture(), `长度=${source.text.length}`)
   await renderer.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'a', code: 'KeyA', modifiers: 4, commands: ['selectAll'] })
+  // CM6 通过 DOM observer 同步选区，读状态前要等一帧
+  await sleep(120)
   const allSource = await evaluate(renderer, `(() => {
     const content = document.querySelector('#editor .cm-content')
     const view = content.cmTile.root.view
