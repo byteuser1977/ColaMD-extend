@@ -1063,10 +1063,8 @@ function scrollRatio(el: HTMLElement): number {
 }
 
 function restoreScrollRatio(el: HTMLElement, ratio: number): void {
-  requestAnimationFrame(() => {
-    const range = el.scrollHeight - el.clientHeight
-    el.scrollTop = Math.max(0, Math.min(range, range * ratio))
-  })
+  const range = el.scrollHeight - el.clientHeight
+  el.scrollTop = Math.max(0, Math.min(range, range * ratio))
 }
 
 function toggleSourceMode(): void {
@@ -1820,8 +1818,15 @@ async function init(): Promise<void> {
   // Cmd/Ctrl+F 在页面这一层也接一次：菜单的快捷键是主路径（macOS 上由菜单先接走），
   // 但菜单被隐藏或平台不转发快捷键时，这个兜底能保证打开的仍是**我们自己的**面板，
   // 而不是 CodeMirror 自带那块只有英文的（它已经从编辑器扩展里摘掉了）。
+  // Cmd/Ctrl+/ 同理接源码切换（CodeMirror 的注释绑定已摘掉）。页面 preventDefault 之后
+  // 菜单的同名快捷键不会再触发；切换不是幂等的，两边都触发就等于没按。
   document.addEventListener('keydown', (event) => {
     if (!(event.metaKey || event.ctrlKey) || event.shiftKey || event.altKey) return
+    if (event.key === '/') {
+      event.preventDefault()
+      toggleSourceMode()
+      return
+    }
     if (event.key.toLowerCase() !== 'f') return
     event.preventDefault()
     searchPanel.show()

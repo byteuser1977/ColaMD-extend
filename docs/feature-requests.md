@@ -104,6 +104,24 @@ All twelve built-in themes already ship as standalone, commented CSS files in [`
 
 **Status:** Adds a Files / Outline switch in the existing sidebar. Headings navigate in both visual and Markdown source modes. The outline doubles as a reading-progress view: the entry for the section at the top of the viewport is highlighted while scrolling (both modes), the active entry stays revealed in long documents, and jumping from the outline or an anchor link flashes the landing heading once so the arrival is visible. Colors derive from each theme's link color. Long headings expose their full text through a hover tooltip.
 
+### MDX support
+
+**Source:** [#179](https://github.com/marswaveai/ColaMD/issues/179)
+
+Declined. ColaMD opens a Markdown file and shows that file character for character (`save(open(x)) === x`); MDX is a JavaScript module that compiles to a component tree, so a document stops being text and becomes code that must be built, resolved and run, with a bundler, a React runtime and a security boundary inside the editor.
+
+### Two sidebars at once (files and outline)
+
+**Source:** [#188](https://github.com/marswaveai/ColaMD/issues/188)
+
+Declined. The panel is one, and one press swaps what it shows. A second column is a permanent sidebar, the reading column has to give way on both sides, and narrow windows lose the place to write; the editor is a canvas that stays out of the way. If the real need is "when reading the outline I lose track of which folder I am in", a single line of the current directory at the top of the outline is the cheap answer.
+
+### Tab drag to reorder and drag out to a new window
+
+**Source:** [#185](https://github.com/marswaveai/ColaMD/pull/185)
+
+Declined. Drag affordances have been rejected elsewhere in the product (panel resizing became fixed rules plus a narrow hot zone), and dragging a tab out is multi-window under another name; tabs answered that need ([#44](https://github.com/marswaveai/ColaMD/issues/44)).
+
 ### Resizable file panel
 
 **Sources:** [#64](https://github.com/marswaveai/ColaMD/issues/64)
@@ -230,6 +248,26 @@ Evidence used:
 Rule kept: exactly nine cards. The order is documented in an HTML comment above the card list on the gh-pages branch.
 
 ## Candidates
+
+### 整理空行（一次动作，不自动）
+
+**Source:** [#188](https://github.com/marswaveai/ColaMD/issues/188)
+
+LLM 生成的 Markdown 常常在段落之间留一串空行，读起来松垮。要的是一个「整理空行」的命令：连续空行并成一条，代码块和属性区里不动，行尾空白顺手去掉，整篇只留一次撤销。
+
+**Not automatic.** 打开文件时悄悄改一遍别人的文档，和「文件是最新的、也是你写的那个样子」直接冲突；只有用户按下它才动。
+
+**Status:** Candidate, not scheduled.
+
+### 文件重命名 (#185)
+
+**Source:** [#185](https://github.com/marswaveai/ColaMD/pull/185)
+
+改文件名现在要去文件管理器。需要的是文件列表右键里的「重命名」：保留扩展名、同名冲突要提示、成功后同步已打开的标签、文件监听和最近打开记录。PR #185 里这一半是可以要的。
+
+**Not wanted from that PR:** 标签拖拽排序和拖出独立窗口。拖拽在本产品里反复被否（面板调宽改成固定规则加窄热区、标签排序一直是 Candidate 里「先问值不值得」的那条），而拖出窗口就是多窗口，多窗口的需求在 [#44](https://github.com/marswaveai/ColaMD/issues/44) 里已经由标签页回答了。
+
+**Status:** Candidate, not scheduled.
 
 ### 右键菜单：插入表格、待办、列表、标题层级 (#163)
 
