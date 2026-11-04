@@ -4,9 +4,14 @@ import { livePreviewField } from './live-preview'
 
 /** 这个位置所在的行是不是代码块。复用 live-preview 已经给行加上的 `cm-md-codeblock`，不另起一套。 */
 function inCodeBlock(state: EditorState, pos: number): boolean {
+  // 源码模式下 livePreviewCompartment 把整个 livePreview（含 livePreviewField）收掉了，
+  // 这里必须带 false 兜底：compute 声明依赖了这个 field，field 被移除会触发重算，
+  // 裸读会抛 RangeError: Field is not present in this state，源码模式就切不过去了。
+  const decorations = state.field(livePreviewField, false)
+  if (!decorations) return false
   const line = state.doc.lineAt(pos)
   let code = false
-  state.field(livePreviewField).between(line.from, line.from, (_from, _to, decoration) => {
+  decorations.between(line.from, line.from, (_from, _to, decoration) => {
     if (decoration.spec.class?.split(' ').includes('cm-md-codeblock')) code = true
   })
   return code
