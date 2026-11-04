@@ -211,8 +211,7 @@ const MEASURE = `(() => {
       strong: q('.cm-md-strong').length,
       em: q('.cm-md-em').length,
       strike: q('.cm-md-strike').length,
-      // 加粗只用字重、删除线只用划线，都不换颜色（2026-10-25 定：文字颜色要少）
-      strongColor: (() => { const el = q('.cm-md-strong')[0]; return el ? getComputedStyle(el).color : null })(),
+      // 删除线只用划线，不换颜色（2026-10-25 定：文字颜色要少）
       strikeColor: (() => { const el = q('.cm-md-strike')[0]; return el ? getComputedStyle(el).color : null })(),
       code: q('.cm-md-inlinecode').length,
       highlight: q('.cm-md-highlight').length,
@@ -1225,9 +1224,8 @@ function main() {
       check('引用渲染', m.quote.count >= 1 && m.quote.raw === false, `count=${m.quote.count} 露 >: ${m.quote.raw}`)
       check('引用文字用正文色，不压灰', m.quote.textColor === m.list.bodyColor,
         `引用=${m.quote.textColor} 正文=${m.list.bodyColor}`)
-      check('加粗与删除线不换颜色，跟正文同色',
-        m.inline.strongColor === m.list.bodyColor && m.inline.strikeColor === m.list.bodyColor,
-        `加粗=${m.inline.strongColor} 删除线=${m.inline.strikeColor} 正文=${m.list.bodyColor}`)
+      check('删除线不换颜色，跟正文同色', m.inline.strikeColor === m.list.bodyColor,
+        `删除线=${m.inline.strikeColor} 正文=${m.list.bodyColor}`)
       check('分隔线渲染', m.hr.count >= 1, `hr=${m.hr.count}`)
       check('公式渲染', m.math.katex >= 2, `katex=${m.math.katex} block=${m.math.block} error=${m.math.error}`)
       check('Mermaid 渲染', m.mermaid.ready >= 1 && m.mermaid.svg >= 1,

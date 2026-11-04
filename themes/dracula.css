@@ -25,6 +25,10 @@
   color: #ffffff;
 }
 
+#editor .cm-content .cm-md-strong {
+  color: #ff79c6;
+}
+
 #editor .cm-content .cm-md-inlinecode {
   color: #8be9fd;
 }

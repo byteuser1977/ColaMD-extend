@@ -27,6 +27,10 @@
   line-height: 1.9;
 }
 
+#editor .cm-content .cm-md-strong {
+  color: #c44b2b;
+}
+
 #editor .cm-content .cm-md-inlinecode {
   color: #c44b2b;
 }

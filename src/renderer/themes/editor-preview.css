@@ -625,6 +625,17 @@ body.theme-writer .cm-content {
 }
 
 /* 加粗的颜色 */
+body.theme-elegant .cm-content .cm-md-strong { color: #c44b2b; }
+body.theme-bear .cm-content .cm-md-strong { color: #d43d2a; }
+body.theme-solarized-dark .cm-content .cm-md-strong { color: #cb4b16; }
+body.theme-nord .cm-content .cm-md-strong { color: #8fbcbb; }
+body.theme-gruvbox .cm-content .cm-md-strong { color: #fe8019; }
+body.theme-dracula .cm-content .cm-md-strong { color: #ff79c6; }
+body.theme-sepia .cm-content .cm-md-strong { color: #7a5a33; }
+body.theme-dark .cm-content .cm-md-strong { color: #e6edf3; }
+body.theme-notion .cm-content .cm-md-strong { color: #37352f; }
+body.theme-midnight .cm-content .cm-md-strong { color: #e8e8e8; }
+body.theme-writer .cm-content .cm-md-strong { color: #2f2f2c; }
 
 /* 行内代码的字色 */
 body.theme-elegant .cm-content .cm-md-inlinecode { color: #c44b2b; }

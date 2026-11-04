@@ -48,7 +48,11 @@
   color: #1b4f72;
 }
 
-/* 加粗只用字重，不给颜色：文字颜色越少越干净。想改的是行内代码的颜色，往下一条。 */
+/* 加粗与行内代码。这两个是最常调的两笔颜色。 */
+#editor .cm-content .cm-md-strong {
+  color: #2f6f9f;
+}
+
 #editor .cm-content .cm-md-inlinecode {
   color: #b0543a;
 }
