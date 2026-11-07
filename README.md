@@ -10,10 +10,10 @@ It offers true WYSIWYG editing, 12 built-in themes, rich-text copy, smart line b
 
 Whatever writes the file (an AI agent such as Claude Code or Codex, a script, or another editor), ColaMD shows the new content right away. No reopening, no manual refresh.
 
-**This repository (ColaMD-extend) is an extended fork of [marswaveai/ColaMD](https://github.com/marswaveai/colamd)**, currently based on upstream v2.7.7. Everything upstream offers is here; the fork ports its own features on top, see [Extend Features](#extend-features) and the [porting roadmap](#porting-roadmap-extend).
+**This repository (ColaMD-extend) is an extended fork of [marswaveai/ColaMD](https://github.com/marswaveai/colamd)**, currently based on upstream v2.7.11. Everything upstream offers is here; the fork ports its own features on top, see [Extend Features](#extend-features) and the [porting roadmap](#porting-roadmap-extend).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Upstream](https://img.shields.io/badge/upstream-v2.7.7-blue)](https://github.com/marswaveai/colamd)
+[![Upstream](https://img.shields.io/badge/upstream-v2.7.11-blue)](https://github.com/marswaveai/colamd)
 [![GitHub release](https://img.shields.io/github/release/byteuser1977/ColaMD-extend.svg)](https://github.com/byteuser1977/ColaMD-extend/releases)
 
 [Download](#download) | [Features](#features)
@@ -131,6 +131,7 @@ ColaMD will keep growing as a focused, free Markdown editor:
 - v2.0.1: Universal macOS build for Apple silicon and Intel Macs, plus custom-theme restoration, Mermaid render recovery, and Windows updater fixes
 - v2.0.2: Resizable file panel (180–420px, remembered) and an outline progress view that highlights the current heading and flashes the landing point after a jump
 - v2.3.0: Folders expand in place in the file list, one root and downward, so nested documents are one click away. Plus a round of shell tightening: the tab strip starts on the panel's edge line, resizing the panel lights up the divider itself, long names in the list appear as a hover label instead of scrolling past the icon, and the title-bar controls express state through weight instead of boxes
+- v2.7.11: Typing feel and coordinate alignment from upstream v2.7.10 / v2.7.11 (`#` becomes a heading only after a space, Enter and Backspace hand off to CodeMirror's commands, list indents halved, clicking below a table no longer lands one row off, diagrams re-measure after they finish drawing), plus four export fixes from the extend fork: inline formulas no longer wrap in exported Word, Mermaid colors in the Word and HTML exports follow the theme, and PDF exports no longer carry the diagram zoom buttons
 - v2.7.0: The editor core is rewritten around a single rule: the editor holds the file's bytes, and rendering is a layer drawn on top of them. Characters you never touched can no longer change on save (table delimiter rows and `*`, `$`, `_` used to come back rewritten), long documents export whole instead of one screenful, and images, links, footnotes, inline HTML, Mermaid diagrams, code highlighting, copy buttons and list continuation are all back on the new core
 - v2.6.0: Mermaid diagrams are drawn into exported Word documents (light themes follow the theme's own colors; dark themes render light, because Word is a white page), the reading column has three widths in View → Text Width (640 / 780 / 1080, honoured by source mode and by the HTML and PDF exports), unsaved work is copied to `~/.colamd/recovered` before it is discarded, and the tab close button answers a 24×24 target while staying 16×16 on screen
 - v2.5.0: The document becomes a slideshow (View → Play Slideshow, ⌘⇧P): one `---` per page, full screen, starting at your caret, with the theme's typography, tables, formulas and diagrams on every slide. The same deck exports as a 16:9 PDF. Empty lines you type are written as blank lines instead of `<br />` tags, and a mixed `---`/`***` document keeps the rule marker it mostly uses

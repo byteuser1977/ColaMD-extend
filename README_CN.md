@@ -12,10 +12,10 @@ ColaMD 是一款开源、免费、优雅的 Markdown 编辑器，用于写作、
 
 无论是什么在写这个文件（Claude Code、Codex 这类 AI Agent，一个脚本，或另一个编辑器），ColaMD 都会立刻显示最新内容，不用重开文件，也不用手动刷新。
 
-**本仓库（ColaMD-extend）是 [marswaveai/ColaMD](https://github.com/marswaveai/colamd) 的扩展版**，当前基于上游 v2.7.7。上游的全部功能都在；扩展版在此之上陆续移植自有功能，见[扩展版功能](#扩展版功能)与[移植路线图](#移植路线图扩展版)。
+**本仓库（ColaMD-extend）是 [marswaveai/ColaMD](https://github.com/marswaveai/colamd) 的扩展版**，当前基于上游 v2.7.11。上游的全部功能都在；扩展版在此之上陆续移植自有功能，见[扩展版功能](#扩展版功能)与[移植路线图](#移植路线图扩展版)。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Upstream](https://img.shields.io/badge/upstream-v2.7.7-blue)](https://github.com/marswaveai/colamd)
+[![Upstream](https://img.shields.io/badge/upstream-v2.7.11-blue)](https://github.com/marswaveai/colamd)
 [![GitHub release](https://img.shields.io/github/release/byteuser1977/ColaMD-extend.svg)](https://github.com/byteuser1977/ColaMD-extend/releases)
 
 [下载](#下载) | [功能](#功能)
@@ -172,6 +172,7 @@ ColaMD 会继续把「免费、优雅、专注」这件事做好：
 * v2.0.2: 文件面板可调宽（180–420px，记住选择），大纲新增阅读进度高亮与跳转落点闪烁反馈
 
 * v2.3.0：文件面板里的文件夹可以就地展开，一个树根向下看，嵌套的文档只差一次点击；同时把外壳收紧一圈，标签从面板的边界线开始，拖拽调宽亮起的是分割线本身，长文件名改由浮层说全名，标题栏按钮用深浅表达状态
+* v2.7.11：上游 v2.7.10 / v2.7.11 的打字手感与坐标对齐（`#` 后跟空格才算标题、回车和退格交给 CodeMirror 官方命令、列表缩进收窄一半、表格下方点选不再偏一行、图异步画完重新量高度），加上 Extend 的四处导出修复：Word 行内公式不再折行、导出 Word/HTML 的图表配色跟随主题、PDF 不再带上图表的缩放按钮
 * v2.7.0：编辑器内核重写，只认一条规则：编辑器里存的是文件的字节，渲染只是叠在字节上面的一层。你没碰过的字符保存后不会再变（表格分隔行和 `*`、`$`、`_` 以前会被改写），长文档导出整篇而不是一屏，图片、链接、脚注、行内 HTML、Mermaid 图表、代码高亮与复制按钮、列表续行也都在新内核上补齐
 * v2.6.0：导出的 Word 里带上 Mermaid 图（浅色主题跟随主题配色，深色主题按浅色画，因为 Word 是白纸），正文宽度多了三档（视图 → 正文宽度：640 / 780 / 1080，源码模式和 HTML、PDF 导出都跟着走），丢弃未保存内容之前先往 `~/.colamd/recovered` 留一份副本，标签关闭按钮可点的范围扩到 24×24（可见的还是 16×16）
 * v2.5.0：文档变成幻灯片（视图 → 放映幻灯片，⌘⇧P）：一条 `---` 一页，全屏放映，从光标所在页开始，主题的字体、表格、公式和图表每一页都在；同一套分页还能导出成 16:9 的幻灯片 PDF。编辑时按出的空行存成 Markdown 本来的空行而不是 `<br />` 标签，`---` 与 `***` 混用的文件保存时保留多数派写法
