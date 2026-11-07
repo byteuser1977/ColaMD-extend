@@ -558,7 +558,10 @@ body.exporting .cm-content .cm-md-frontmatter {
 
 /* ======= mermaid ======= */
 
-.cm-content .cm-md-mermaid {
+/* 不带 .cm-content 前缀：导出的 HTML 里 mermaid 块落在 .colamd-document 下，
+   没有 .cm-content 祖先；选择器收在编辑器里，导出文档的 SVG 就解析不到
+   --pele-*，只能吃 pele 自己的兜底色，颜色跟界面对不上（导出 HTML 实测）。 */
+.cm-md-mermaid {
   display: block;
   text-align: center;
   padding: 0.8em 0;
@@ -589,12 +592,12 @@ body.exporting .cm-content .cm-md-frontmatter {
   --pele-radius: 6px;
 }
 
-.cm-content .cm-md-mermaid svg {
+.cm-md-mermaid svg {
   max-width: 100%;
   height: auto;
 }
 
-.cm-content .cm-md-mermaid-failed {
+.cm-md-mermaid-failed {
   text-align: left;
   font-family: var(--font-mono);
   font-size: 0.9em;

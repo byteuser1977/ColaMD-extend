@@ -1,6 +1,6 @@
 # ColaMD Extend v2.7.10-rc.1 版本说明
 
-本文件记录 `2.7.10-rc.1` 的代码改动、验证结果与发布注意事项。版本从 `2.7.9` 上升一个小版本；基座仍是上游 v2.7.7。本版没有新功能，全部是导出链路上的三处修复：Word 导出行内公式折行、Word 导出 Mermaid 配色跟随主题、PDF 导出不再带上图表的缩放控件。
+本文件记录 `2.7.10-rc.1` 的代码改动、验证结果与发布注意事项。版本从 `2.7.9` 上升一个小版本；基座仍是上游 v2.7.7。本版没有新功能，全部是导出链路上的四处修复：Word 导出行内公式折行、Word 导出 Mermaid 配色跟随主题、PDF 导出不再带上图表的缩放控件、导出 HTML 的 Mermaid 配色跟随主题。
 
 ## 代码改动
 
@@ -37,7 +37,20 @@
 
 修复：`src/renderer/print-layout.ts` 的纸面规则新增 `body.paper .pele-zoom { display: none !important; }`。`body.paper` 是文档 PDF 与幻灯片 PDF 两条打印路共用的状态（`__colamdPrintExport.enter()` → `enterPaperLayout()`），`!important` 压过 pele 写在元素上的内联样式；导出结束纸面规则移除，屏幕上的缩放控件照常可用。图片/HTML 导出的摊平阶段也会带上这条规则，属于无害的双保险。
 
-### 4. 文档
+### 4. 导出 HTML 的 Mermaid 配色跟随主题
+
+导出的 HTML 用浏览器打开后，图表是 pele 引擎的兜底配色（白底、深灰字），跟界面渲染对不上。
+
+根因有两处，缺一不可：界面上的 `--pele-*` 变量挂在 `.cm-content .cm-md-mermaid` 选择器上，而导出的语义文档里图表被包成普通 `<div>`——`.cm-md-mermaid` 类名没带出去，文档里也没有 `.cm-content` 祖先，选择器两头都够不着，SVG 只能吃 pele 自己的兜底色。
+
+修复（两处配合）：
+
+- `src/renderer/themes/editor-preview.css`：三处选择器从 `.cm-content .cm-md-mermaid*` 放宽为 `.cm-md-mermaid*`。编辑器里 widget 本来就只在 `.cm-content` 里，行为不变；导出文档里现在能命中了。
+- `src/renderer/editor/clean-html.ts`：导出时把 widget 的类名带到包裹 div 上，选择器才有匹配对象。顺带修好导出文档里图的居中与 `max-width:100%`（此前同样因选择器不匹配而丢失）。
+
+`themes/contract.json` 的活变量清单里 `--code-block-bg` / `--code-block-text` / `--text-muted` / `--link-color` 齐全，库渲染器路径（`buildExportHTML`）同样受益；契约静态检查（`verify:theme-contract`）通过。
+
+### 5. 文档
 
 - `docs/word-export.md`：「为什么深色主题回落浅色板」一节补充 Mermaid 调色板的新推导方式。
 - `docs/packaging.md`：Extend 功能改动记录引用路径加上本文件。
@@ -57,6 +70,8 @@
 - `src/renderer/editor/mermaid-bridge.ts`：`renderMermaid` 接受 `palette`
 - `src/renderer/main.ts`：Word 导出传入按主题推导的调色板
 - `src/renderer/print-layout.ts`：纸面规则隐藏 `.pele-zoom`
+- `src/renderer/themes/editor-preview.css`：`.cm-md-mermaid*` 选择器放宽（去掉 `.cm-content` 前缀）
+- `src/renderer/editor/clean-html.ts`：导出文档的 mermaid 块携带 widget 类名
 - `docs/word-export.md`、`docs/packaging.md`
 - `package.json` / `package-lock.json` / `themes/contract.json`：版本号
 - `resources/demo/changelog.md`、`README.md`、`README_CN.md`
@@ -65,9 +80,11 @@
 
 已通过：
 
-- `npm run build`（electron-vite，无类型错误、无编译错误），三处改动均确认进入 `dist/` 产物
+- `npm run build`（electron-vite，无类型错误、无编译错误），各处改动均确认进入 `dist/` 产物
+- `npm run verify:theme-contract`（契约静态检查通过，2.7.10-rc.1，27 个活变量，50 个编辑器钩子，9 个 Pele 变量）
+- 用户已在真实环境确认：Word 行内公式不再折行、Word/PDF 导出修复生效、导出 HTML 的 Mermaid 配色与界面一致
 
 已知限制：
 
-- 三处修复均未在真实 Electron 环境跑端到端导出验收；建议本地分别导出 Word（含行内公式 + Mermaid）、PDF（图放不下的文档）各一份确认效果
+- `verify:themes`（真机 Electron）在本机跑不通（「等不到调试目标」，环境限制，与本次改动无关）
 - 行内公式宽于 2000px 时仍会在截图里折行（见第 1 节边界说明）

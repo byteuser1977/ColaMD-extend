@@ -228,9 +228,12 @@ function renderCode(lines: HTMLElement[]): string {
 function renderGroup(kind: LineKind, lines: HTMLElement[], ownerDepth = -1): string {
   if (kind === 'code') return renderCode(lines)
   // 图与块公式已经把源码换成了独立的 HTML，整块带走；包一层 div 让它在流里独占一行。
+  // 类名要跟着走：--pele-* 那组变量与图的布局规则都挂在 .cm-md-mermaid 上
+  // （themes/editor-preview.css），导出文档里没有它，SVG 只能吃 pele 的兜底色，
+  // 颜色跟界面对不上。
   if (kind === 'mermaid') {
     const widget = lines[0].querySelector('.cm-md-mermaid')
-    return widget ? `<div>${widget.innerHTML}</div>` : ''
+    return widget ? `<div class="${widget.className}">${widget.innerHTML}</div>` : ''
   }
   if (kind === 'math') {
     const widget = lines[0].querySelector('.cm-md-math-block')
