@@ -104,3 +104,33 @@ theme repository can gate merges on the same check.
 - Theme files should be self-contained (no external imports)
 - Omitted variables inherit ColaMD's Light defaults, so override only the tokens your theme needs
 - Name the file descriptively: `dark-ocean.css`, `solarized-light.css`, etc.
+
+## Keeping the standalone files in sync
+
+The twelve files in this directory are copies of the built-in themes, **not** the source
+of truth. The app draws a theme from `src/renderer/themes/base.css` (`:root` light
+defaults, `body.theme-dark`, `body.theme-elegant`), `premium.css` (the other nine),
+and the per-theme typography and accent rules in `editor-preview.css`. When a built-in
+theme changes, update the matching standalone file **in the same commit**:
+
+- Every variable in `contract.json`'s `liveVariables` must have the same value as the
+  built-in block. A variable may be omitted only when the Light default is what that
+  theme uses too — omission is inheritance, not a second opinion.
+- Per-theme element rules (bold, inline code, links, quotes, tables) must match
+  `editor-preview.css`. A rule that exists only here is a difference users see after
+  importing the file, and a rule that exists only upstream is a difference they do not.
+- A standalone override that merely repeats a default is a no-op for `verify:themes`;
+  delete it instead of restating the default.
+
+What the checks can and cannot catch:
+
+| Check | Catches | Does not catch |
+|-------|---------|----------------|
+| `npm run check:theme-colors` | palette contract (contrast, live tokens) | drift from the built-in values |
+| `npm run verify:theme-contract` | contract JSON vs source | drift from the built-in values |
+| `npm run verify:themes` | selectors that match nothing (needs Electron) | standalone vs built-in equality |
+
+The built-in/standalone comparison is therefore a manual step during review: diff each
+`body.theme-*` block in `base.css` / `premium.css` and its rules in `editor-preview.css`
+against the matching file here before shipping a theme change.
+
