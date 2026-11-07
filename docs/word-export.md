@@ -62,7 +62,9 @@ HTML 块扫描有一步去重：父块已经包含子块时只截一次。CodeMi
 
 ### 为什么深色主题回落浅色板
 
-Word 是白纸。深色主题的浅色字搬到 Word 上会看不见，所以 `readDocxStyle()` 用背景亮度判据（`luminance(--bg-color) < 0.5`）整体回落到 `LIGHT` 调色板，而不是逐色转换。这与 Mermaid 导出挑浅色配色是同一条规则。
+Word 是白纸。深色主题的浅色字搬到 Word 上会看不见，所以 `readDocxStyle()` 用背景亮度判据（`luminance(--bg-color) < 0.5`）整体回落到 `LIGHT` 调色板，而不是逐色转换。
+
+浅色主题则整体跟随主题：正文字色、Mermaid 调色板（`diagramPrintPalette()` 从同一份令牌照 editor-preview.css 的 `.cm-md-mermaid` 公式推出 Pele 八色）都来自主题实际算出的值，导出观感与界面渲染一致；深色主题经由同一份令牌自然落到浅色板，Mermaid 不需要再做一次明暗判断。
 
 ### 颜色怎么读
 

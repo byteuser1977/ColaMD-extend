@@ -32,6 +32,11 @@ const PAPER_RULES = `
 body.${PAPER_CLASS} #editor { height: auto !important; overflow: visible !important; }
 body.${PAPER_CLASS} #editor .cm-editor { height: auto !important; }
 body.${PAPER_CLASS} #editor .cm-scroller { display: block !important; height: auto !important; overflow: visible !important; }
+/* 放不下的图带一排缩放控件（#129）。打印时 Chromium 不执行脚本，pele 没机会把它们
+   收回去，控件就叠在图上进了 PDF。它是编辑器的东西，不是文档的内容——纸面上藏掉
+   （图片/HTML 导出另有 withDiagramZoomPaused 在序列化时兜着；Word 导出重新画图，
+   天生没有控件）。内联样式是 pele 自己写的，!important 才压得过。 */
+body.${PAPER_CLASS} .pele-zoom { display: none !important; }
 `
 
 /** CodeMirror 内部那个「视口不受限」的开关。 */

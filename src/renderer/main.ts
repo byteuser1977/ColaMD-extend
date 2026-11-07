@@ -1,5 +1,5 @@
 import { createEditor, focusEditor, getMarkdown, getEditorView, getEditorScroller, onEditorJumpPhase, setMarkdown, setEditorEditable, getEditorState, restoreEditorState, applyMarkdownStyle, runFormatCommand, jumpToLine, jumpToHeading, setCleanExport, setDocumentFileUrl, setSourceMode, type FormatCommandId } from './editor/editor'
-import { markdownForWord } from './editor/mermaid-export'
+import { diagramPrintPalette, markdownForWord } from './editor/mermaid-export'
 import { markdownWithMathImages } from './editor/math-export'
 import { markdownWithHtmlImages } from './editor/html-export'
 import { readDocxStyle } from './editor/docx-style'
@@ -1961,7 +1961,7 @@ async function init(): Promise<void> {
     // HTML 块先截成图片；之后的公式扫描基于替换过的文本，偏移量才不会错位。
     const html = await markdownWithHtmlImages(getContent(), `#${style.text}`)
     const math = await markdownWithMathImages(html.content, isChinese(), `#${style.text}`)
-    const payload = await markdownForWord(math.content, isChinese())
+    const payload = await markdownForWord(math.content, isChinese(), diagramPrintPalette(style))
     await api.exportDOCX({
       content: payload.content,
       images: { ...html.images, ...math.images, ...payload.images },

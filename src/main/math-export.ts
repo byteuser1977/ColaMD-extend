@@ -34,6 +34,11 @@ export interface MathScreenshot {
 
 const CAPTURE_TIMEOUT_MS = 20000
 const SETTLE_MS = 20000
+// 测量用的窗口宽度。每截完一条公式，窗口会被缩到内容宽；下一条若直接在窄窗口里
+// 测量，inline-block 的 stage 会被窗口宽度压住，稍宽的公式在 KaTeX 内部折行，
+// 截出来的 PNG 本身就是两行（导出 Word 后看到「公式换行」）。测量前先撑回一个
+// 足够宽的宽度，量出自然尺寸再缩到实际大小截图。
+const MEASURE_WIDTH = 2000
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -135,6 +140,9 @@ export async function renderShots(
         const fixedWidth = typeof item.width === 'number' && item.width > 0 ? Math.round(item.width) : null
         const display = fixedWidth ? 'block' : 'inline-block'
         const widthValue = fixedWidth ? `${fixedWidth}px` : 'auto'
+        // 测量前把窗口撑宽，避免上一条内容把窗口缩窄后压折这条公式。
+        const [, previousHeight] = win.getContentSize()
+        win.setContentSize(MEASURE_WIDTH, Math.max(200, previousHeight))
         const measured = await withTimeout(
           win.webContents.executeJavaScript(`(async () => {
             const stage = document.getElementById('stage')
