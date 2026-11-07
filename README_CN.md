@@ -119,6 +119,8 @@ ColaMD 不要求你改变现有习惯，也适合与 Obsidian、Typora、VS Code
 | Windows | `.exe`               |
 | Linux   | `.AppImage` / `.deb` |
 
+macOS 上也可以用社区维护的 Homebrew Cask，它跟着每次发布更新：`brew install --cask colamd`。
+
 ## 路线图
 
 ### 移植路线图（扩展版）

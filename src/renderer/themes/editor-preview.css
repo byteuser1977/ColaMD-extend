@@ -222,8 +222,13 @@ body.source-mode #editor .cm-content {
   width: 0.8em;
 }
 
-/* 有序列表的序号。行首那个数被替换成了重排后的编号，它是内容，不是标记。 */
-.cm-content .cm-md-li .cm-md-listmark {
+/* 有序列表的序号。行首那个数被替换成了重排后的编号，它是内容，不是标记。
+ *
+ * 里面那个 `*` 不是随手写的：高亮层把 ListMark 当 processingInstruction 压成灰色，
+ * 那道 span **嵌在** cm-md-listmark 里面，只给外面这层设颜色盖不住它，屏幕上序号
+ * 还是灰的（2026-10-25 报的：「3 和 9 是黑色的，其他都是灰色」）。 */
+.cm-content .cm-md-li .cm-md-listmark,
+.cm-content .cm-md-li .cm-md-listmark * {
   color: var(--text-color);
 }
 
@@ -318,10 +323,15 @@ body.source-mode #editor .cm-content {
   font-size: 0.875em;
 }
 
+/* 
+ * 上下留白用 padding，不能用 margin。块级 widget 的高度是 CodeMirror 按
+ * getBoundingClientRect() 量的，外边距不算在 rect 里，可浏览器排版时又真的占位置，
+ * 于是它往后每一行的坐标都比 CodeMirror 记的偏低一截，点正文时光标落到下一行
+ * （#199，两张表叠起来就够错一行）。 */
 .cm-content .cm-md-table-widget {
   border-collapse: collapse;
   width: 100%;
-  margin: 0.25em 0;
+  padding: 0.25em 0;
 }
 
 .cm-content .cm-md-table-widget th,
@@ -422,8 +432,13 @@ body.source-mode #editor .cm-content {
  * 文件里的 HTML 照原样画出来（先过 html-sanitize 的闸）。
  * 自己的外观交给元素自身的属性，这里只给块级留一点呼吸。
  */
+/*
+ * 上下留白用 padding，不能用 margin（#199）。块级 widget 的高度是 CodeMirror 按
+ * getBoundingClientRect() 量的，外边距不算在 rect 里，浏览器排版时又真占位置，于是
+ * 它下面每一行的坐标都比 CodeMirror 记的偏低一截，点正文时光标落到下一行。
+ */
 .cm-content .cm-md-html-block {
-  margin: 0.4em 0;
+  padding: 0.4em 0;
 }
 
 .cm-content .cm-md-html-inline {
@@ -483,8 +498,7 @@ body.source-mode #editor .cm-content {
 .cm-content .cm-md-math-block {
   display: block;
   text-align: center;
-  padding: 8px;
-  margin: 0.25em 0;
+  padding: 12px 8px;
   border-radius: 6px;
   cursor: text;
 }

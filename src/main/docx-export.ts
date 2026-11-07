@@ -250,6 +250,38 @@ function emTwips(px: number, em: number): number {
   return Math.round(px * em * 15)
 }
 
+/**
+ * 代码用的字体。
+ *
+ * 以前写死 `font: 'Menlo'`：Menlo 是 macOS 的字体，Windows 上没有。docx 会把这个
+ * 字符串同时写进 `w:rFonts` 的 ascii / hAnsi / cs / eastAsia 四个槽位，Word 找不到
+ * 字体就整段替换，代码块在 Windows 上直接变成 ♣ ○ ◇ 这种符号乱码（#202 报的）。
+ * eastAsia 单独给一个中文字体，代码里的中文注释才不会是乱码里混着方框。
+ */
+const CODE_FONT = process.platform === 'darwin'
+  ? { ascii: 'Menlo', hAnsi: 'Menlo', cs: 'Menlo', eastAsia: 'PingFang SC' }
+  : process.platform === 'win32'
+    ? { ascii: 'Consolas', hAnsi: 'Consolas', cs: 'Consolas', eastAsia: 'Microsoft YaHei' }
+    : { ascii: 'DejaVu Sans Mono', hAnsi: 'DejaVu Sans Mono', cs: 'DejaVu Sans Mono', eastAsia: 'Noto Sans CJK SC' }
+
+const CODE_SIZE = 18
+
+/**
+ * 代码块的每一行都要自己一个 run，行间用 `<w:br/>`。
+ *
+ * OOXML 里 `<w:t>` 内部的 `\n` 不产生换行，把整段代码塞进一个 TextRun，导出后只会
+ * 剩下 Word 的自动折行（#202 的第 2 条）。空行也要留一个 break，不然空行会被吃掉。
+ */
+function codeRuns(value: string): ParagraphChild[] {
+  const lines = value.replace(/\n+$/, '').split('\n')
+  const runs: ParagraphChild[] = []
+  lines.forEach((line, index) => {
+    if (index > 0) runs.push(new TextRun({ break: 1, font: CODE_FONT, size: CODE_SIZE }))
+    if (line !== '') runs.push(new TextRun({ text: line, font: CODE_FONT, size: CODE_SIZE, noProof: true }))
+  })
+  return runs.length > 0 ? runs : [new TextRun({ text: '', font: CODE_FONT, size: CODE_SIZE })]
+}
+
 function headingForDepth(depth: number): (typeof HeadingLevel)[keyof typeof HeadingLevel] {
   const headings = [
     HeadingLevel.HEADING_1,
@@ -557,6 +589,9 @@ function codeParagraph(node: MarkdownNode, context: DocxContext, extra: IParagra
   return new Paragraph({
     // 引用里的代码块要保留自己的底色与行距，所以代码块的属性写在 extra 之后。
     ...extra,
+    // 显式左对齐：不写的话继承默认样式，默认是两端对齐时每一行都会被拉满行宽
+    // （上游 #202 的第 3 条）。
+    alignment: AlignmentType.LEFT,
     shading: { fill: context.style.codeBlockBackground },
     spacing: { before: codePad, after: codePad, line: codeLine, lineRule: LineRuleType.AT_LEAST },
     children,

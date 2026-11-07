@@ -64,6 +64,7 @@
     "verify:themes:cli": "node scripts/verify-themes-cli.mjs",
     "verify:theme-contract": "node scripts/verify-theme-contract.mjs",
     "verify:lib": "node scripts/verify-lib.mjs",
+    "verify:docx": "node scripts/verify-docx.mjs",
     "cap:sync": "npm run build && npx cap sync android",
     "cap:build:android": "node scripts/cap-android.mjs debug",
     "cap:build:android:release": "node scripts/cap-android.mjs release",
