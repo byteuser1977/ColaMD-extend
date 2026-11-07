@@ -492,7 +492,16 @@ function collectMath(state: EditorState, ranges: DecorationRange[]): void {
     ranges.push({
       from: range.from,
       to: range.to,
-      deco: Decoration.replace({ widget: new MathWidget(range.code, range.block, range.from, range.to) }),
+      // 跨行 replace 必须是 block 装饰（CM6 约束）：inline 跨行 replace 只有初次
+      // 构建能画出来，增量更新（源码退出 → 重新渲染）时 widget 永远不会被重建，
+      // 块级公式表现为「点进去改完再点走，公式整块消失」。只对整行覆盖的范围加。
+      deco: Decoration.replace({
+        widget: new MathWidget(range.code, range.block, range.from, range.to),
+        block:
+          range.block &&
+          state.doc.lineAt(range.from).from === range.from &&
+          state.doc.lineAt(Math.min(range.to, state.doc.length)).to === range.to,
+      }),
     })
   }
 }
@@ -661,7 +670,12 @@ function collectMermaid(state: EditorState, ranges: DecorationRange[], front: Ra
       ranges.push({
         from: node.from,
         to: node.to,
-        deco: Decoration.replace({ widget: new MermaidWidget(code, `${node.from}:${code.length}`, node.from, node.to) }),
+        // fence 恒为整行 → 恒为 block 装饰：跨行 inline replace 在增量更新时
+        // widget 不会被重建，「点图进源码、点走再渲染」的图会整块消失（见 collectMath）。
+        deco: Decoration.replace({
+          widget: new MermaidWidget(code, `${node.from}:${code.length}`, node.from, node.to),
+          block: true,
+        }),
       })
   })
 }
