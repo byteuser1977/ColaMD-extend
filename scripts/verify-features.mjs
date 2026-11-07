@@ -95,6 +95,8 @@ function fixture() {
     // #161：格子里的单词含下划线时，两个相邻单词之间的那一对 `_` 曾经被当斜体吃掉。
     '| 甲二 | local_upload / external_api / excel_upload |',
     '| *真斜体* | snake_case_name |',
+    // #197：格子里的行内公式要画成公式，不能留下字面的美元符号。
+    '| 甲三 | Bansal 等的 $\\delta$ 窗口 |',
     '',
     '行内公式 $a^2+b^2=c^2$ 与价格 $349。',
     '',
@@ -258,9 +260,20 @@ const MEASURE = `(() => {
       olTextColor: textColorOf('有序项一'),
       bulletColor: (() => { const b = q('.cm-md-li-bullet')[0]; return b ? getComputedStyle(b).color : null })(),
       markColor: (() => {
+        // 量序号那个**字**的颜色，不是外层的颜色：True 灰的是嵌在 cm-md-listmark
+        // 里面的高亮 span，外面那层一直是正文色（2026-10-25 又踩了一次）。
         const line = lines.find((l) => l.textContent.includes('有序项一'))
-        const mark = line && line.querySelector('.cm-md-listmark')
-        return mark ? getComputedStyle(mark).color : null
+        if (!line) return null
+        const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT)
+        let node
+        while ((node = walker.nextNode())) {
+          const raw = node.textContent.trim()
+          const digits = raw.slice(0, -1)
+          if (raw.endsWith('.') && digits.length > 0 && [...digits].every((c) => c >= '0' && c <= '9')) {
+            return getComputedStyle(node.parentElement).color
+          }
+        }
+        return null
       })()
     },
     table: {
@@ -273,6 +286,9 @@ const MEASURE = `(() => {
       imgs: q('.cm-md-table-widget td img').length,
       // #161：只有真正的星号斜体该成斜体，词中下划线不能
       ems: q('.cm-md-table-widget em').map((e) => e.textContent),
+      // #197：格子里的行内公式要画成公式，不能留下字面的美元符号
+      math: q('.cm-md-table-widget td .katex').length,
+      mathErrors: q('.cm-md-table-widget td .cm-md-math-error').length,
       cellTexts: q('.cm-md-table-widget td').map((td) => td.textContent)
     },
     quote: {
@@ -282,6 +298,33 @@ const MEASURE = `(() => {
       textColor: textColorOf('引用文字')
     },
     hr: { count: q('.cm-md-hr').length },
+    // #199：块级 widget 的上下外边距不能占位。CodeMirror 量块高时用的是
+    // getBoundingClientRect()，外边距不在 rect 里，但浏览器排版时又真占着，
+    // 于是 widget 下面每一行的实际位置都比 CodeMirror 记的偏低，点正文就落到下一行。
+    layout: (() => {
+      const view = document.querySelector('#editor .cm-content').cmTile.root.view
+      const content = view.contentDOM
+      const base = content.getBoundingClientRect().top + parseFloat(getComputedStyle(content).paddingTop) - view.scrollDOM.scrollTop
+      const rows = [...content.querySelectorAll('.cm-md-table-widget, .cm-md-mermaid, .cm-md-math-block, .cm-md-html-block')].map((el) => {
+        const from = Number(el.dataset.sourceFrom)
+        const style = getComputedStyle(el)
+        // 量它所在的那一行：屏幕上这一行在哪、多高，跟 CodeMirror 记的必须一样
+        const line = el.closest('.cm-line').getBoundingClientRect()
+        const block = Number.isFinite(from) ? view.lineBlockAt(from) : null
+        const round = (v) => Math.round(v * 10) / 10
+        return {
+          cls: el.className.split(' ')[0],
+          gap: block ? round(line.top - base - block.top) : null,
+          heightGap: block ? round(line.height - block.height) : null,
+          margin: style.marginTop + '/' + style.marginBottom,
+        }
+      })
+      return {
+        count: rows.length,
+        worst: rows.reduce((max, r) => Math.max(max, Math.abs(r.gap ?? 0), Math.abs(r.heightGap ?? 0)), 0),
+        rows,
+      }
+    })(),
     math: { katex: q('.katex').length, block: q('.cm-md-math-block').length, error: q('.cm-md-math-error').length },
     mermaid: { ready: q('.cm-md-mermaid-ready').length, svg: q('.cm-md-mermaid svg').length, failed: q('.cm-md-mermaid-failed').length },
     code: (() => {
@@ -663,6 +706,17 @@ async function lineText(renderer, fragment) {
     const line = [...document.querySelectorAll('#editor .cm-line')].find((l) => l.textContent.includes(${JSON.stringify(fragment)}))
     return line ? line.textContent : null
   })()`)
+}
+
+/**
+ * 文档里的那一行原文（含行首缩进）。
+ *
+ * 2026-11-07 起，列表行行首那几个空格在渲染模式下被藏起来了（缩进交给 CSS，不然
+ * 「CSS 缩进 + 源码空格」两份叠在一起，越深越夸张），所以量缩进不能再读 DOM 文字。
+ */
+async function docLine(renderer, fragment) {
+  const all = await evaluate(renderer, `document.querySelector('.cm-content').cmTile.root.view.state.doc.toString()`)
+  return String(all).split('\n').find((line) => line.includes(fragment)) ?? null
 }
 
 async function lineClass(renderer, fragment) {
@@ -1130,9 +1184,144 @@ async function checkListTableExport(renderer) {
   }
 }
 
+/**
+ * 打字手感：日常最常用的那几下手，量的是**按完之后屏幕上和文件里留下了什么**。
+ *
+ * 2026-11-07 橘子发过一场火：「输入 #xxx 的时候标题的格式就渲染了，我还没点空格呢，
+ * 而且点冒号的时候，后面的格式就丢了，还有列表格式，回车，删除，各种丢格式」。
+ * 这几条都是自己写的交互攒出来的，所以现在退回 CodeMirror 官方命令（lang-markdown
+ * 的 insertNewlineContinueMarkup / deleteMarkupBackward），只留「行首退格先拆标记」
+ * 这一层薄薄的外壳，并用下面的断言钉住。
+ *
+ * 单独一个窗口：打字会把文档改掉，不能和夹具那些静态断言挤在同一份文档里。
+ */
+async function checkTyping() {
+  const source = join(WORK, 'typing.md')
+  writeFileSync(source, '')
+  const port = 9995 + Math.floor(Math.random() * 4)
+  const child = spawn('npx', ['electron', 'scripts/offscreen-window.cjs', source,
+    `--user-data-dir=${join(WORK, 'udd-typing')}`, `--remote-debugging-port=${port}`
+  ], { cwd: APP, stdio: 'ignore', detached: true })
+
+  try {
+    const page = await waitTarget(port, (t) => t.type === 'page' && /index\.html/.test(t.url))
+    const renderer = await connect(page.webSocketDebuggerUrl)
+    await renderer.send('Emulation.setFocusEmulationEnabled', { enabled: true })
+    await renderer.send('Page.bringToFront')
+    for (let i = 0; i < 60; i++) {
+      if (await evaluate(renderer, `!!document.querySelector('#editor .cm-content')`)) break
+      await sleep(250)
+    }
+    const box = JSON.parse(await evaluate(renderer, `(() => {
+      const r = document.querySelector('#editor .cm-content').getBoundingClientRect()
+      return JSON.stringify({ x: Math.round(r.left + 40), y: Math.round(r.top + 12) })
+    })()`))
+    let focused = false
+    for (let i = 0; i < 6 && !focused; i++) {
+      for (const type of ['mousePressed', 'mouseReleased']) {
+        await renderer.send('Input.dispatchMouseEvent', { type, x: box.x, y: box.y, button: 'left', clickCount: 1 })
+      }
+      await sleep(300)
+      focused = await evaluate(renderer, `document.activeElement === document.querySelector('#editor .cm-content')`)
+    }
+    check('打字窗口拿到焦点', focused === true, String(focused))
+
+    const docText = () => evaluate(renderer, `document.querySelector('.cm-content').cmTile.root.view.state.doc.toString()`)
+    const insert = async (text) => {
+      await renderer.send('Input.insertText', { text })
+      await sleep(260)
+    }
+    const clearDoc = async () => {
+      await pressKey(renderer, 'a', 'KeyA', 65, 4)
+      await pressKey(renderer, 'Backspace', 'Backspace', 8)
+      await pressKey(renderer, 'Backspace', 'Backspace', 8)
+    }
+    const lineClasses = () => evaluate(renderer, `JSON.stringify([...document.querySelectorAll('#editor .cm-line')].map((l) => l.className))`)
+    const textColorOf = (needle) => evaluate(renderer, `(() => {
+      const walker = document.createTreeWalker(document.querySelector('#editor .cm-content'), NodeFilter.SHOW_TEXT)
+      let node
+      while ((node = walker.nextNode())) {
+        if (node.textContent.includes(${JSON.stringify(needle)})) return getComputedStyle(node.parentElement).color
+      }
+      return null
+    })()`)
+
+    // 1. 空格没落下之前不该当标题（CommonMark 把孤零零一个 `#` 也算空标题）
+    await insert('#')
+    const hashClasses = await lineClasses()
+    check('只打一个 # 还不是标题', !hashClasses.includes('atxheading') && (await docText()) === '#',
+      `行类=${hashClasses} 文档=${JSON.stringify(await docText())}`)
+    await insert(' 一级')
+    check('打出空格才成为标题', (await lineClasses()).includes('atxheading1'),
+      `行类=${await lineClasses()} 文档=${JSON.stringify(await docText())}`)
+
+    // 2. 标题前一次退格变回普通段落（不要留下 `#标题` 这种半截状态）
+    await pressKey(renderer, 'Home', 'Home', 36)
+    await pressKey(renderer, 'Backspace', 'Backspace', 8)
+    check('标题前退格一次变回段落', (await docText()) === '一级', JSON.stringify(await docText()))
+
+    // 3. 引用里回车自动续 `> `（屏幕上是引用，文件里也得是）
+    await clearDoc()
+    await insert('> 引用')
+    await pressKey(renderer, 'Enter', 'Enter', 13)
+    check('引用里回车自动续 >', (await docText()) === '> 引用\n> ', JSON.stringify(await docText()))
+    await clearDoc()
+
+    // 4. 列表行行首退格：拆标记，不要把上一行和这一行粘起来
+    await insert('- 甲')
+    await pressKey(renderer, 'Enter', 'Enter', 13)
+    await insert('乙')
+    await pressKey(renderer, 'Enter', 'Enter', 13)
+    await insert('丙')
+    await pressKey(renderer, 'Home', 'Home', 36)
+    await pressKey(renderer, 'Backspace', 'Backspace', 8)
+    check('列表行行首退格不把两行粘起来', (await docText()) === '- 甲\n- 乙\n丙', JSON.stringify(await docText()))
+    await clearDoc()
+
+    // 5. 有序列表：回车续号，行首退格不粘连
+    await insert('1. 甲')
+    await pressKey(renderer, 'Enter', 'Enter', 13)
+    await insert('乙')
+    await pressKey(renderer, 'Enter', 'Enter', 13)
+    await insert('丙')
+    check('有序列表回车自动续号', (await docText()) === '1. 甲\n2. 乙\n3. 丙', JSON.stringify(await docText()))
+    await pressKey(renderer, 'Home', 'Home', 36)
+    await pressKey(renderer, 'Backspace', 'Backspace', 8)
+    check('有序列表行首退格拆掉标记', (await docText()) === '1. 甲\n2. 乙\n丙', JSON.stringify(await docText()))
+    await clearDoc()
+
+    // 6. 空条目上再按一次回车：退出列表（官方命令默认会在空条目上方插一个空行，
+    //    Obsidian 与 Typora 都是直接退出，所以这里关掉了 nonTightLists）
+    await insert('- 甲')
+    await pressKey(renderer, 'Enter', 'Enter', 13)
+    await pressKey(renderer, 'Enter', 'Enter', 13)
+    check('空列表项上回车退出列表', (await docText()) === '- 甲\n', JSON.stringify(await docText()))
+    await insert('正文')
+    check('退出列表后打的是普通段落', (await docText()) === '- 甲\n正文' && !(await lineClasses()).at(-1).includes('cm-md-li'),
+      `文档=${JSON.stringify(await docText())} 行类=${await lineClasses()}`)
+    await clearDoc()
+
+    // 7. 链接后面打中文冒号：后半行不能一起变成链接
+    await insert('看这个 https://example.com/a：后面还有 **粗体**')
+    const urlColor = await textColorOf('https://example')
+    const tailColor = await textColorOf('后面还有')
+    const bodyColor = await evaluate(renderer, `getComputedStyle(document.querySelector('#editor .cm-content')).color`)
+    check('链接后面打中文冒号，后半行保持正文色', tailColor === bodyColor && urlColor !== bodyColor,
+      `链接=${urlColor} 后半行=${tailColor} 正文=${bodyColor}`)
+  } finally {
+    stopVerifyApp(join(WORK, 'udd-typing'))
+    try { process.kill(child.pid, 'SIGKILL') } catch { /* 已退出 */ }
+  }
+}
+
 function main() {
   return (async () => {
     mkdirSync(WORK, { recursive: true })
+    if (process.argv.includes('--typing-only')) {
+      await checkTyping()
+      reportChecks()
+      return
+    }
     const source = join(WORK, 'features.md')
     writeFileSync(source, fixture(), 'utf8')
     writeFileSync(join(WORK, 'pixel.png'), PIXEL_PNG)
@@ -1209,6 +1398,11 @@ function main() {
         `表格=${m.table.tables} 真 table=${m.table.realTables} cells=${m.table.cells}`)
       check('表格格子里的 <br/> 画成换行', m.table.brs >= 1, `<br> 个数=${m.table.brs}`)
       check('表格格子里的图片画出来', m.table.imgs >= 1, `格子里 img 个数=${m.table.imgs}`)
+      // #197：格子里的 `$\delta$` 要画成公式，不能把美元符号留在字上
+      check('表格格子里的公式渲染（#197）',
+        m.table.math >= 1 && m.table.mathErrors === 0
+          && !(m.table.cellTexts ?? []).some((t) => t.includes('$')),
+        `格子 katex=${m.table.math} 失败=${m.table.mathErrors} 格子=${JSON.stringify((m.table.cellTexts ?? []).filter((t) => t.includes('$')))}`)
       // #161：CommonMark 里 `_` 不能跨在词中间生效。`local_upload / external_api`
       // 是两个普通单词，不能被读成一句斜体，连下划线都不能丢。
       const ems = m.table.ems ?? []
@@ -1252,6 +1446,11 @@ function main() {
         m.exportHtml.code && m.exportHtml.table && m.exportHtml.quote && m.exportHtml.heading,
         `strong=${m.exportHtml.strong} em=${m.exportHtml.em} a=${m.exportHtml.anchor} ul=${m.exportHtml.list} pre=${m.exportHtml.code} table=${m.exportHtml.table} quote=${m.exportHtml.quote} h1=${m.exportHtml.heading}`)
       check('导出的 HTML 代码块不残留收尾反引号', m.exportHtml.codeFenceFree === true, 'pre code 里无 ``` 残留')
+      // #199：块级 widget 不能用上下外边距占位，且屏幕上每一行的位置必须等于 CodeMirror
+      // 记的位置，否则鼠标点正文时光标落到下一行。
+      check('块级 widget 的占位与光标定位一致（#199）',
+        m.layout.count >= 2 && m.layout.worst < 1 && m.layout.rows.every((r) => r.margin === '0px/0px'),
+        `widget=${m.layout.count} 最大偏差=${m.layout.worst}px ${m.layout.rows.map((r) => `${r.cls}:位置差=${r.gap}:高度差=${r.heightGap}`).join(' ')}`)
       check('导出的 HTML 不带编辑器结构',
         m.exportHtml.cmClass === false && m.exportHtml.cmLine === false && m.exportHtml.frontmatter === false,
         `cm-md 类名残留=${m.exportHtml.cmClass}[${m.exportHtml.cmClassNames}] cm-line 残留=${m.exportHtml.cmLine} 属性区残留=${m.exportHtml.frontmatter}`)
@@ -1705,9 +1904,9 @@ function main() {
       await clickLine(renderer, '无序项二')
       // 光标在行上时看到的是**源码**（`- 无序项二`）；移开光标后这一行会被画成圆点，
       // 所以基准必须在点进去之后再取。
-      const beforeIndent = await lineText(renderer, '无序项二')
+      const beforeIndent = await docLine(renderer, '无序项二')
       await pressKey(renderer, 'Tab', 'Tab', 9)
-      const afterIndent = await lineText(renderer, '无序项二')
+      const afterIndent = await docLine(renderer, '无序项二')
       await clickLine(renderer, '无序项一')
       const nestedClass = await lineClass(renderer, '无序项二')
       check('Tab 缩进列表项',
@@ -1717,7 +1916,7 @@ function main() {
 
       await clickLine(renderer, '无序项二')
       await pressKey(renderer, 'Tab', 'Tab', 9, 8)
-      const backIndent = await lineText(renderer, '无序项二')
+      const backIndent = await docLine(renderer, '无序项二')
       await clickLine(renderer, '无序项一')
       const backClass = await lineClass(renderer, '无序项二')
       check('Shift+Tab 退回一级',
@@ -1735,19 +1934,38 @@ function main() {
       // 用「起点为五/六」这一组：外层起始编号是 5，缩进再退回去正好原地往返，
       // 不会把别的断言依赖的文本改掉。
       await clickLine(renderer, '起点为六')
-      const orderedBefore = await lineText(renderer, '起点为六')
+      const orderedBefore = await docLine(renderer, '起点为六')
       await pressKey(renderer, 'Tab', 'Tab', 9)
-      const orderedNested = await lineText(renderer, '起点为六')
+      const orderedNested = await docLine(renderer, '起点为六')
       const orderedClass = await lineClass(renderer, '起点为六')
       check('缩进进子列表时序号从 1 重新数',
         orderedNested === '   1. 起点为六' && (orderedClass ?? '').includes('cm-md-li-1'),
         `缩进前=${JSON.stringify(orderedBefore)} 缩进后=${JSON.stringify(orderedNested)}`)
       await pressKey(renderer, 'Tab', 'Tab', 9, 8)
-      const orderedBack = await lineText(renderer, '起点为六')
+      const orderedBack = await docLine(renderer, '起点为六')
       await clickLine(renderer, '起点为五')
       check('退回一级后序号跟着外层排好',
         orderedBack === orderedBefore,
         `退回后=${JSON.stringify(orderedBack)} 期望=${JSON.stringify(orderedBefore)}`)
+
+      // 多位序号缩进成 `1.` 时序号变短，光标要留在原来那个字前面，接着打字不能错位。
+      const caretDoc = '9. 父项\n10. 子项\n'
+      await evaluate(renderer, `(() => {
+        window.__caretView = document.querySelector('#editor .cm-content').cmTile.root.view
+        window.__caretState = __caretView.state
+        __caretView.setState(__caretState.constructor.create({ doc: ${JSON.stringify(caretDoc)}, extensions: __caretState.config.base }))
+        __caretView.dispatch({ selection: { anchor: ${caretDoc.indexOf('子项') + 1} } })
+        __caretView.focus()
+      })()`)
+      try {
+        await pressKey(renderer, 'Tab', 'Tab', 9)
+        await renderer.send('Input.insertText', { text: 'X' })
+        await sleep(200)
+        const caretText = await evaluate(renderer, '__caretView.state.doc.toString()')
+        check('多位序号缩进后打字仍落在原位置', caretText === '9. 父项\n   1. 子X项\n', JSON.stringify(caretText))
+      } finally {
+        await evaluate(renderer, `__caretView.setState(__caretState); delete window.__caretView; delete window.__caretState`)
+      }
 
       // 深色主题下选中文字不能被选区色盖住（2026-10-04 报的）。
       await clickLine(renderer, '待办未完成')
@@ -1847,6 +2065,7 @@ function main() {
 
       await checkListTableExport(renderer)
       await checkSelectionVisibility(renderer)
+      await checkTyping()
       reportChecks()
     } finally {
       stopVerifyApp(udd)
