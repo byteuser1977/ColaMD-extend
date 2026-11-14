@@ -974,13 +974,16 @@ function collectTables(
       ranges.push({
         from: node.from,
         to: node.to,
+        // 表格恒为整行 → 恒为 block 装饰：跨行 inline replace 在增量更新时
+        // widget 不会被重建，改完表格退出源码后整块会消失（见 collectMath）。
         deco: Decoration.replace({
           widget: new TableWidget(
             state.doc.sliceString(node.from, node.to),
             state.field(documentFileUrlField, false) ?? documentFileUrl,
             node.from,
             node.to
-          )
+          ),
+          block: true,
         }),
       })
       return false
@@ -1135,7 +1138,15 @@ function collectHTML(
     ranges.push({
       from: node.from,
       to: node.to,
-      deco: Decoration.replace({ widget: new HTMLWidget(state.doc.sliceString(node.from, node.to), block, node.from, node.to) }),
+      // HTML 块跨行 → block 装饰：跨行 inline replace 在增量更新时 widget 不会
+      // 被重建，退出源码后整块消失（见 collectMath）。行内标签不跨行，保持 inline。
+      deco: Decoration.replace({
+        widget: new HTMLWidget(state.doc.sliceString(node.from, node.to), block, node.from, node.to),
+        block:
+          block &&
+          state.doc.lineAt(node.from).from === node.from &&
+          state.doc.lineAt(Math.min(node.to, state.doc.length)).to === node.to,
+      }),
     })
     return false
   })
