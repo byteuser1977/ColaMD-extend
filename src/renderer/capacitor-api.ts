@@ -180,11 +180,6 @@ async function shareFile(f: FilesystemModule, path: string, title: string): Prom
 }
 
 /** 懒加载 Capacitor 插件。字符串字面量 import() 保证 Vite 静态分析可拆 chunk。 */
-type FilePickerModule = {
-  FilePicker: {
-    pickFiles: (o: unknown) => Promise<{ files: { path?: string; name: string; blob?: Blob }[] }>
-  }
-}
 type FilesystemModule = {
   Filesystem: typeof import('@capacitor/filesystem').Filesystem
   Directory: typeof import('@capacitor/filesystem').Directory
@@ -201,8 +196,6 @@ async function capModule<T = unknown>(name: string): Promise<T | null> {
         return (await import('@capacitor/share')) as T
       case '@capacitor/app':
         return (await import('@capacitor/app')) as T
-      case '@capawesome/capacitor-file-picker':
-        return (await import('@capawesome/capacitor-file-picker')) as T
       default:
         return null
     }
@@ -225,47 +218,20 @@ function createCapacitorAPI(): ElectronAPI {
   const api: ElectronAPI = {
     // ── 文件通道（真实现：Documents/colamd/ 虚拟路径） ──
     openFile: async () => {
-      const picker = await capModule<FilePickerModule>('@capawesome/capacitor-file-picker')
-      if (!picker) {
-        nativeLog('openFile: file-picker plugin unavailable')
-        return null
+      // 走原生 ACTION_GET_CONTENT：与「文件管理器点开」共用 MainActivity 的
+      // readContentFromUri + deliverPendingFile 链路。FilePicker 插件在 Android
+      // WebView 里 blob/path 都不可靠（blob 可能为空、path 未必是 Cache 相对路径），
+      // 读失败又被静默吞掉，菜单打开看起来就像「没反应」。内容经原生 onActivityResult
+      // → __colamdIntentFile → emitFileOpened → onFileOpened 送达，这里不直接返回。
+      const bridge = (window as unknown as Record<string, unknown>).ColaMDNative as
+        | { openFilePicker?: () => void }
+        | undefined
+      if (bridge?.openFilePicker) {
+        bridge.openFilePicker()
+      } else {
+        nativeLog('openFile: openFilePicker bridge unavailable')
       }
-      let picked: { files: { path?: string; name: string; blob?: Blob; mimeType?: string }[] }
-      try {
-        // 不按 MIME 过滤：文件管理器里 .md 常被报成 application/octet-stream，
-        // types 限成 text/markdown 会让目标文件根本选不中。放行全部，选中后
-        // 由下方校验内容，扩展名不合适也不拦——用户自己选的。
-        picked = await picker.FilePicker.pickFiles({ types: ['*/*'], multiple: false, readData: true })
-      } catch (e) {
-        // 用户取消选择也会走异常：不算错误，静默返回。
-        nativeLog(`openFile: pick canceled or failed: ${String(e)}`)
-        return null
-      }
-      const file = picked.files[0]
-      if (!file) return null
-      let content = ''
-      try {
-        if (file.blob) content = await file.blob.text()
-        else if (file.path) {
-          const f = await fs()
-          if (!f) return null
-          content = (await f.Filesystem.readFile({ path: file.path, directory: f.Directory.Cache })).data as string
-        }
-      } catch (e) {
-        nativeLog(`openFile: read failed for ${file.name}: ${String(e)}`)
-        return null
-      }
-      if (!file.blob && !file.path) {
-        // readData 没拿到内容也没有缓存路径：载荷残缺，明确记下来
-        nativeLog(`openFile: picker returned no data for ${file.name} (mime: ${String((file as { mimeType?: string }).mimeType)})`)
-        return null
-      }
-      const name = file.name || 'document.md'
-      nativeLog(`openFile picked ${name}, ${content.length} chars`)
-      // 桌面版由主进程广播 file-opened；移动端 select 完直接在这里补一次，
-      // 渲染层只认这个事件（菜单里的「打开文件」靠它载入内容）。
-      emitFileOpened(name, content)
-      return { path: `${DOCS_DIR}/${name}`, content }
+      return null
     },
     openFilePath: async (path: string) => {
       const f = await fs()
@@ -280,7 +246,7 @@ function createCapacitorAPI(): ElectronAPI {
     getFileManagerName: async () => 'system' as FileManagerName,
     revealFile: noopTrue,
     showEntryContextMenu: noopVoid,
-    showTabContextMenu: noopVoid,
+    showTabContextMenu: async (menu) => showTabMenu(menu),
     onTabMenuAction: (cb) => onEvent('tab-menu-action', cb),
     listSiblings: async () => {
       const f = await fs()
@@ -696,4 +662,77 @@ function closeMenu(): void {
   const panel = root.querySelector<HTMLElement>('.cola-mm-panel')
   if (panel) panel.classList.remove('open')
   window.setTimeout(() => root.remove(), 200)
+}
+
+const TAB_MENU_STYLE_ID = 'cola-tab-menu-style'
+function ensureTabMenuStyle(): void {
+  if (document.getElementById(TAB_MENU_STYLE_ID)) return
+  const style = document.createElement('style')
+  style.id = TAB_MENU_STYLE_ID
+  style.textContent = `
+.cola-tcm-root { position: fixed; inset: 0; z-index: 2147483000; }
+.cola-tcm-panel { position: absolute; min-width: 168px; padding: 6px;
+  background: var(--bg-color, #fff); color: var(--text-color, #222);
+  border: 1px solid var(--border-color, #e0e0e0); border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22); font-size: 15px; }
+.cola-tcm-item { display: block; width: 100%; min-height: 44px; padding: 8px 14px; border: 0; border-radius: 9px;
+  background: transparent; color: inherit; font: inherit; text-align: left; }
+.cola-tcm-item:active { background: color-mix(in srgb, var(--text-color) 10%, transparent); }
+.cola-tcm-item[disabled] { opacity: 0.4; }
+`
+  document.head.appendChild(style)
+}
+
+let tabMenuEl: HTMLElement | null = null
+function closeTabMenu(): void {
+  tabMenuEl?.remove()
+  tabMenuEl = null
+}
+
+/**
+ * 长按页签弹的动作菜单：桌面走原生 contextmenu，移动端没有主进程，
+ * 这里是同一通道（tab-menu-action）的 HTML 版。非活动页签没有关闭按钮，
+ * 长按是唯一的关闭入口，所以三条动作都在。
+ */
+function showTabMenu(menu: { tabId: string; filePath: string | null; canCloseOthers: boolean; canCloseRight: boolean }): void {
+  closeTabMenu()
+  ensureTabMenuStyle()
+  const zh = isChinese()
+  const root = document.createElement('div')
+  root.className = 'cola-tcm-root'
+  const panel = document.createElement('div')
+  panel.className = 'cola-tcm-panel'
+  const items: { label: string; action: string; disabled: boolean }[] = [
+    { label: zh ? '关闭' : 'Close', action: 'close', disabled: false },
+    { label: zh ? '关闭其他' : 'Close others', action: 'close-others', disabled: !menu.canCloseOthers },
+    { label: zh ? '关闭右侧' : 'Close to the right', action: 'close-right', disabled: !menu.canCloseRight },
+  ]
+  for (const item of items) {
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.className = 'cola-tcm-item'
+    btn.textContent = item.label
+    if (item.disabled) btn.disabled = true
+    btn.addEventListener('click', () => {
+      closeTabMenu()
+      emitEvent('tab-menu-action', { action: item.action, tabId: menu.tabId })
+    })
+    panel.appendChild(btn)
+  }
+  panel.addEventListener('click', (e) => e.stopPropagation())
+  root.addEventListener('click', closeTabMenu)
+  root.appendChild(panel)
+  document.body.appendChild(root)
+  tabMenuEl = root
+  // 贴着被长按的页签往下弹，水平夹在屏幕内；找不到（极端时序）就上部居中。
+  const entry = document.querySelector<HTMLElement>(`.tab-entry[data-tab-id="${menu.tabId}"]`)
+  const rect = entry?.getBoundingClientRect()
+  const pw = panel.offsetWidth
+  if (rect) {
+    panel.style.left = `${Math.round(Math.min(Math.max(8, rect.left + rect.width / 2 - pw / 2), window.innerWidth - pw - 8))}px`
+    panel.style.top = `${Math.round(rect.bottom + 4)}px`
+  } else {
+    panel.style.left = `${Math.round((window.innerWidth - pw) / 2)}px`
+    panel.style.top = '80px'
+  }
 }

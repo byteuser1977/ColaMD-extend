@@ -1473,51 +1473,12 @@ body.presenting #editor .cm-content svg {
   }
 }
 
-/* Android：文件列表面板与拖拽把手仍属于桌面——导航开关已经移除，这里把它们
-   一起藏掉，避免留下一个打不开又关不掉的界面。页签条恢复显示：多文档在移动端
-   一样要可见、可切，布局按触屏重排（竖屏独立一行、横屏融入顶栏）。 */
+/* Android 单窗体：文件列表、拖拽把手、页签条一起藏掉。移动端一次只编辑一个文档，
+   打开文件直接替换当前内容，靠「打开文件」/文件列表导航，不做页签（对标 iA Writer
+   等移动端 Markdown 编辑器的单文档形态）。 */
 body.platform-android #file-panel,
-body.platform-android #panel-resizer {
+body.platform-android #panel-resizer,
+body.platform-android #tab-bar,
+body.platform-android .tab-new-btn {
   display: none;
-}
-
-/* 触屏没有 hover：关闭按钮常显（桌面靠 hover 显隐的规则在手机上等于永远消失）。
-   可见尺寸补到 24×24，加上不可见外扩一圈后热区 32×32，拇指按得准。 */
-body.platform-android .tab-entry-close {
-  opacity: 1;
-  pointer-events: auto;
-  width: 24px;
-  height: 24px;
-  right: 4px;
-}
-
-/* 触屏标签字号抬一档，行高盒随桌面规则走。 */
-body.platform-android .tab-entry {
-  font-size: 13px;
-}
-
-/* 竖屏：页签条从顶栏行里挪出来，独立成第二行——顶栏一行放不下又有意义
-   （菜单、保存状态、源码切换都要留在第一行），页签整行独占，44px 触控目标。 */
-@media (orientation: portrait) {
-  body.platform-android #titlebar {
-    flex-wrap: wrap;
-    height: auto;
-    min-height: var(--chrome-row-height);
-  }
-  body.platform-android #tab-bar {
-    order: 10;
-    flex: 0 0 100%;
-    max-width: none;
-    height: 44px;
-    align-self: auto;
-  }
-  body.platform-android .tab-new-btn {
-    order: 11;
-    width: 44px;
-    height: 44px;
-  }
-  /* 编辑区、浮层的顶端偏移跟着这个变量走：竖屏页签行占 44px，横屏归零。 */
-  body.platform-android {
-    --tab-bar-height: 44px;
-  }
 }

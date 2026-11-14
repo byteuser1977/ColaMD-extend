@@ -1,5 +1,5 @@
 {
-  "contractVersion": "2.7.12-rc.1",
+  "contractVersion": "2.7.12",
   "liveVariables": [
     "--bg-color",
     "--text-color",

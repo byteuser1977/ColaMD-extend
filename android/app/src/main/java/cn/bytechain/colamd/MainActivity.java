@@ -29,6 +29,9 @@ public class MainActivity extends BridgeActivity {
 
     private static final String LOG_TAG = "ColaMD";
 
+    // 菜单「打开文件」的 requestCode：onActivityResult 据此认出文件选择结果。
+    private static final int REQUEST_OPEN_FILE = 1001;
+
     // JS 桥方法在 JavaBridge 线程上执行，UI 线程写入的字段必须 volatile，
     // 否则 release 包里 JIT 可能让桥线程一直读到旧值（暂存的文件取不出来）。
     private volatile String pendingFileName = null;
@@ -112,24 +115,41 @@ public class MainActivity extends BridgeActivity {
             return;
         }
 
+        readAndDeliver(uri);
+    }
+
+    /** 菜单「打开文件」的返回：拿到用户选中的 URI 后，与 Intent 打开共用同一套读文件逻辑。 */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_OPEN_FILE) return;
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) {
+            Log.i(LOG_TAG, "openFilePicker canceled");
+            return;
+        }
+        readAndDeliver(data.getData());
+    }
+
+    /** 读一个 content:// URI 并推给 JS：Intent 打开与菜单「打开文件」共用这一条。 */
+    private void readAndDeliver(android.net.Uri uri) {
         try {
             String content = readContentFromUri(uri);
             if (content != null) {
                 pendingFileName = getFileName(uri);
                 pendingFileContent = content;
                 pendingFileJson = buildPayload(pendingFileName, content);
-                Log.i(LOG_TAG, "handleIntent cached " + pendingFileName + " (" + content.length() + " chars)");
+                Log.i(LOG_TAG, "readAndDeliver " + pendingFileName + " (" + content.length() + " chars)");
                 // 页面已就绪就立刻推送，不等轮询；没就绪（冷启动页面还在加载）
                 // 推送是空操作，由 checkPendingFile 轮询兜底。
                 deliverPendingFile();
             } else {
-                Log.w(LOG_TAG, "handleIntent: could not read " + uri);
+                Log.w(LOG_TAG, "readAndDeliver: could not read " + uri);
                 deliverReadFailure("could not read " + uri);
             }
         } catch (Exception e) {
             // SecurityException（文件管理器没授读权限）等在这里现形：推给 JS、写 logcat，
             // 不能再静默吞掉——否则用户只看到「点了文件什么都没发生」。
-            Log.w(LOG_TAG, "handleIntent failed for " + uri, e);
+            Log.w(LOG_TAG, "readAndDeliver failed for " + uri, e);
             deliverReadFailure(e.getClass().getSimpleName() + ": " + e.getMessage());
         }
     }
@@ -218,6 +238,22 @@ public class MainActivity extends BridgeActivity {
      * JS 通过 window.ColaMDNative.{method}() 调用。
      */
     public class ColaMDNativeBridge {
+
+        /** 菜单「打开文件」：弹系统文件选择器（ACTION_GET_CONTENT），选完走 onActivityResult。 */
+        @JavascriptInterface
+        public void openFilePicker() {
+            runOnUiThread(() -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    intent.setType("*/*");
+                    startActivityForResult(intent, REQUEST_OPEN_FILE);
+                } catch (Exception e) {
+                    Log.w(LOG_TAG, "openFilePicker failed", e);
+                    deliverReadFailure("openFilePicker: " + e.getMessage());
+                }
+            });
+        }
 
         /** JS 主动调用检查是否有待打开的文件 */
         @JavascriptInterface
