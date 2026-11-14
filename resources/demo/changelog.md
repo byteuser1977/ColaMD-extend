@@ -4,6 +4,18 @@
 
 ---
 
+## v2.7.13-rc.1 · 验收脚本与依赖维护
+
+这一版没有新功能，集中做两件事：把验收脚本在 Windows 上修到能跑，把依赖里的安全漏洞清干净。
+
+**验收脚本回归了。** v2.7.12 合并上游时冲掉了两个 Windows 兼容修复：`verify:links` 直接用系统 TEMP，TEMP 指向不可写目录时 esbuild 的产物写不进去；`verify:docx` 用 `spawn npx` 起打包进程，Windows 上没有 npx 这个可执行文件，一律 ENOENT，解包 docx 又依赖 macOS 自带的 unzip。现在两个脚本的工作目录统一落进 `node_modules/.cache`，esbuild 改走 JS API，Windows 解包走 PowerShell 的 Expand-Archive 兜底，`npm run verify:docx` 和 `npm run verify:links` 在三平台都能直接跑。
+
+**Word 导出补回一处退化。** 主题化重写代码块渲染时，#202 修复里的 `noProof`（关掉 Word 拼写检查红波浪线）丢了，代码块和行内代码重新挂上红波浪线。已在两处补回，`verify:docx` 的 10 条 XML 断言全绿。
+
+**依赖安全清零。** `npm audit` 从 17 个漏洞清到 0：electron 升到 44.11.3（4 个 high，随产物分发），katex 升到 0.19.1（原型污染，公式渲染行为经验收确认不变），@capacitor/cli 升到 8.6.2（tar 的 critical 链，与 android 运行时 6.x 保持兼容），electron-builder 的 minimatch 链用 npm overrides 对齐到修复版。Android debug APK 与三平台验收脚本全部重跑通过。
+
+---
+
 ## v2.7.12 · 列表边界、大文档复制与 Android 修复
 
 这一版集中修复列表与引用混排时的输入边界，长文档拖选复制卡顿，以及 Android 上打开文件的可靠性。
