@@ -23,11 +23,18 @@ export interface WordExportPayload {
   images: Record<string, string>
 }
 
-/** 推导调色板需要的三个令牌，readDocxStyle() 的返回值天然满足。 */
+/** 推导调色板需要的令牌，readDocxStyle() 的返回值天然满足。 */
 interface PaletteSource {
   codeBlockBackground: string
   codeBlockText: string
+  text: string
   link: string
+}
+
+/** 感知亮度，判断这个底色是深是浅。入参不带 `#`。 */
+function isDarkHex(hex: string): boolean {
+  const channel = (index: number): number => (Number.parseInt(hex.slice(index, index + 2), 16) || 0) / 255
+  return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4) < 0.5
 }
 
 /** sRGB 按权重混合，等价于 `color-mix(in srgb, a w%, b)`。入参出参都不带 `#`。 */
@@ -48,10 +55,15 @@ function mixSrgb(a: string, b: string, weightA: number): string {
  * 令牌是「浅色跟随主题、深色整体回落浅色」算出来的，所以深色主题自然落到浅色板，
  * 不需要这里的逻辑再做一次明暗判断。混合公式照抄 themes/editor-preview.css 的
  * `.cm-md-mermaid`（18% / 28% / 45% 三档），两边要一起改。
+ *
+ * 但代码块的底不一定是纸的颜色：elegant、bear 是浅色主题配深色代码块，它们的
+ * codeBlockText 是浅色。Word 是白纸、PNG 也先铺白底，照搬就成了浅色线条落在
+ * 白纸上（2026-11-14）。这类主题改按正文色画。
  */
 export function diagramPrintPalette(style: PaletteSource): Record<string, string> {
-  const bg = style.codeBlockBackground
-  const fg = style.codeBlockText
+  const darkCodeBlock = isDarkHex(style.codeBlockBackground)
+  const bg = darkCodeBlock ? 'FFFFFF' : style.codeBlockBackground
+  const fg = darkCodeBlock ? style.text : style.codeBlockText
   return {
     '--pele-bg': `#${bg}`,
     '--pele-fg': `#${fg}`,
@@ -114,6 +126,7 @@ export async function markdownForWord(
     // 与 docx-style.ts 的 LIGHT 常量同源：没有样式令牌时（脚本/兜底场景）按浅色画。
     codeBlockBackground: 'F6F8FA',
     codeBlockText: '24292F',
+    text: '24292F',
     link: '0969DA',
   }),
 ): Promise<WordExportPayload> {

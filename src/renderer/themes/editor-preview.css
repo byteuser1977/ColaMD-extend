@@ -585,23 +585,25 @@ body.exporting .cm-content .cm-md-frontmatter {
   /* Pele 画图用的变量。它的 SVG 里写的是 `var(--pele-*)`，在 SVG 落进的文档里取值，
      所以换主题不用重画。
 
-     取值的依据是图**画在什么底上**：mermaid 代码块那一行的底色还在（`.cm-md-codeblock`
-     的 ::before），图就浮在它上面。所以底取自代码块，字取自代码块的字色；
-     elegant 和 bear 是浅色主题配深色代码块，它们的 --code-block-text 就是为这种情况
-     准备的（和 editor-preview.css 里代码块自己的写法一致）。
+     取值的依据是图**画在什么底上**。以前这里按「图浮在代码块底色上」取代码块配色，
+     但 mermaid 围栏是**整块替换**：源码行连同 `.cm-md-codeblock` 一起没了，widget 的
+     祖先链是 .cm-content > .cm-lineWrapping > .cm-md-mermaid，没有代码块底色，
+     SVG 画布本身也不画背景（2026-11-14 实测）。于是浅色主题配深色代码块的两个
+     主题——elegant、bear——把 #e0dcd7 这类浅色线条画在了 #f0edea 的纸面上，糊成一片。
 
-     明暗两套调色板、按亮度挑一套的那套逻辑没了：底色和字色都从主题推出来，
-     对比度是算出来的，不是猜出来的。
+     所以底和字都从**页面**上取：浅色主题得到深字浅底，深色主题得到浅字深底，
+     跟其他浅色主题（light/notion/sepia/writer）现在的表现一致。导出 HTML 和打印
+     走的是同一套变量，纸面上的配色也跟着对了。
 
      百分比是量着定的：节点填充最初取 10%，Nord 上量出来是 #383E49 贴在 #262C37 的底上，
      只靠一圈描边分界，显得糊（2026-10-19）。18% / 28% / 45% 三档在 9 个主题上都拉开了。 */
-  --pele-bg: var(--code-block-bg);
-  --pele-fg: var(--code-block-text, var(--text-color));
-  --pele-muted: color-mix(in srgb, var(--code-block-text, var(--text-color)) 70%, var(--code-block-bg));
-  --pele-line: var(--code-block-text, var(--text-color));
-  --pele-surface: color-mix(in srgb, var(--code-block-text, var(--text-color)) 18%, var(--code-block-bg));
-  --pele-surface-alt: color-mix(in srgb, var(--code-block-text, var(--text-color)) 28%, var(--code-block-bg));
-  --pele-border: color-mix(in srgb, var(--code-block-text, var(--text-color)) 45%, var(--code-block-bg));
+  --pele-bg: var(--bg-color);
+  --pele-fg: var(--text-color);
+  --pele-muted: color-mix(in srgb, var(--text-color) 70%, var(--bg-color));
+  --pele-line: var(--text-color);
+  --pele-surface: color-mix(in srgb, var(--text-color) 18%, var(--bg-color));
+  --pele-surface-alt: color-mix(in srgb, var(--text-color) 28%, var(--bg-color));
+  --pele-border: color-mix(in srgb, var(--text-color) 45%, var(--bg-color));
   --pele-accent: var(--link-color);
   --pele-radius: 6px;
 }
@@ -758,6 +760,99 @@ body.theme-gruvbox .cm-content .cm-md-hr {
 /* 链接 */
 body.theme-notion .cm-content .cm-md-url {
   color: #9b9a97;
+}
+
+/* ======= 导出文档的主题差量（document.css 消费）=======
+ *
+ * 应用里的内容差量写在 `.cm-md-*` 装饰类上（上面「各主题的差别」一节），而导出的
+ * HTML 交出去的是语义标签（strong/code/th/h1…），那些规则一条都匹配不上——导出文件
+ * 因此丢掉主题的配色（2026-11-14 bug：elegant 导出后加粗、行内代码、表头全是默认色）。
+ * 这里把同一批值定义成 body 级变量，由 themes/document.css 的 `.colamd-document`
+ * 消费：导出时整份 CSS 连同 body 的主题类一起内联进文件，变量自然生效；应用内
+ * `.cm-content` 取的也是同一批值（上面各主题的差别），两边看到同一套配色。
+ *
+ * 默认值不在这里声明：自定义属性里的 var() 在**声明处**求值，写在 :root 上会
+ * 用亮色主题的变量值定死（2026-11-14 实测行内代码背景取成了 light 的 --code-bg）。
+ * document.css 里统一用 `var(--doc-*, 默认值)`，fallback 在使用处求值，才跟得对主题。
+ */
+
+body.theme-elegant {
+  --font-body: 'LXGW WenKai', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', Georgia, serif;
+  --doc-line-height: 1.9;
+  --doc-strong-color: #c44b2b;
+  --doc-code-color: #c44b2b;
+  --doc-table-side-border: none;
+  --doc-th-border-bottom: 2px solid #c44b2b;
+}
+
+body.theme-sepia {
+  --font-body: Georgia, 'Source Han Serif SC', 'Noto Serif SC', 'Songti SC', serif;
+  --doc-line-height: 1.85;
+  --doc-strong-color: #7a5a33;
+  --doc-code-color: #7a5a33;
+  --doc-h1-border: none;
+  --doc-h1-align: center;
+  --doc-h2-border: 1px dashed var(--border-color);
+}
+
+body.theme-writer {
+  --font-body: 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, Consolas, 'PingFang SC', 'Noto Sans SC', monospace;
+  --doc-line-height: 1.8;
+  --doc-strong-color: #2f2f2c;
+  --doc-code-color: #3b6ec4;
+  --doc-h1-border: none;
+  --doc-h2-border: none;
+}
+
+body.theme-bear {
+  --doc-strong-color: #d43d2a;
+  --doc-code-color: #d43d2a;
+  --doc-hr-color: #d43d2a;
+}
+
+body.theme-notion {
+  --doc-strong-color: #37352f;
+  --doc-code-color: #eb5757;
+  --doc-code-bg: #f7f6f3;
+  --doc-table-side-border: none;
+  --doc-h1-border: none;
+  --doc-h2-border: none;
+}
+
+body.theme-solarized-dark {
+  --doc-strong-color: #cb4b16;
+  --doc-code-color: #2aa198;
+  --doc-heading-color: #93a1a1;
+}
+
+body.theme-nord {
+  --doc-strong-color: #8fbcbb;
+  --doc-code-color: #88c0d0;
+  --doc-heading-color: #eceff4;
+}
+
+body.theme-gruvbox {
+  --doc-strong-color: #fe8019;
+  --doc-code-color: #b8bb26;
+  --doc-heading-color: #fbf1c7;
+  --doc-hr-color: #504945;
+}
+
+body.theme-dracula {
+  --doc-strong-color: #ff79c6;
+  --doc-code-color: #8be9fd;
+  --doc-heading-color: #ffffff;
+}
+
+body.theme-dark {
+  --doc-strong-color: #e6edf3;
+  --doc-code-color: #ff7b72;
+}
+
+body.theme-midnight {
+  --doc-strong-color: #e8e8e8;
+  --doc-code-color: #e5786d;
+  --doc-heading-color: #f5f5f5;
 }
 
 /* 属性区收起后留下的那一行空壳：压成零高，顶上就不会多出一条空白（见 live-preview

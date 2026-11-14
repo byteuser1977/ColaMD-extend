@@ -128,9 +128,12 @@ export function detachDiagramZoom(host: HTMLElement): void {
 /**
  * 导出（PNG / PDF）拿的是屏幕上这份 DOM 的序列化结果，缩放会跟着一起出去：用户放大看图
  * 之后导出，纸上就是一角被裁掉的图，右上角还多一排缩放按钮。所以序列化之前把视口还原、
- * 把控件藏起来，序列化完立刻恢复（同步的，屏幕上不会闪）。
+ * 把控件藏起来。返回的恢复函数负责把控件放回来。
+ *
+ * 打印不一样：Chromium 是异步抓快照，不能像序列化那样「取完就恢复」，得让调用方
+ * 一直攥着这个恢复函数到打印结束（capacitor-api.ts 的 exportPDF）。
  */
-export function withDiagramZoomPaused<T>(run: () => T): T {
+export function pauseDiagramZoom(): () => void {
   const hidden: { element: HTMLElement; display: string }[] = []
   for (const host of zoomHosts) {
     zooms.get(host)?.zoom?.reset()
@@ -140,9 +143,16 @@ export function withDiagramZoomPaused<T>(run: () => T): T {
       controls.style.display = 'none'
     }
   }
+  return () => {
+    for (const item of hidden) item.element.style.display = item.display
+  }
+}
+
+export function withDiagramZoomPaused<T>(run: () => T): T {
+  const restore = pauseDiagramZoom()
   try {
     return run()
   } finally {
-    for (const item of hidden) item.element.style.display = item.display
+    restore()
   }
 }

@@ -12,6 +12,9 @@
  */
 import type { ElectronAPI, FileManagerName, SiblingFile } from '../preload/index'
 import { Capacitor } from '@capacitor/core'
+import { renderWholeDocument } from './print-layout'
+import { setCleanExport } from './editor/editor'
+import { pauseDiagramZoom } from './editor/mermaid-bridge'
 
 /** 是否跑在 Capacitor 原生壳里（Android/iOS WebView）。 */
 function isNativePlatform(): boolean {
@@ -117,9 +120,8 @@ function nativeLog(message: string): void {
 }
 
 /**
- * 打印布局改造：导出 PDF 前把移动端 UI 收起来、解除固定高度，
+ * 打印布局改造：导出前把移动端 UI 收起来、解除固定高度，
  * 让 Chromium 打印管线捕获完整文档而不是可视视口。返回恢复函数。
- * 照 1.5.2 的做法，等两帧再触发打印、3 秒后再恢复，给打印框架留出快照时间。
  */
 function enterPrintLayout(): () => void {
   const undo: { el: HTMLElement; cssText: string }[] = []
@@ -138,7 +140,19 @@ function enterPrintLayout(): () => void {
     overflow: 'visible',
   })
   override('#editor, .cm-editor, .cm-scroller', { height: 'auto', overflow: 'visible' })
-  return () => undo.forEach(({ el, cssText }) => (el.style.cssText = cssText))
+  // 图上的缩放控件会跟图上纸（桌面走 body.paper 那条规则藏起来，移动端没有那层布局）。
+  // 用样式表压住而不是改内联 display：widget 在打印前可能被 CodeMirror 重建一次，
+  // 重建出来的控件是可见的，内联隐藏会丢。顺带把用户放大过的视口还原，
+  // 不然纸上只有一角。
+  const zoomStyle = document.createElement('style')
+  zoomStyle.textContent = '.pele-zoom { display: none !important; }'
+  document.head.append(zoomStyle)
+  const restoreZoom = pauseDiagramZoom()
+  return () => {
+    restoreZoom()
+    zoomStyle.remove()
+    undo.forEach(({ el, cssText }) => (el.style.cssText = cssText))
+  }
 }
 
 /** 导出用的文件名：取当前文档名（去掉扩展名），没有就退回 ColaMD。 */
@@ -167,6 +181,9 @@ function escapeHTML(value: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
 }
+
+/** 等原生「打印结束」回调的兜底上限：回调正常时由打印任务状态驱动，超时只是兜底。 */
+const PRINT_FALLBACK_TIMEOUT_MS = 180_000
 
 /** 把文件交给系统分享面板；用户取消或没有分享能力都不算落盘失败。 */
 async function shareFile(f: FilesystemModule, path: string, title: string): Promise<void> {
@@ -320,16 +337,29 @@ function createCapacitorAPI(): ElectronAPI {
       const bridge = nativeBridge()
       if (!bridge) return false
       const restore = enterPrintLayout()
+      // 干净导出：光标停进的块公式/表格/图按渲染结果打印，不留编辑态的源码
+      // （桌面 PDF 走 __colamdPrintExport.enter 已有同一步骤）
+      setCleanExport(true)
       try {
-        // 等两帧让布局改动生效，打印框架才拿得到完整文档而不是可视视口
+        // 摊平后让 CodeMirror 把整篇渲染出来（与桌面 enterPaperLayout 同一步骤）：
+        // 打印快照不执行脚本，CM 没机会补渲染没进视口的行。
+        await renderWholeDocument()
         await new Promise<void>((resolve) => {
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
         })
+        // 布局恢复不等固定定时：等原生侧通知打印任务结束。用户在系统对话框里
+        // 选「保存为 PDF」时打印框架会重新排版，恢复早了纸上只剩一屏
+        // （2026-11-14 bug：导出的 PDF 只有 1 页）。超时兜底后照样恢复。
+        const finishedP = callNative<{ ok: boolean }>('printDocument')
         bridge.printDocument(exportBaseName())
+        await Promise.race([
+          finishedP,
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), PRINT_FALLBACK_TIMEOUT_MS)),
+        ])
         return true // 弹系统打印对话框（含"保存为 PDF"），结果由系统接管
       } finally {
-        // 打印对话框是异步快照，恢复太早会让纸上只剩一屏（1.5.2 实测 3 秒）
-        setTimeout(restore, 3000)
+        restore()
+        setCleanExport(false)
       }
     },
     exportHTML: async (snapshot) => {

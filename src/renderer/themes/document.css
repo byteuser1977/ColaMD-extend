@@ -16,7 +16,7 @@
   color: var(--text-color);
   font-family: var(--font-body, inherit);
   font-size: 16px;
-  line-height: 1.75;
+  line-height: var(--doc-line-height, 1.75);
   word-wrap: break-word;
 }
 
@@ -29,10 +29,20 @@
   margin: 1.4em 0 0.6em;
   font-weight: 700;
   line-height: 1.35;
+  color: var(--doc-heading-color, inherit);
 }
 
-.colamd-document h1 { font-size: 1.9em; }
-.colamd-document h2 { font-size: 1.55em; }
+.colamd-document h1 {
+  font-size: 1.9em;
+  border-bottom: var(--doc-h1-border, 1px solid var(--border-color));
+  padding-bottom: 0.3em;
+  text-align: var(--doc-h1-align, initial);
+}
+.colamd-document h2 {
+  font-size: 1.55em;
+  border-bottom: var(--doc-h2-border, 1px solid var(--border-color));
+  padding-bottom: 0.25em;
+}
 .colamd-document h3 { font-size: 1.3em; }
 .colamd-document h4 { font-size: 1.12em; }
 .colamd-document h5,
@@ -54,7 +64,10 @@
   text-decoration: underline;
 }
 
-.colamd-document strong { font-weight: 700; }
+.colamd-document strong {
+  font-weight: 700;
+  color: var(--doc-strong-color, inherit);
+}
 .colamd-document em { font-style: italic; }
 .colamd-document s { text-decoration: line-through; }
 
@@ -68,7 +81,8 @@
 .colamd-document code {
   padding: 2px 6px;
   border-radius: 3px;
-  background: var(--code-bg);
+  background: var(--doc-code-bg, var(--code-bg));
+  color: var(--doc-code-color, inherit);
   font-family: var(--font-mono, Menlo, Monaco, monospace);
   font-size: 0.875em;
 }
@@ -85,6 +99,8 @@
 .colamd-document pre code {
   padding: 0;
   background: none;
+  /* 块级代码不走行内代码的主题差量色：代码块自己的配色是 --code-block-* */
+  color: inherit;
   font-size: 0.875em;
   line-height: 1.6;
 }
@@ -113,7 +129,7 @@
 .colamd-document hr {
   margin: 2em 0;
   border: none;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--doc-hr-color, var(--border-color));
 }
 
 .colamd-document table {
@@ -125,13 +141,17 @@
 .colamd-document th,
 .colamd-document td {
   padding: 8px 12px;
-  border: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  border-left: var(--doc-table-side-border, 1px solid var(--border-color));
+  border-right: var(--doc-table-side-border, 1px solid var(--border-color));
 }
 
 .colamd-document th {
   background: var(--table-header-bg);
   font-weight: 600;
   text-align: left;
+  border-bottom: var(--doc-th-border-bottom, 1px solid var(--border-color));
 }
 
 .colamd-document img {

@@ -35,6 +35,12 @@ extraResources:
 npmArgs:
   - "--loglevel=error"
 
+# Download the Electron distribution zip from the npmmirror CDN instead of
+# GitHub releases; GitHub is unreachable/slow from networks in China and the
+# 10-minute download timeout aborts the build mid-transfer.
+electronDownload:
+  mirror: https://npmmirror.com/mirrors/electron/
+
 afterPack: ./scripts/afterPack.js
 
 fileAssociations:

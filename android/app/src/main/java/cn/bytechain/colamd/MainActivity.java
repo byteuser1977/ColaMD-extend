@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.print.PageRange;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
+import android.print.PrintJob;
 import android.print.PrintManager;
 import android.util.Log;
 import android.view.View;
@@ -38,6 +39,11 @@ public class MainActivity extends BridgeActivity {
     private volatile String pendingFileContent = null;
     // 序列化一次的完整载荷：推送与轮询取的是同一份，不会出现两边格式不一致。
     private volatile String pendingFileJson = null;
+
+    // 打印任务状态轮询：用户在系统打印对话框里停留多久不定，只能轮询 PrintJob；
+    // 超时兜底后照样回调，JS 侧恢复布局（宁可早恢复也不能永远不恢复）。
+    private static final long PRINT_POLL_INTERVAL_MS = 250;
+    private static final long PRINT_POLL_TIMEOUT_MS = 180_000;
 
     /**
      * 活动创建时的初始化方法。
@@ -284,11 +290,45 @@ public class MainActivity extends BridgeActivity {
                     PrintManager pm = (PrintManager) getSystemService(Context.PRINT_SERVICE);
                     PrintDocumentAdapter adapter = wv.createPrintDocumentAdapter(
                             jobName != null && !jobName.isEmpty() ? jobName : "ColaMD Document");
-                    pm.print(jobName, adapter, new PrintAttributes.Builder().build());
+                    // 页面属性显式给 A4：空属性在部分 ROM 上分页行为不确定。
+                    PrintAttributes attrs = new PrintAttributes.Builder()
+                            .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                            .setResolution(new PrintAttributes.Resolution("colamd", "ColaMD", 300, 300))
+                            .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
+                            .build();
+                    PrintJob job = pm.print(
+                            jobName != null && !jobName.isEmpty() ? jobName : "ColaMD Document",
+                            adapter, attrs);
+                    // JS 侧打印期间把整篇文档摊平；布局必须等打印真正结束（用户在
+                    // 对话框里点「保存为 PDF」时打印框架还会重排一次）才能恢复。
+                    // 早先的固定 3 秒定时恢复会赶在这次重排之前，PDF 只剩一页
+                    // （2026-11-14 bug：academic-demo 导出只有 1 页 A4）。
+                    notifyPrintFinished(job);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             });
+        }
+
+        /** 轮询打印任务直到结束（或超时兜底），再回调 JS 恢复导出前的布局。 */
+        private void notifyPrintFinished(final PrintJob job) {
+            final WebView wv = getBridge() == null ? null : getBridge().getWebView();
+            if (wv == null || job == null) return;
+            final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+            final long startedAt = android.os.SystemClock.elapsedRealtime();
+            final Runnable[] poll = new Runnable[1];
+            poll[0] = () -> {
+                boolean finished = job.isCompleted() || job.isFailed() || job.isCancelled();
+                boolean timedOut = android.os.SystemClock.elapsedRealtime() - startedAt > PRINT_POLL_TIMEOUT_MS;
+                if (!finished && !timedOut) {
+                    handler.postDelayed(poll[0], PRINT_POLL_INTERVAL_MS);
+                    return;
+                }
+                wv.evaluateJavascript(
+                        "window.__colamdNativeResult && window.__colamdNativeResult('printDocument', {ok: " + finished + "})",
+                        null);
+            };
+            handler.postDelayed(poll[0], PRINT_POLL_INTERVAL_MS);
         }
 
         /**

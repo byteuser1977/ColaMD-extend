@@ -409,6 +409,10 @@ function isActiveRange(_state: EditorState, _from: number, _to: number): boolean
  * 两端都算在内：点表格落在源码第一行开头，那是块的起点，也算「在里面」。
  */
 function isBlockActive(state: EditorState, from: number, to: number): boolean {
+  // 导出快照里不该出现编辑态：光标碰巧停在块里时，块也按渲染结果交出去，
+  // 否则导出的文件里会残留 $$…$$ 源码或表格原文（2026-11-14 bug：academic-demo
+  // 的块公式随光标进了导出 HTML，KaTeX 全没渲染）。
+  if (exportingCleanly(state)) return false
   const sel = state.selection.main
   return sel.from >= from && sel.to <= to
 }
