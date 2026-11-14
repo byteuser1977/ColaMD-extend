@@ -1,6 +1,6 @@
 {
   "name": "@bytechain.cn/colamd",
-  "version": "2.7.11",
+  "version": "2.7.12",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -57,6 +57,7 @@
     "verify:markdown": "node scripts/verify-markdown.mjs",
     "verify:links": "node scripts/verify-links.mjs",
     "verify:features": "node scripts/verify-features.mjs",
+    "verify:list": "node scripts/verify-list-input.mjs",
     "verify:scroll-render": "node scripts/verify-scroll-render.mjs",
     "verify:image-export": "node scripts/verify-image-export.mjs",
     "verify:export-pdf": "node scripts/verify-export-pdf.mjs",
