@@ -13,6 +13,8 @@ vscode-extension/*.vsix
 .tmp/
 .temp/
 .trae/
+# Trae 的 HTML 分享产物（自动生成，不入库）
+.trae-html-share-packages/
 dist-web/
 
 # Capacitor Android 构建产物（工程源码将来随移动端移植入库，只忽略产物）
