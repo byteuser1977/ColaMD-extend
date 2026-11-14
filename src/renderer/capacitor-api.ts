@@ -60,6 +60,37 @@ function callNative<T extends Record<string, unknown>>(tag: string): Promise<T> 
   return new Promise((resolve) => nativeResolvers.set(tag, resolve as (p: Record<string, unknown>) => void))
 }
 
+/**
+ * Intent 待开文件的推送接收器：MainActivity 在 handleIntent 后立刻 evaluateJavascript
+ * 调到这里，不等 2s 轮询。返回 true 告诉原生侧「已送达」，暂存才清空；返回 false
+ * （页面尚未注册、载荷不完整）时原生侧保留暂存，由 checkPendingFile 轮询兜底。
+ * emitFileOpened 自带缓冲：渲染层 onFileOpened 注册晚于推送时先入队、注册时补发。
+ */
+;(
+  window as unknown as { __colamdIntentFile?: (json: string) => boolean; __colamdIntentError?: (reason: string) => void }
+).__colamdIntentFile = (json: string): boolean => {
+  try {
+    const parsed = JSON.parse(json) as { name?: string; content?: string }
+    if (typeof parsed?.name === 'string' && typeof parsed.content === 'string') {
+      nativeLog(`intent file received: ${parsed.name} (${parsed.content.length} chars)`)
+      emitFileOpened(parsed.name, parsed.content)
+      return true
+    }
+    nativeLog(`intent file payload incomplete: ${JSON.stringify(parsed).slice(0, 200)}`)
+    return false
+  } catch (e) {
+    // 原生侧已用 JSONObject 序列化，走到这里说明载荷本身损坏，记下来别静默丢
+    nativeLog(`intent file JSON parse failed: ${String(e)}`)
+    return false
+  }
+}
+;(
+  window as unknown as { __colamdIntentError?: (reason: string) => void }
+).__colamdIntentError = (reason: string): void => {
+  // SecurityException（文件管理器没授读权限）等从这里现形
+  nativeLog(`intent read failed: ${reason}`)
+}
+
 /** 原生打印桥（MainActivity 注入的 ColaMDNative）。 */
 function nativeBridge(): { printDocument: (job: string) => void; printToFile: (job: string) => void; pdfToImage: (pdf: string, out: string, scale: number) => void } | null {
   const bridge = (window as unknown as Record<string, unknown>).ColaMDNative as
@@ -195,18 +226,42 @@ function createCapacitorAPI(): ElectronAPI {
     // ── 文件通道（真实现：Documents/colamd/ 虚拟路径） ──
     openFile: async () => {
       const picker = await capModule<FilePickerModule>('@capawesome/capacitor-file-picker')
-      if (!picker) return null
-      const picked = await picker.FilePicker.pickFiles({ types: ['text/markdown', 'text/plain'], multiple: false, readData: true })
+      if (!picker) {
+        nativeLog('openFile: file-picker plugin unavailable')
+        return null
+      }
+      let picked: { files: { path?: string; name: string; blob?: Blob; mimeType?: string }[] }
+      try {
+        // 不按 MIME 过滤：文件管理器里 .md 常被报成 application/octet-stream，
+        // types 限成 text/markdown 会让目标文件根本选不中。放行全部，选中后
+        // 由下方校验内容，扩展名不合适也不拦——用户自己选的。
+        picked = await picker.FilePicker.pickFiles({ types: ['*/*'], multiple: false, readData: true })
+      } catch (e) {
+        // 用户取消选择也会走异常：不算错误，静默返回。
+        nativeLog(`openFile: pick canceled or failed: ${String(e)}`)
+        return null
+      }
       const file = picked.files[0]
       if (!file) return null
       let content = ''
-      if (file.blob) content = await file.blob.text()
-      else if (file.path) {
-        const f = await fs()
-        if (!f) return null
-        content = (await f.Filesystem.readFile({ path: file.path, directory: f.Directory.Cache })).data as string
+      try {
+        if (file.blob) content = await file.blob.text()
+        else if (file.path) {
+          const f = await fs()
+          if (!f) return null
+          content = (await f.Filesystem.readFile({ path: file.path, directory: f.Directory.Cache })).data as string
+        }
+      } catch (e) {
+        nativeLog(`openFile: read failed for ${file.name}: ${String(e)}`)
+        return null
+      }
+      if (!file.blob && !file.path) {
+        // readData 没拿到内容也没有缓存路径：载荷残缺，明确记下来
+        nativeLog(`openFile: picker returned no data for ${file.name} (mime: ${String((file as { mimeType?: string }).mimeType)})`)
+        return null
       }
       const name = file.name || 'document.md'
+      nativeLog(`openFile picked ${name}, ${content.length} chars`)
       // 桌面版由主进程广播 file-opened；移动端 select 完直接在这里补一次，
       // 渲染层只认这个事件（菜单里的「打开文件」靠它载入内容）。
       emitFileOpened(name, content)

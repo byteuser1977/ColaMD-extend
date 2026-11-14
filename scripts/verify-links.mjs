@@ -81,7 +81,10 @@ async function unitChecks() {
   // Verify tableCellStart (supports indented & unbordered tables, #153)
   const editorCode = readFileSync(join(ROOT, 'src/renderer/editor/editor.ts'), 'utf8')
   const tStart = editorCode.indexOf('function tableCellStart(')
-  const tEnd = editorCode.indexOf('\n}\n', tStart) + 3
+  // Windows checkout (autocrlf) 是 CRLF 行尾，闭合大括号行是 "}\r\n"，不能假定 "\n}\n"
+  const closeMatch = editorCode.slice(tStart).match(/\r?\n\}\r?\n/)
+  assert(closeMatch, 'tableCellStart closing brace not found')
+  const tEnd = tStart + closeMatch.index + closeMatch[0].length
   const { code: compiledTableCell } = await transform(editorCode.slice(tStart, tEnd), { loader: 'ts' })
   const tableContext = {}
   vm.runInNewContext(compiledTableCell, tableContext)

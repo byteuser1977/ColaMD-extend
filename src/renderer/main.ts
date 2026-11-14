@@ -472,7 +472,11 @@ function renderTabBar(): void {
   bar.hidden = false
   // The strip lives inside the title bar's row now, so it consumes no height of
   // its own: the editor starts right under the same 40px row either way.
-  document.documentElement.style.setProperty('--tab-bar-height', '0px')
+  // Android 例外：竖屏时页签条是顶栏下方的独立一行，高度由 CSS 按 orientation
+  // 决定，这里不能写死内联值（内联会压过媒体查询，旋转后布局就错了）。
+  if (!isAndroidApp()) {
+    document.documentElement.style.setProperty('--tab-bar-height', '0px')
+  }
   document.documentElement.style.setProperty('--editor-top-gap', '0px')
   bar.innerHTML = ''
   // Hide the hover hint unconditionally, including the path where the whole
@@ -766,6 +770,63 @@ async function openFileInNewTab(path: string): Promise<void> {
   if (!claimed || claimed === current) return
   claimed.filePath = path
   await window.electronAPI.openSibling(path)
+}
+
+/**
+ * Android：打开的文件（Intent 推送 / 菜单「打开」）一律新开页签，当前文档留在
+ * 原页签不被覆盖——页签条已经恢复显示，多文档就该是页签的样子。Intent 的内容
+ * 已经读进内存（文件不在 Documents/colamd 里），装载不走 activateFile，直接用。
+ */
+async function openAndroidFileTab(data: { path: string | null; content: string; fileUrl: string | null }): Promise<void> {
+  // 移动端 emitFileOpened 永远给出名字；path 缺位只可能是异常载荷，按未命名文档收下，
+  // 内容不能丢。
+  const path = data.path
+  // 同一路径已经开着：切回去，不重复开。
+  const existing = path ? tabs.find((tab) => tab.filePath === path) : null
+  if (existing) {
+    await activateTab(existing.id)
+    return
+  }
+  captureActiveTab()
+  // 当前页签有未保存内容先落盘；保存被拒就不打开新文件，避免误丢。
+  if (!await saveTabForLeaving(activeTab())) return
+  // 冷启动/空壳场景：唯一的页签还是启动种子（无路径、没有编辑过），直接收养它，
+  // 不留一个多余的未命名页签；app 已在用时才真正新开页签。
+  const seed = tabs.length === 1 && !tabs[0].filePath && !tabs[0].dirty && !tabs[0].content
+  const tab: DocumentTab = seed ? tabs[0] : {
+    id: `tab-${nextTabId++}`,
+    filePath: path,
+    dirty: false,
+    revision: ++documentRevision,
+    sourceMode: false,
+    content: data.content,
+    frontmatter: '',
+    lineEnding: data.content.includes('\r\n') ? '\r\n' : '\n',
+    editorState: null,
+    // 没有真实路径的载荷没有磁盘基准，内容按未保存处理，离开时走保存通道。
+    diskContent: path ? data.content : null,
+    scrollTop: 0
+  }
+  if (!seed) tabs.push(tab)
+  tab.revision = ++documentRevision
+  activeTabId = tab.id
+  currentFilePath = path
+  applyDocumentFileUrl(data.fileUrl ?? null)
+  dirty = false
+  setContent(data.content, true)
+  resetDirty()
+  if (!path) setDirty() // 没有磁盘基准的内容一律视为未保存
+  updateFileTitle()
+  updatePanelVisibility()
+  void refreshSiblings()
+  scheduleOutlineUpdate()
+  const resetScroll = (): void => {
+    editorScroller().scrollTop = 0
+  }
+  resetScroll()
+  requestAnimationFrame(resetScroll)
+  renderTabBar()
+  // 不聚焦编辑器：打开文档多半是阅读，立刻弹输入法键盘反而碍事。
 }
 
 // Closing several tabs runs one at a time: each close may need its own unsaved
@@ -1980,6 +2041,11 @@ async function init(): Promise<void> {
     renderTabBar()
   })
   api.onFileOpened((data) => {
+    // Android：一律新开页签，当前文档不被覆盖（Intent 打开/菜单打开同一条路）。
+    if (isAndroidApp()) {
+      void openAndroidFileTab(data).catch((e) => reportRuntimeError('openAndroidFileTab', e))
+      return
+    }
     // A document opened into a window that has none yet (a launch with a file)
     // lands in the first tab rather than creating a second one.
     ensureTab()

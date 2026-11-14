@@ -33,6 +33,8 @@ public class MainActivity extends BridgeActivity {
     // 否则 release 包里 JIT 可能让桥线程一直读到旧值（暂存的文件取不出来）。
     private volatile String pendingFileName = null;
     private volatile String pendingFileContent = null;
+    // 序列化一次的完整载荷：推送与轮询取的是同一份，不会出现两边格式不一致。
+    private volatile String pendingFileJson = null;
 
     /**
      * 活动创建时的初始化方法。
@@ -115,13 +117,61 @@ public class MainActivity extends BridgeActivity {
             if (content != null) {
                 pendingFileName = getFileName(uri);
                 pendingFileContent = content;
+                pendingFileJson = buildPayload(pendingFileName, content);
                 Log.i(LOG_TAG, "handleIntent cached " + pendingFileName + " (" + content.length() + " chars)");
+                // 页面已就绪就立刻推送，不等轮询；没就绪（冷启动页面还在加载）
+                // 推送是空操作，由 checkPendingFile 轮询兜底。
+                deliverPendingFile();
             } else {
                 Log.w(LOG_TAG, "handleIntent: could not read " + uri);
+                deliverReadFailure("could not read " + uri);
             }
         } catch (Exception e) {
+            // SecurityException（文件管理器没授读权限）等在这里现形：推给 JS、写 logcat，
+            // 不能再静默吞掉——否则用户只看到「点了文件什么都没发生」。
             Log.w(LOG_TAG, "handleIntent failed for " + uri, e);
+            deliverReadFailure(e.getClass().getSimpleName() + ": " + e.getMessage());
         }
+    }
+
+    /** 组装一次 JSON 载荷；失败返回 null（不会拿半份载荷去投递）。 */
+    private String buildPayload(String name, String content) {
+        try {
+            // 用 JSONObject 序列化：手拼字符串不会转义制表符等控制字符，
+            // 文件里只要有一个 tab，JSON.parse 就会失败，整篇内容被丢掉。
+            JSONObject payload = new JSONObject();
+            payload.put("name", name);
+            payload.put("content", content);
+            return payload.toString();
+        } catch (Exception e) {
+            Log.w(LOG_TAG, "buildPayload could not serialise payload", e);
+            return null;
+        }
+    }
+
+    /** 页面就绪就立刻把待开文件推给 JS；JS 接收成功才清掉暂存，失败留给轮询。 */
+    private void deliverPendingFile() {
+        final String json = pendingFileJson;
+        if (json == null) return;
+        final WebView wv = getBridge() == null ? null : getBridge().getWebView();
+        if (wv == null) return;
+        final String script = "window.__colamdIntentFile && window.__colamdIntentFile(" + JSONObject.quote(json) + ")";
+        runOnUiThread(() -> wv.evaluateJavascript(script, value -> {
+            if ("true".equals(value)) {
+                Log.i(LOG_TAG, "pending file delivered via push");
+                pendingFileName = null;
+                pendingFileContent = null;
+                pendingFileJson = null;
+            }
+        }));
+    }
+
+    /** 读取失败也要让 JS 侧知道：至少 logcat / 控制台里能看到原因。 */
+    private void deliverReadFailure(final String reason) {
+        final WebView wv = getBridge() == null ? null : getBridge().getWebView();
+        if (wv == null) return;
+        final String script = "window.__colamdIntentError && window.__colamdIntentError(" + JSONObject.quote(reason) + ")";
+        runOnUiThread(() -> wv.evaluateJavascript(script, null));
     }
 
     /**
@@ -172,24 +222,13 @@ public class MainActivity extends BridgeActivity {
         /** JS 主动调用检查是否有待打开的文件 */
         @JavascriptInterface
         public synchronized String checkPendingFile() {
-            if (pendingFileName == null || pendingFileContent == null) return "null";
-            String name = pendingFileName;
-            String content = pendingFileContent;
+            String json = pendingFileJson;
+            if (json == null) return "null";
             pendingFileName = null;
             pendingFileContent = null;
-            try {
-                // 用 JSONObject 序列化：手拼字符串不会转义制表符等控制字符，
-                // 文件里只要有一个 tab，JSON.parse 就会失败，整篇内容被丢掉。
-                JSONObject payload = new JSONObject();
-                payload.put("name", name);
-                payload.put("content", content);
-                String json = payload.toString();
-                Log.i(LOG_TAG, "checkPendingFile delivered " + name + " (" + content.length() + " chars)");
-                return json;
-            } catch (Exception e) {
-                Log.w(LOG_TAG, "checkPendingFile could not serialise payload", e);
-                return "null";
-            }
+            pendingFileJson = null;
+            Log.i(LOG_TAG, "checkPendingFile delivered (" + json.length() + " chars)");
+            return json;
         }
 
         /** 渲染层日志 / 错误转发到 logcat：release 包没有控制台。 */
