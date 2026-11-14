@@ -5,7 +5,6 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, statSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -17,7 +16,12 @@ const require = createRequire(import.meta.url)
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 if (!process.argv.includes('--unit')) assertBuildFresh()
 
-const WORK = mkdtempSync(join(tmpdir(), 'colamd-verify-links-'))
+// The system temp dir is not always writable *for the esbuild child process*
+// (e.g. TEMP pointing at a locked z:\swap\temp): node can write there, esbuild's
+// outfile write still fails with EACCES, so a plain write probe cannot tell.
+// node_modules/.cache is where verify-markdown puts its bundles and is the one
+// location esbuild is known to write to everywhere.
+const WORK = mkdtempSync(join(ROOT, 'node_modules', '.cache', 'colamd-verify-links-'))
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 let passed = 0
 const check = (name, fn) => { fn(); passed++; console.log(`PASS ${name}`) }

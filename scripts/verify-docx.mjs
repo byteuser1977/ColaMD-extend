@@ -8,13 +8,17 @@
 //
 // 用法: npm run verify:docx
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
+import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
+import { build } from 'esbuild'
 
-const APP = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
-const WORK = join(homedir(), 'Library', 'Caches', 'colamd-verify', 'docx')
+// Windows 上 pathname 是 `/D:/...`，做不成 cwd 和路径，fileURLToPath 跨平台
+const APP = fileURLToPath(new URL('..', import.meta.url))
+// 工作目录放 node_modules/.cache：本机系统 TEMP 对 esbuild 子进程不可写（EACCES），
+// verify-markdown 的产物一直落在这里且跨平台可用，保持同一约定。
+const WORK = join(APP, 'node_modules', '.cache', 'colamd-verify', 'docx')
 rmSync(WORK, { recursive: true, force: true })
 mkdirSync(WORK, { recursive: true })
 
@@ -35,8 +39,17 @@ function check(name, ok, detail = '') {
 const stub = join(WORK, 'electron-stub.cjs')
 writeFileSync(stub, 'module.exports = { nativeImage: { createFromDataURL: () => ({ isEmpty: () => true }), createFromPath: () => ({ isEmpty: () => true }) } }\n')
 const bundle = join(WORK, 'docx-export.cjs')
-execFileSync('npx', ['esbuild', join(APP, 'src/main/docx-export.ts'), '--bundle', '--platform=node',
-  '--format=cjs', `--alias:electron=${stub}`, `--outfile=${bundle}`, '--log-level=error'], { cwd: APP })
+// 用 esbuild 的 JS API 而不是 spawn npx：Windows 上没有 npx 这个可执行文件
+// （只有 npx.cmd，不带 shell 的 spawn 找不到，一律 ENOENT），JS API 跨平台都能跑。
+await build({
+  entryPoints: [join(APP, 'src/main/docx-export.ts')],
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  alias: { electron: stub },
+  outfile: bundle,
+  logLevel: 'error',
+})
 
 const CODE = ['{', '  "key": "值",', '', '  "nested": {', '    "a": 1', '  }', '}'].join('\n')
 const fixture = [
@@ -56,12 +69,30 @@ const fixture = [
 
 const require_ = createRequire(import.meta.url)
 const { markdownToDocx } = require_(bundle)
+
+// docx 本质是 zip。macOS/Linux 自带 unzip；Windows 没有，借 PowerShell 的
+// Expand-Archive 兜底（它只认 .zip 后缀，复制一份再解）。
+function readDocxDocumentXml(docxPath) {
+  try {
+    return execFileSync('unzip', ['-p', docxPath, 'word/document.xml']).toString('utf8')
+  } catch {}
+  if (process.platform === 'win32') {
+    const zipCopy = join(WORK, 'out.zip')
+    const outDir = join(WORK, 'unzipped')
+    copyFileSync(docxPath, zipCopy)
+    execFileSync('powershell.exe', ['-NoProfile', '-Command',
+      `Expand-Archive -LiteralPath '${zipCopy}' -DestinationPath '${outDir}' -Force`])
+    return readFileSync(join(outDir, 'word', 'document.xml'), 'utf8')
+  }
+  throw new Error('no unzip available')
+}
+
 const docxPath = join(WORK, 'out.docx')
 writeFileSync(docxPath, await markdownToDocx({ content: fixture, sourcePath: null }))
 
 let xml = ''
 try {
-  xml = execFileSync('unzip', ['-p', docxPath, 'word/document.xml']).toString('utf8')
+  xml = readDocxDocumentXml(docxPath)
 } catch {
   console.log('✗ 解不开 docx（缺 unzip？）')
   process.exitCode = 1
@@ -77,11 +108,11 @@ check('代码字体不是写死的 Menlo', codeSlots.length > 0 && codeSlots.eve
 check('代码字体按平台选（macOS 是 Menlo）', codeSlots.every((slot) => process.platform !== 'darwin' || /w:ascii="Menlo"/.test(slot)))
 
 // 2. 换行：每行代码之间要有一个 <w:br/>，不能只有一个塞着 \n 的 <w:t>
+// 引用块现在是独立段落（不再用 br 拼接），所以期望值就是 codeLines - 1。
 const breaks = (xml.match(/<w:br\/>/g) ?? []).length
 const codeLines = CODE.split('\n').length
-const quoteBreaks = 1
-check('代码块每行之间是 <w:br/>，不是自动折行', breaks === codeLines - 1 + quoteBreaks,
-  `<w:br/> ${breaks} 个，期望 ${codeLines - 1 + quoteBreaks}`)
+check('代码块每行之间是 <w:br/>，不是自动折行', breaks === codeLines - 1,
+  `<w:br/> ${breaks} 个，期望 ${codeLines - 1}`)
 check('代码里没有塞进 <w:t> 的换行符', !/<w:t[^>]*>[^<]*\n[^<]*<\/w:t>/.test(xml))
 
 // 3. 对齐与拼写检查：代码段落显式左对齐，变量名不带红波浪线
