@@ -46,7 +46,7 @@ chapter: Act I · 数据
 
 ### 全出血杂志式排版（2026-11-16 按用户反馈重画）
 
-参考杂志风网页 PPT 与报告类 PPTX 重画，色彩仍只引主题活变量：内容铺满 16:9 纸面、只留 6vw 边距（放映 6vw、导出 64px），不再聚在中央窄栏；字体三件套——衬线（标题/大数字/金句）、无衬线（正文）、等宽（chrome/页码/标签）；标题阶梯按模板比例放大，内容页 4.2em、章节页 5.2em、封面 6.8em，一页第一个标题不论写成 h1 还是 h2 都走同一档；没写版式的页自动走文章版式（标题 3.4em、正文 0.95em / 1.8、行宽 82%），`figure` 页让 Mermaid / SVG / 图片独占一屏；文档式的标题下划线一律去掉，封面与章节页的强调色短杠也收掉，改用 kicker、标题、导语三层；细线代替色块（tag 边框、卡片描边、chrome 中缝线）；底色为主题底色 95% + 强调色 5% 的柔和调和。每页第一条线（`cm-md-page-start`）统一留出页顶安全区给 chrome，且整页只算一次：多行页头块只有第一行承担安全区，其余字段行零高度，不再出现四行块叠出三百多像素空白；内容页顶部对齐，只有 cover / section / closing / quote 这类 hero 页垂直居中。cover 改为杂志封面式左对齐、h1 主标题 + h2 副标题 + 首段导语，Notion 主题下换成无衬线居中封面。
+参考杂志风网页 PPT 与报告类 PPTX 重画，色彩仍只引主题活变量：内容铺满 16:9 纸面、只留 6vw 边距（放映 6vw、导出 64px），不再聚在中央窄栏；字体三件套——衬线（标题/大数字/金句）、无衬线（正文）、等宽（chrome/页码/标签）；标题阶梯按模板比例放大，内容页 4.2em、章节页 5.2em、封面 6.8em，一页第一个标题不论写成 h1 还是 h2 都走同一档；没写版式的页自动走文章版式（标题 3.4em、正文 0.95em / 1.8、行宽 82%），`figure` 页的标题与内容页同档，Mermaid / SVG / 图片占画面约七成并居中；文档式的标题下划线一律去掉，封面与章节页的强调色短杠也收掉，改用 kicker、标题、导语三层；细线代替色块（tag 边框、卡片描边、chrome 中缝线）；底色为主题底色 95% + 强调色 5% 的柔和调和。每页第一条线（`cm-md-page-start`）统一留出页顶安全区给 chrome，且整页只算一次：多行页头块只有第一行承担安全区，其余字段行零高度，不再出现四行块叠出三百多像素空白；内容页顶部对齐，只有 cover / section / closing / quote 这类 hero 页垂直居中。cover 改为杂志封面式左对齐、h1 主标题 + h2 副标题 + 首段导语，Notion 主题下换成无衬线居中封面。
 
 随后的精细化调整（同一版内）：放映基准字号改为随画面宽度缩放（`clamp(17px, 1.35vw, 26px)`，1080p 下正文 26px、内容标题 ≈109px、封面主标题 ≈177px），导出纸面基线同步提到 24px；kicker 用等宽小字、0.3em 字距、压淡，导语 1.25em 并压到次要色；kpi 改成模板 stat-card 的三件式（细线、大数字、说明）；衬线/等宽字体栈补上中文字族（Songti SC / 思源宋体 / 宋体），否则中文标题会掉进 Georgia 兜底；列表符号改强调色，正文加粗借强调色，行内代码去边框，代码块折行不横向滚动，表头用一根强调色粗线代替全网格，图片限制高度不撑破一页；放映与导出行高统一 1.7，同一份稿子在屏幕与纸上的换行位置一致；分页符残留的横线在放映时不再画出来；页内 `slide-css` 的优先级提到 `#editor` 层级，能压过版式自带的容器级规则；容器级居中版式里的指令行改为不占位，避免安全区被 flex 当成一项内容把整页推偏。字体变量从 `#editor` 挪到 `:root`，chrome 的 fixed 元素才继承得到（原先只能拿到 Georgia 兜底）。
 
@@ -85,11 +85,11 @@ meta: 2026-11 · 内部分享
 | `steps` | process.steps | 步骤条：列表项横排，步骤名包圆号 |
 | `matrix` | product.matrix | 卡片矩阵：列表项变卡片网格 |
 | `two-col` | comparison.two-column | 双栏：放映整页分两栏；导出退化两列并排 |
-| `figure` | visual.figure | 图表独立页：Mermaid / SVG / 图片独占一屏，标题退成小注 |
+| `figure` | visual.figure | 图表独立页：标题与内容页同档，Mermaid / SVG / 图片占画面约七成并居中 |
 | `quote` | — | 引言：引用居中放大，指令行后紧跟的首个引用行加大引号 |
 | `closing` | closing.summary | 收束：整体居中压淡，清单换 ▸ 前缀 |
 
-标准模板在 `resources/templates/slides.md`，示例文档 `resources/demo/slides-demo.md` 每种版式一页，另有一页不写版式的默认文章页，在文件面板点开即可放映。
+标准模板在 `resources/templates/slides.md`，示例文档 `resources/demo/slides-demo.md` 每种版式一页，另有一页不写版式的默认文章页，在文件面板点开即可放映。完整的页头字段、版式约定、主题令牌与导出差异见 [slides.md](slides.md)。
 
 ### 架构：孤岛模块，最小化上游冲突面
 
@@ -105,6 +105,10 @@ meta: 2026-11 · 内部分享
 - 页内 CSS 经属性白名单清洗（`scopeSlideCSS`：拒 `position: absolute/fixed`、`z-index`、伪协议 URL；`@media`/`@keyframes` 递归；括号不配平整段丢弃），选择器前缀锁定到当前页。
 - 页面脚本跑在 `sandbox="allow-scripts"` 的 blob iframe 里（无 allow-same-origin，opaque origin，拿不到父文档与 localStorage）——「不碰编辑器」是结构保证。翻页重载 iframe 即全量清理（定时器/监听器/闭包一次清零）；脚本只能经 postMessage 桥调 `slide.setClass` / `slide.setVar` / `slide.setTimeout` / `slide.requestAnimationFrame`，落点记录在案、离场回滚。
 - 用 blob URL 而非 srcdoc：渲染进程 CSP 是 `default-src 'self'`，srcdoc 继承父 CSP 会被拦；blob URL 只需 CSP 放行 `frame-src blob:`，应用自身的 script-src 依然不许内联。
+
+### 顺手修复：图表页只显示标题
+
+放映规则按「不是当前页就藏」工作，而 Mermaid、图片、表格是 `.cm-lineWrapping` 里的块级 widget，本身没有页码类，会被一起藏掉，图页只剩标题和导语。现在按文档顺序把前一条带页码的行的类补给它；放映和导出量页高共用同一套补类逻辑，图页的垂直居中也能把图算进去。
 
 ### 顺手修复：放映走到中段就「凭空到顶」
 
@@ -141,7 +145,7 @@ Android 的 `versionName` 由 `android/app/build.gradle` 从 `package.json` 读�
 
 - `src/renderer/editor/core.ts`（+1 行扩展注册）
 - `src/renderer/main.ts`（+1 行副作用导入；`startSlideshow` 调用处补 `await`）
-- `src/renderer/slideshow.ts`（放映修复：数页码前渲染整篇、散场还原、起手闸；空白页过滤）
+- `src/renderer/slideshow.ts`（放映修复：数页码前渲染整篇、散场还原、起手闸；空白页过滤；块级 widget 补页码）
 - `src/renderer/index.html`（CSP 补 `frame-src blob:`）
 - `scripts/verify-features.mjs`（版式夹具改为页头块写法；新增四组断言：版式类落行、指令块不进正文、页标题与 kicker 属性、标题后首段成为导语）
 - `scripts/verify-workdir.mjs`（Windows 下按 profile 路径结束 Electron，避免缓存目录被占用）

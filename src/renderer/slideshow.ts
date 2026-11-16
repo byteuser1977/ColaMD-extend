@@ -90,6 +90,31 @@ export function deckPages(): number[] {
   return root ? pageNumbers(root) : []
 }
 
+/**
+ * 块级 widget（Mermaid、图片、公式）在 CM6 里是 `.cm-lineWrapping` 这类
+ * 直接子节点，不是 `.cm-line`，拿不到页码类。放映规则按「不是当前页就藏」
+ * 工作，它们会被一起藏掉——图页只剩标题和导语。这里按文档顺序把前一条
+ * 带页码的行的类补给它，让整块 widget 跟着所属页一起显示。
+ */
+export function tagBlockWidgets(root: Element): void {
+  // 先清掉上一次贴的类，文档改过、页码挪过之后不会拿旧页号继续往下贴。
+  for (const child of Array.from(root.children)) {
+    if (child.classList.contains('cm-line')) continue
+    for (const cls of Array.from(child.classList)) {
+      if (cls.startsWith(PAGE_CLASS_PREFIX)) child.classList.remove(cls)
+    }
+  }
+  let page: string | null = null
+  for (const child of Array.from(root.children)) {
+    const own = Array.from(child.classList).find(cls => cls.startsWith(PAGE_CLASS_PREFIX))
+    if (own) {
+      page = own
+      continue
+    }
+    if (page) child.classList.add(page)
+  }
+}
+
 function firstLineOf(page: number): Element | null {
   const root = documentRoot()
   if (!root) return null
@@ -237,6 +262,7 @@ async function beginSlideshow(next: SlideshowOptions = {}): Promise<boolean> {
   // 与导出路径 2026-09-26 修的是同一个病，见 print-layout 的头注释）。
   // 整篇渲染保持到散场：跳到远处页（End/Home）时那些行也得在 DOM 里。
   await renderWholeDocument()
+  tagBlockWidgets(root)
   const deck = pageNumbers(root)
   if (deck.length === 0) {
     restoreViewport()

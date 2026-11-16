@@ -502,16 +502,14 @@ body.slides-printing .cm-md-li {
 body.presenting #editor[data-slide-layout='cover'] .cm-md-slide-directive,
 body.presenting #editor[data-slide-layout='section'] .cm-md-slide-directive,
 body.presenting #editor[data-slide-layout='closing'] .cm-md-slide-directive,
-body.presenting #editor[data-slide-layout='two-col'] .cm-md-slide-directive,
-body.presenting #editor[data-slide-layout='figure'] .cm-md-slide-directive {
+body.presenting #editor[data-slide-layout='two-col'] .cm-md-slide-directive {
   display: none;
 }
 
 body.presenting #editor[data-slide-layout='cover'] .cm-md-page-start,
 body.presenting #editor[data-slide-layout='section'] .cm-md-page-start,
 body.presenting #editor[data-slide-layout='closing'] .cm-md-page-start,
-body.presenting #editor[data-slide-layout='two-col'] .cm-md-page-start,
-body.presenting #editor[data-slide-layout='figure'] .cm-md-page-start {
+body.presenting #editor[data-slide-layout='two-col'] .cm-md-page-start {
   padding-top: 0;
 }
 
@@ -792,71 +790,45 @@ body.slides-printing .cm-md-slide-two-col:not(.cm-md-page-start) {
 
 /* ════ figure · 图表 / 图片独立页 ════
  *
- * 约定：标题 + 一张 Mermaid / SVG / 图片，标题退成小注，图独占一屏。
- * 放映时整页 flex 居中；导出时仍是块流，靠 hero 居中把图放到纸面中间。 */
-body.presenting #editor[data-slide-layout='figure'] .cm-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 92vh;
-  text-align: center;
-}
-
-body.presenting #editor[data-slide-layout='figure'] .cm-md-page-title {
-  font-size: 2em;
-  line-height: 1.2;
-  max-width: 18em;
-  margin-bottom: 0.7em;
-  animation: slide-rise 0.6s ease-out both;
-}
-
+ * 约定：标题与 kpi 页同一档（标准 4.2em、左对齐），图占画面约七成并居中，
+ * 不再铺满整屏；最高 66vh，避免压到页脚。 */
 body.presenting #editor[data-slide-layout='figure'] .cm-md-page-lead {
-  font-size: 0.95em;
-  max-width: 70%;
-  margin-bottom: 0.8em;
+  margin-bottom: 0.6em;
 }
 
 body.presenting #editor[data-slide-layout='figure'] .cm-md-mermaid,
 body.presenting #editor[data-slide-layout='figure'] .cm-md-image {
-  max-width: 92%;
+  width: 70%;
+  max-width: 70%;
+  padding: 0;
   margin: 0 auto;
 }
 
 body.presenting #editor[data-slide-layout='figure'] .cm-md-mermaid svg,
 body.presenting #editor[data-slide-layout='figure'] .cm-md-image img {
+  width: 100%;
   max-width: 100%;
-  max-height: 70vh;
-  width: auto;
+  max-height: 66vh;
   height: auto;
 }
 
-body.slides-printing .cm-md-slide-figure {
-  text-align: center;
-}
-
-body.slides-printing .cm-md-slide-figure.cm-md-page-title {
-  font-size: 2em;
-  margin-bottom: 0.7em;
-}
-
+/* 导出：标题/导语走标准页角色，图收在 52vh，保证一页放得下。 */
 body.slides-printing .cm-md-slide-figure.cm-md-page-lead {
-  font-size: 0.95em;
-  max-width: 70%;
-  margin-inline: auto;
-  margin-bottom: 0.8em;
+  margin-bottom: 0.6em;
 }
 
 body.slides-printing .cm-md-slide-figure .cm-md-mermaid,
 body.slides-printing .cm-md-slide-figure .cm-md-image {
-  max-width: 92%;
+  width: 70%;
+  max-width: 70%;
+  padding: 0;
   margin: 0 auto;
 }
 
 body.slides-printing .cm-md-slide-figure .cm-md-mermaid svg,
 body.slides-printing .cm-md-slide-figure .cm-md-image img {
-  max-height: 70vh;
-  width: auto;
+  width: 100%;
+  max-height: 52vh;
   height: auto;
 }
 

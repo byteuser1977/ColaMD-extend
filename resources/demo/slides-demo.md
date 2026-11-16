@@ -128,7 +128,7 @@ chapter: Act I · 图表
 
 ## 图表独立页
 
-Mermaid、SVG 与普通图片都走这一版式，图独占一屏，标题退成小注。
+Mermaid、SVG 与普通图片都走这一版式，标题与内容页同档，图占画面约七成并居中。
 
 ```mermaid
 flowchart LR

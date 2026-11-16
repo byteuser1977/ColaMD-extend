@@ -13,7 +13,7 @@
 
 import { PAGE_CLASS_PREFIX, PAGE_START_CLASS } from './editor/live-preview'
 import { getSlideDirectives } from './editor/slide-directives'
-import { deckPages } from './slideshow'
+import { deckPages, tagBlockWidgets } from './slideshow'
 import { renderWholeDocument, restoreViewport } from './print-layout'
 
 /** 16:9, the shape a projector expects and the shape the deck fills. */
@@ -127,6 +127,9 @@ export async function enterPrintLayout(): Promise<SlidesSheet | false> {
   // 摊平之后还要等 CodeMirror 把整篇渲染出来。页数和页高都要量在整篇上：
   // 不等这一步，长文档只有视口里那几页，后面的页根本不在 DOM 里（2026-09-26 报的）。
   await renderWholeDocument()
+  // Mermaid / 图片 / 表格是块级 widget，包在 .cm-lineWrapping 里，本身没有
+  // 页码类；不补类的话，量页高时会把它漏掉，图页的垂直居中会算错。
+  tagBlockWidgets(root)
 
   const deck = deckPages()
   if (deck.length === 0) {
@@ -147,15 +150,14 @@ export async function enterPrintLayout(): Promise<SlidesSheet | false> {
     const ownMargin = parseFloat(getComputedStyle(first).marginTop)
     const owned = last.getBoundingClientRect().bottom - first.getBoundingClientRect().top
     const used = owned + (Number.isFinite(ownMargin) ? ownMargin : 0)
-    // 封面、章节、收束、金句、图表是 hero 页，内容垂直居中；其余内容页顶部对齐，
-    // 不再把标题推到半空中——这是「一页一屏」的关键。
+    // 封面、章节、收束、金句是 hero 页，内容垂直居中；其余内容页（含图表页）
+    // 顶部对齐，标题和 kpi 页保持同一位置。
     const layout = getSlideDirectives().get(page)?.layout
     const hero =
       layout === 'cover' ||
       layout === 'section' ||
       layout === 'closing' ||
-      layout === 'quote' ||
-      layout === 'figure'
+      layout === 'quote'
     const above = hero ? Math.max(0, Math.floor((PAGE_HEIGHT_PX - SAFETY_PX - used) / 2)) : 0
     const target = `.cm-content > .${PAGE_CLASS_PREFIX}${page}.${PAGE_START_CLASS}`
     if (order > 0) rules.push(`body.${PRINT_CLASS} #editor ${target} { break-before: page; }`)
