@@ -121,7 +121,7 @@ function exitPresentation(): void {
 function applyCurrentPage(): void {
   const dirs = getSlideDirectives().get(currentPage)
   if (pageStyle) {
-    const css = (dirs?.css ?? []).map((block) => scopeSlideCSS(block, `${PAGE_CLASS_PREFIX}${currentPage}`, `body.${PRESENTING_CLASS}`))
+    const css = (dirs?.css ?? []).map((block) => scopeSlideCSS(block, `${PAGE_CLASS_PREFIX}${currentPage}`, `body.${PRESENTING_CLASS} #editor`))
     pageStyle.textContent = css.join('\n')
   }
   syncChrome()
@@ -354,7 +354,7 @@ function mountPrintCss(): void {
   const rules: string[] = []
   for (const [page, dirs] of getSlideDirectives()) {
     for (const block of dirs.css) {
-      rules.push(scopeSlideCSS(block, `${PAGE_CLASS_PREFIX}${page}`, `body.${PRINT_CLASS}`))
+      rules.push(scopeSlideCSS(block, `${PAGE_CLASS_PREFIX}${page}`, `body.${PRINT_CLASS} #editor`))
     }
   }
   printStyle = document.createElement('style')

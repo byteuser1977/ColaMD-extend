@@ -194,11 +194,16 @@ body.presenting:has(#editor[data-slide-layout='cover']) .slide-ghost {
   opacity: 0;
 }
 
-/* ─── 版式字体族与全出血 ──────────────────────────────────────────── */
-body.presenting #editor,
-body.slides-printing #editor {
-  --slide-serif: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', Georgia, serif;
-  --slide-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+/* ─── 版式字体族与全出血 ────────────────────────────────────────────
+ * 衬线栈把中文衬线排在前面（宋体系）：杂志感来自中文衬线的骨架，只在
+ * 拉丁字母上找 Georgia 是不够的。等宽栈同理，中文等宽缺字时退回系统字体。 */
+/* 变量挂在 body 上而不是 #editor 上：chrome 的 fixed 元素是 body 的直接
+ * 子节点，不在 #editor 里面，挂在 #editor 上它们只能拿到兜底的 Georgia。 */
+body.presenting,
+body.slides-printing {
+  --slide-serif: 'Songti SC', 'Noto Serif CJK SC', 'Noto Serif SC', 'Source Han Serif SC',
+    'STSong', 'SimSun', Georgia, serif;
+  --slide-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, 'Menlo', monospace;
 }
 
 /* 全出血：正文铺满纸面，只留 6vw 边距——幻灯片不是文档，不要阅读列宽。 */
@@ -207,6 +212,13 @@ body.presenting #editor .cm-content {
   max-width: none !important;
   margin: 0 !important;
   padding: 0 6vw !important;
+}
+
+/* 放映的基准字号：PPT 的字号要跟画面走，不能跟主题的阅读字号走。
+ * 1080p 全屏 ≈ 26px 正文 → h1 ≈ 62px、cover 主标题 ≈ 83px；窄窗口退到 17px。
+ * 下面的字号阶梯全部是相对它的 em，一处调整整副牌等比缩放。 */
+body.presenting #editor .cm-content {
+  font-size: clamp(17px, 1.35vw, 26px);
 }
 
 /* ─── 通用字号阶梯（全出血后的 PPT 惯例）────────────────────────────
@@ -237,12 +249,26 @@ body.slides-printing .cm-md-atxheading2 {
 
 body.presenting .cm-md-atxheading3,
 body.slides-printing .cm-md-atxheading3 {
-  font-size: 1.25em;
+  font-family: var(--slide-serif, Georgia, serif);
+  font-size: 1.28em;
+  font-weight: 600;
+  line-height: 1.4;
   border-bottom: none;
   padding-top: 0;
+  margin-bottom: 0.35em;
 }
 
-body.presenting #editor,
+body.presenting .cm-md-atxheading4,
+body.slides-printing .cm-md-atxheading4 {
+  font-size: 1.08em;
+  font-weight: 600;
+  border-bottom: none;
+  padding-top: 0;
+  margin-bottom: 0.3em;
+}
+
+/* 行高放映与导出同值：不一致会让同一份稿子在屏幕上和纸上换行位置不同。 */
+body.presenting #editor .cm-content,
 body.slides-printing #editor .cm-content {
   line-height: 1.7;
 }
@@ -251,6 +277,7 @@ body.presenting .cm-md-li,
 body.slides-printing .cm-md-li {
   margin-top: 0.45em;
   margin-bottom: 0.45em;
+  padding-left: 0.3em;
 }
 
 @keyframes slide-rise {
@@ -262,6 +289,24 @@ body.slides-printing .cm-md-li {
     opacity: 1;
     transform: none;
   }
+}
+
+/* 容器级版式（整页 flex 居中或分栏）里，页首安全区要交还给布局本身：
+ * 指令行改成真正不占位（display:none），page-start 的上内距归零——否则
+ * 那 96px 会被 flex 当成一项内容，整页内容被推得偏下。这些页的 chrome
+ * 本来就是淡出的，不需要安全区。 */
+body.presenting #editor[data-slide-layout='cover'] .cm-md-slide-directive,
+body.presenting #editor[data-slide-layout='section'] .cm-md-slide-directive,
+body.presenting #editor[data-slide-layout='closing'] .cm-md-slide-directive,
+body.presenting #editor[data-slide-layout='two-col'] .cm-md-slide-directive {
+  display: none;
+}
+
+body.presenting #editor[data-slide-layout='cover'] .cm-md-page-start,
+body.presenting #editor[data-slide-layout='section'] .cm-md-page-start,
+body.presenting #editor[data-slide-layout='closing'] .cm-md-page-start,
+body.presenting #editor[data-slide-layout='two-col'] .cm-md-page-start {
+  padding-top: 0;
 }
 
 /* ════ cover · 主视觉封面（dsh-ppt: cover.hero）════
@@ -623,4 +668,101 @@ body.slides-printing .cm-md-slide-closing.cm-md-atxheading1,
 body.slides-printing .cm-md-slide-closing.cm-md-atxheading2 {
   border-bottom: none;
   padding-top: 84px;
+}
+
+/* ════ 内容元素：列表 / 强调 / 代码 / 引用 / 表格 / 图片 ════
+ *
+ * 这些元素在幻灯片里是「顺带出现」的，画法要按 PPT 的读法走：符号收进强调色、
+ * 边框收掉、字号按元素性质缩放。版式自己的专用画法（kpi 的大数字、matrix 的
+ * 卡名、closing 的 ▸）选择器多一个 cm-md-slide-* 类，权重更高，不受这里影响。 */
+
+/* 列表符号：强调色、稍收紧，与文字之间留一点气。 */
+body.presenting .cm-md-listmark,
+body.slides-printing .cm-md-listmark {
+  color: var(--pele-accent);
+  font-weight: 600;
+  padding-right: 0.15em;
+}
+
+/* 正文里的加粗与斜体都借强调色与衬线：演讲时观众一眼抓到关键词。 */
+body.presenting .cm-md-strong,
+body.slides-printing .cm-md-strong {
+  color: var(--pele-accent);
+}
+
+body.presenting .cm-md-em,
+body.slides-printing .cm-md-em {
+  font-family: var(--slide-serif, Georgia, serif);
+}
+
+/* 行内代码：缩到正文的 0.86，去掉文档式边框，用极淡的同色底。 */
+body.presenting .cm-md-inlinecode,
+body.slides-printing .cm-md-inlinecode {
+  font-size: 0.86em;
+  padding: 0.08em 0.34em;
+  border: none;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
+
+/* 代码块：字号再小一档，内距放宽，圆角收边；放映一律折行，横向滚动在
+ * 幻灯片上等于内容被切掉。 */
+body.presenting .cm-md-codeblock,
+body.slides-printing .cm-md-codeblock {
+  font-size: 0.82em;
+  line-height: 1.55;
+  padding: 1em 1.1em;
+  border-radius: var(--pele-radius, 8px);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* 引用（非 quote 版式）：一根强调色细线，字号略降，与被引正文拉开层次。 */
+body.presenting .cm-md-blockquote,
+body.slides-printing .cm-md-blockquote {
+  border-left: 2px solid var(--pele-accent);
+  padding-left: 1em;
+  font-size: 1.02em;
+  color: var(--text-secondary);
+}
+
+/* 表格：表头一根强调色粗线定标，行线压到最细，内距放宽——PPT 的表格
+ * 读的是列，不是网格。 */
+body.presenting .cm-md-table-widget table,
+body.slides-printing .cm-md-table-widget table {
+  font-size: 0.88em;
+  border-collapse: collapse;
+}
+
+body.presenting .cm-md-table-widget th,
+body.slides-printing .cm-md-table-widget th {
+  font-family: var(--slide-serif, Georgia, serif);
+  padding: 0.5em 0.7em;
+  border-bottom: 2px solid var(--pele-accent);
+}
+
+body.presenting .cm-md-table-widget td,
+body.slides-printing .cm-md-table-widget td {
+  padding: 0.45em 0.7em;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* 图片：一张图不该撑破一页。放映按视口高度收；打印的纸高限制在
+ * slides-export.ts 的 layoutRules 里（那里知道纸尺寸，vh 在纸上没有意义）。 */
+body.presenting #editor img {
+  max-height: 62vh;
+}
+
+body.presenting #editor img,
+body.slides-printing #editor img {
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: var(--pele-radius, 8px);
+}
+
+/* 分页符残留：分隔线是分页边界，不是正文的一行，放映时不画。不带 #editor
+ * 是刻意的——页内 slide-css 想把某条线当进度条用时，要压得过这一条。
+ * 打印侧另有一条带 !important 的隐藏规则（slides-export.ts）。 */
+body.presenting .cm-md-hr {
+  display: none;
 }

@@ -10,7 +10,9 @@
 
 一篇文档切完 `---` 之后，每一页可以声明一种版式：分隔线后第一行写 `<!-- slide: 版式名 -->`。这份示例每种版式一页，放映（⌘⇧P）看效果。
 
-内置版式十种：cover（封面）、section（章节）、agenda（议程）、kpi（关键数字）、timeline（时间轴）、steps（步骤）、matrix（卡片矩阵）、two-col（双栏）、quote（引言）、closing（收束）。页内还可以写 `<!-- slide-css -->` 微调样式、`<!-- slide-js -->` 挂放映脚本，格式见项目 README 的幻灯片版式一节。
+文件顶部那几行 `<!-- deck-*: … -->` 是 deck 级公共元素：logo、品牌名、标题、副标题，放映与导出时印在每页的固定位置，cover/section/closing 幕封页自动隐藏。
+
+内置版式十种：cover（封面）、section（章节）、agenda（议程）、kpi（关键数字）、timeline（时间轴）、steps（步骤）、matrix（卡片矩阵）、two-col（双栏）、quote（引言）、closing（收束）。页内还可以写 `<!-- slide-css -->` 微调本页样式、`<!-- slide-js -->` 挂放映脚本（跑在沙箱里，离场即回收），示例见「页内样式微调」与「会动的章节条」两页。
 
 ---
 
@@ -20,7 +22,7 @@
 
 ## cover · 主视觉封面
 
-标题居中放大，副标题压淡，底部强调色条
+标题放大，副标题压淡，标题下一段强调色短杠
 
 ---
 
@@ -76,12 +78,48 @@
 
 <!-- slide: matrix -->
 
-## 版式家族
+## 页内样式微调
 
-- **数据类** kpi、timeline、steps
-- **结构类** cover、section、agenda、closing
-- **对照类** two-col、matrix
-- **引用类** quote
+- **slide-css** 样式只作用于本页
+- **白名单** 拒绝绝对定位与伪协议
+- **随主题** 变量照常生效
+
+<!-- slide-css
+.cm-md-slide-matrix.cm-md-li {
+  background: color-mix(in srgb, var(--pele-accent) 7%, transparent);
+  border-color: var(--pele-accent);
+}
+-->
+
+---
+
+<!-- slide: section -->
+
+## 会动的章节条
+
+脚本每 0.7 秒推进一步 CSS 变量，下面的横线就自己长满整页——`slide.setVar` 与 `slide.setClass` 是放映脚本影响页面的仅有的两个出口，脚本本体跑在沙箱 iframe 里，离场即回收。
+
+<!-- slide-css
+.cm-md-hr {
+  display: block;
+  width: calc(var(--slide-demo, 0) * 1%);
+  height: 4px;
+  font-size: 0;
+  color: transparent;
+  background: var(--pele-accent);
+  margin: 2.5em 0 0;
+  border: none;
+  transition: width 1.1s ease;
+}
+-->
+
+<!-- slide-js
+[15, 40, 70, 100].forEach(function (w, i) {
+  slide.setTimeout(function () { slide.setVar('slide-demo', String(w)); }, 700 * (i + 1));
+});
+-->
+
+***
 
 ---
 

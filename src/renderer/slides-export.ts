@@ -28,7 +28,7 @@ const PAGE_HEIGHT_PX = Math.round(PAGE_HEIGHT_INCHES * PX_PER_INCH)
  *  让 16:9 纸上的正文读起来是「幻灯片正文」而不是「文档正文」；标题阶梯见
  *  themes/slides.css。页首上方的安全区（chrome 的高度）由 page-start 的
  *  padding-top 承担，也写在 slides.css。 */
-const FONT_SIZE_PX = 22
+const FONT_SIZE_PX = 24
 /** 纸面左右边距：6vw 是放映侧的值，打印里纸宽固定，直接给像素。 */
 const PAGE_MARGIN_PX = 77
 /** A page that fills its sheet exactly is a page that spills over it: leave a hair. */
@@ -90,7 +90,7 @@ body.${PRINT_CLASS} #editor .cm-content {
   margin: 0 !important;
   padding: 0 ${PAGE_MARGIN_PX}px !important;
   font-size: ${FONT_SIZE_PX}px !important;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 /* 分隔线是分页边界，不是正文里的一行。 */
 body.${PRINT_CLASS} #editor .cm-line.cm-md-hr { display: none !important; }
