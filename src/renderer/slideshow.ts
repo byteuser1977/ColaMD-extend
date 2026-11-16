@@ -74,6 +74,11 @@ function pageNumbers(root: Element): number[] {
     const page = pageOfLine(line)
     if (page === null) continue
     if (line.classList.contains('cm-md-hr')) continue
+    // 只有空行/分隔线的页不算一页；图片、Mermaid、公式这类没有文字的
+    // 可视内容仍要算，否则图页会被当成空白页跳过。
+    const text = (line.textContent ?? '').trim()
+    const visual = line.querySelector('img, svg, .cm-md-mermaid, .cm-md-image, .katex')
+    if (!text && !visual) continue
     found.add(page)
   }
   return [...found].sort((a, b) => a - b)

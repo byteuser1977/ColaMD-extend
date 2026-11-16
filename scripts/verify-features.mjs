@@ -121,18 +121,26 @@ function fixture() {
     // 查找跳转的靶子：这一条在文档最末尾，一屏高的视口里绝对看不见。
     'NEEL 后半段的锚点。',
     '',
-    // 幻灯片版式夹具：deck 级公共元素指令 + 一页声明 cover 版式 + 页内 slide-css。
-    // 断言钉住：版式类落到该页每一行、指令注释（含 deck-*）不进正文
+    // 幻灯片版式夹具：deck 块 + 一页声明 cover 版式与页级文案 + 页内 slide-css。
+    // 断言钉住：版式类落到该页每一行、多行指令块整块不进正文、页标题/导语角色成立
     // （见 checkSlideLayouts）。
     '---',
     '',
-    '<!-- deck-brand: ColaMD 验收 -->',
-    '<!-- deck-title: 版式验收 -->',
-    '<!-- deck-meta: 2026-11 -->',
+    '<!-- deck',
+    'brand: ColaMD 验收',
+    'title: 版式验收',
+    'meta: 2026-11',
+    '-->',
     '',
-    '<!-- slide: cover -->',
+    '<!-- slide: cover',
+    'kicker: 验收用',
+    'label: 版式验收',
+    'chapter: 验收',
+    '-->',
     '',
     '# 版式验收封面',
+    '',
+    '封面导语。',
     '',
     '<!-- slide-css',
     'h1 { letter-spacing: 0.1em; }',
@@ -608,26 +616,29 @@ function reportChecks() {
   if (failed.length) process.exitCode = 1
 }
 
-/** 幻灯片版式验收：版式类要落到声明页的每一行，指令注释一行也不进正文。 */
+/** 幻灯片版式验收：版式类要落到声明页的每一行，多行指令块一行也不进正文。 */
 async function checkSlideLayouts(renderer) {
-  const got = JSON.parse(await evaluate(renderer, `(() => {
+  const got = JSON.parse(await evaluate(renderer, `JSON.stringify((() => {
     const content = document.querySelector('#editor .cm-content')
     const coverLines = content.querySelectorAll('.cm-md-slide-cover')
     const directiveLines = content.querySelectorAll('.cm-md-slide-directive')
     // 指令行的 textContent 本来就含指令原文；要钉的是「别的行」不出现指令源码。
     const leak = [...content.querySelectorAll('.cm-line')]
       .some((el) => !el.classList.contains('cm-md-slide-directive')
-        && /slide:|slide-css|slide-js|deck-(logo|brand|title|meta)/.test(el.textContent))
+        && /slide:|slide-css|slide-js|deck|kicker:|chapter:|label:/.test(el.textContent))
+    const title = content.querySelector('.cm-md-page-title')
     return {
       cover: coverLines.length,
       directive: directiveLines.length,
-      deckLines: [...directiveLines].filter((el) => el.textContent.includes('deck-')).length,
+      title: title ? title.getAttribute('data-slide-kicker') : null,
+      lead: content.querySelectorAll('.cm-md-page-lead').length,
       leak
     }
-  })()`))
+  })())`))
   check('幻灯片版式类落到整页', got.cover >= 4, JSON.stringify(got))
-  check('幻灯片指令不进正文', got.directive >= 5 && !got.leak, JSON.stringify(got))
-  check('deck 指令按注释行处理', got.deckLines >= 3, JSON.stringify(got))
+  check('幻灯片指令块整块不进正文', got.directive >= 11 && !got.leak, JSON.stringify(got))
+  check('页标题与 kicker 属性成立', got.title === '验收用', JSON.stringify(got))
+  check('标题后首段成为导语', got.lead >= 1, JSON.stringify(got))
 }
 
 /** 复用当前窗口逐主题截图取色，检查选区是否真的画在引用和代码背景之上。 */
@@ -2163,7 +2174,13 @@ function main() {
     } finally {
       stopVerifyApp(udd)
       await sleep(300)
-      rmSync(WORK, { recursive: true, force: true })
+      try {
+        // Windows 上 Electron 的缓存文件可能晚一步释放；清理失败不该把断言结果
+        // 盖成一条 ENOTEMPTY，留给下一次开跑时再擦。
+        rmSync(WORK, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 })
+      } catch (error) {
+        console.warn(`! 清理验收缓存失败（不影响断言结果）：${error.message}`)
+      }
     }
   })()
 }

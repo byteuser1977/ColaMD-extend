@@ -15,8 +15,13 @@
 
 import { Decoration, EditorView, type DecorationSet } from '@codemirror/view'
 import { RangeSetBuilder, StateField, type EditorState, type Extension } from '@codemirror/state'
-import { scanSlideDirectives, publishSlideDirectives, publishDeckChrome } from './slide-directives'
-import { decorationsRefreshEffect } from './live-preview'
+import {
+  scanSlideDirectives,
+  publishSlideDirectives,
+  publishDeckChrome,
+  publishDocumentBase,
+} from './slide-directives'
+import { decorationsRefreshEffect, documentFileUrlField } from './live-preview'
 
 export const SLIDE_CLASS_PREFIX = 'cm-md-slide-'
 export const DIRECTIVE_CLASS = 'cm-md-slide-directive'
@@ -26,15 +31,28 @@ function layoutClass(name: string): string | null {
   return /^[a-z][a-z0-9-]*$/.test(name) ? `${SLIDE_CLASS_PREFIX}${name}` : null
 }
 
+type LineSpec = {
+  classes: Set<string>
+  attributes: Record<string, string>
+}
+
 function buildDecorations(state: EditorState): DecorationSet {
   const scan = scanSlideDirectives(state)
   // 快照给放映/导出层读：field 重算的时机就是指令变化的时机。
   publishSlideDirectives(scan.directives)
   publishDeckChrome(scan.deck, scan.linesByPage.size)
+  publishDocumentBase(state.field(documentFileUrlField, false) ?? null)
 
-  const builder = new RangeSetBuilder<Decoration>()
-  type Pending = { from: number; cls: string }
-  const pending: Pending[] = []
+  const specs = new Map<number, LineSpec>()
+  const add = (from: number, cls?: string, attrs?: Record<string, string>): void => {
+    let spec = specs.get(from)
+    if (!spec) {
+      spec = { classes: new Set(), attributes: {} }
+      specs.set(from, spec)
+    }
+    if (cls) spec.classes.add(cls)
+    if (attrs) Object.assign(spec.attributes, attrs)
+  }
 
   for (const [page, dirs] of scan.directives) {
     if (!dirs.layout) continue
@@ -42,15 +60,38 @@ function buildDecorations(state: EditorState): DecorationSet {
     if (!cls) continue
     const lines = scan.linesByPage.get(page)
     if (!lines) continue
-    for (const n of lines) pending.push({ from: state.doc.line(n).from, cls })
+    for (const n of lines) add(state.doc.line(n).from, cls)
   }
-  for (const n of scan.directiveLines) {
-    pending.push({ from: state.doc.line(n).from, cls: DIRECTIVE_CLASS })
+  // 没写 slide 块的页走默认文章版式：标题收小、正文压紧，一页装更多字。
+  for (const [page, lines] of scan.linesByPage) {
+    if (scan.directives.get(page)?.layout) continue
+    for (const n of lines) add(state.doc.line(n).from, 'cm-md-page-default')
   }
-  // RangeSetBuilder 只吃升序：两种来源合在一起排一遍。
-  pending.sort((a, b) => a.from - b.from)
-  for (const item of pending) {
-    builder.add(item.from, item.from, Decoration.line({ class: item.cls }))
+  for (const n of scan.directiveLines) add(state.doc.line(n).from, DIRECTIVE_CLASS)
+
+  // 页角色：同一行同时是页首、版式行和标题行时，类名并成一条行装饰。
+  for (const [page, role] of scan.roles) {
+    const kicker = scan.directives.get(page)?.kicker?.replace(/\s+/g, ' ').trim()
+    for (const n of role.titleLines) {
+      const from = state.doc.line(n).from
+      add(from, 'cm-md-page-title', kicker ? { 'data-slide-kicker': kicker } : undefined)
+    }
+    for (const n of role.leadLines) add(state.doc.line(n).from, 'cm-md-page-lead')
+    for (const n of role.kickerLines) add(state.doc.line(n).from, 'cm-md-page-kicker')
+  }
+
+  const builder = new RangeSetBuilder<Decoration>()
+  // RangeSetBuilder 只吃升序：所有来源合在一起排一遍。
+  const pending = [...specs.entries()].sort((a, b) => a[0] - b[0])
+  for (const [from, spec] of pending) {
+    builder.add(
+      from,
+      from,
+      Decoration.line({
+        class: [...spec.classes].join(' '),
+        attributes: Object.keys(spec.attributes).length > 0 ? spec.attributes : undefined,
+      }),
+    )
   }
   return builder.finish()
 }

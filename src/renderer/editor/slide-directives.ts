@@ -1,9 +1,11 @@
 // 幻灯片页面指令：解析层（纯逻辑，无 DOM）。
 //
 // 一页里的三件事都写在 HTML 注释里（CommonMark HTMLBlock，渲染时本来就不显示）：
-//   <!-- slide: cover -->          版式声明，仅页首生效（该页第一个非空行）
-//   <!-- slide-css … -->           页内 CSS 微调，页内任意位置，可多条
-//   <!-- slide-js … -->            页内脚本，放映时进沙箱执行
+//   <!-- slide: cover
+//        kicker: … label: … chapter: … -->   页头块，仅页首生效（该页第一个真实内容之前）
+//   <!-- slide-css … -->                      页内 CSS 微调，页内任意位置，可多条
+//   <!-- slide-js … -->                       页内脚本，放映时进沙箱执行
+// 旧的单行 `<!-- slide: cover -->` 与 `<!-- slide-kicker: … -->` 继续兼容。
 //
 // 为什么不并入 live-preview 的 collectPages：分页类是上游装饰，本模块独立扫描同一棵
 // 语法树、自己打版式类，上游合并时互不相扰（见 .trae/documents/slides-layout-system.md
@@ -25,6 +27,22 @@ export type PageDirectives = {
   layout?: string
   css: string[]
   js: string[]
+  /** 标题上方的等宽小字。指令优先，没写时取标题前那段文字。 */
+  kicker?: string
+  /** chrome 左侧短标签，覆盖 deck-title。 */
+  label?: string
+  /** chrome 右侧章节文案，覆盖 deck-meta。 */
+  chapter?: string
+}
+
+/**
+ * 一页的结构角色，由 Markdown 本身决定：第一个标题是页标题，标题后的第一段是导语，
+ * 标题前的那段兜底当 kicker。行号给 slide-layout 挂类用，不参与快照。
+ */
+export type PageRoles = {
+  titleLines: number[]
+  leadLines: number[]
+  kickerLines: number[]
 }
 
 /**
@@ -49,11 +67,22 @@ export type SlideScan = {
   directiveLines: number[]
   /** deck 级公共元素；一条都没写就是空对象，chrome 整条不出现。 */
   deck: DeckChrome
+  /** 页角色：标题、导语、结构兜底的 kicker。 */
+  roles: Map<number, PageRoles>
 }
 
-const LAYOUT_RE = /^<!--\s*slide:\s*([a-z][a-z0-9-]*)\s*-->$/
+// 页头块：第一行声明版式，后面的 `kicker: …` 等是页级文案。
+// 单行 `<!-- slide: cover -->` 仍然走同一条正则，group 2 为空。
+const LAYOUT_RE = /^<!--\s*slide\s*:\s*([a-z][a-z0-9-]*)\b([\s\S]*?)-->$/
+// deck 块：`<-- deck` 后面必须是空白，避免和旧的 deck-logo 单行写法撞车。
+const DECK_BLOCK_RE = /^<!--\s*deck(?:\s+([\s\S]*?))?-->$/
+// 页级字段：kicker / label / chapter，单行一条。
+const PAGE_FIELD_RE = /^([a-z][a-z0-9-]*)\s*:\s*(.+)$/
+const PAGE_FIELD_KEYS = new Set(['kicker', 'label', 'chapter'])
+const DECK_FIELD_KEYS = new Set(['logo', 'brand', 'title', 'meta'])
 const CSS_RE = /^<!--\s*slide-css\b\s*([\s\S]*?)-->$/
 const JS_RE = /^<!--\s*slide-js\b\s*([\s\S]*?)-->$/
+const PAGE_KEY_RE = /^<!--\s*slide-(kicker|label|chapter)\s*:\s*([\s\S]*?)-->$/
 const DECK_RE = /^<!--\s*deck-(logo|brand|title|meta)\s*:\s*([\s\S]*?)-->$/
 
 function inRange(range: { from: number; to: number }, at: number): boolean {
@@ -97,8 +126,12 @@ function pageOfLines(state: EditorState, front: { from: number; to: number } | n
   return pageOf
 }
 
-/** 每页第一个非空行的行号；版式声明只在这里生效，写在页中间就当普通注释。 */
-function firstContentLines(state: EditorState, pageOf: number[]): Map<number, number> {
+/** 每页第一个真实内容行；注释块整体（含多行字段）都不算内容。 */
+function firstContentLines(
+  state: EditorState,
+  pageOf: number[],
+  commentLines: Set<number>,
+): Map<number, number> {
   const first = new Map<number, number>()
   for (let n = 1; n <= state.doc.lines; n++) {
     const page = pageOf[n - 1]
@@ -106,11 +139,111 @@ function firstContentLines(state: EditorState, pageOf: number[]): Map<number, nu
     // 分隔线自己不算内容：`---` 归前页，但下一页的「第一行」不该是它。
     if (state.doc.line(n).text.trim() === '') continue
     if (/^ {0,3}(?:---|\*\*\*|___)\s*$/.test(state.doc.line(n).text)) continue
-    // 注释也不算内容：deck 指令惯例写在页首，不能把同一页的 slide 声明挤下位。
-    if (/^\s*<!--/.test(state.doc.line(n).text)) continue
+    // 注释也不算内容：多行 deck/slide 块的字段行同样不算，否则它们会把
+    // 同一页稍后的 slide 声明挤成「页中注释」。
+    if (commentLines.has(n)) continue
     first.set(page, n)
   }
   return first
+}
+
+type CommentBlock = {
+  source: string
+  from: number
+  to: number
+  fromLine: number
+  toLine: number
+  page: number
+}
+
+type BlockRange = { from: number; to: number; fromLine: number; toLine: number }
+
+function lineRange(fromLine: number, toLine: number): number[] {
+  const lines: number[] = []
+  for (let n = fromLine; n <= toLine; n++) lines.push(n)
+  return lines
+}
+
+/** 列表、引用、表格里的段落不算页标题或导语。 */
+function isNestedBlock(node: SyntaxNodeRef): boolean {
+  let parent = node.node.parent
+  while (parent) {
+    if (parent.name === 'ListItem' || parent.name === 'Blockquote' || parent.name === 'Table') return true
+    parent = parent.parent
+  }
+  return false
+}
+
+/**
+ * 一页的角色由 Markdown 结构决定：
+ *   - 第一个 ATX 标题 = 页标题
+ *   - 标题后的第一个顶层段落 = 导语
+ *   - 标题前紧邻的顶层段落 = 结构兜底的 kicker
+ * 段落可能跨多行，整段都挂同一个角色。
+ */
+function collectRoles(
+  state: EditorState,
+  front: { from: number; to: number } | null,
+  pageOf: number[],
+  directives: Map<number, PageDirectives>,
+): Map<number, PageRoles> {
+  const headings = new Map<number, BlockRange>()
+  const paragraphs = new Map<number, BlockRange[]>()
+
+  iterateContent(state, front, (node) => {
+    const isHeading = /^ATXHeading[1-6]$/.test(node.name)
+    if (!isHeading && node.name !== 'Paragraph') return
+    if (isNestedBlock(node)) return
+    const fromLine = state.doc.lineAt(node.from).number
+    const toLine = state.doc.lineAt(Math.max(node.from, node.to - 1)).number
+    const page = pageOf[fromLine - 1]
+    const range = { from: node.from, to: node.to, fromLine, toLine }
+    if (isHeading) {
+      if (!headings.has(page)) headings.set(page, range)
+      return
+    }
+    const list = paragraphs.get(page)
+    if (list) list.push(range)
+    else paragraphs.set(page, [range])
+  })
+
+  const roles = new Map<number, PageRoles>()
+  for (const [page, heading] of headings) {
+    const paras = paragraphs.get(page) ?? []
+    const lead = paras.find((p) => p.from > heading.to)
+    const before = paras.filter((p) => p.to < heading.from).pop()
+    const role: PageRoles = {
+      titleLines: lineRange(heading.fromLine, heading.toLine),
+      leadLines: lead ? lineRange(lead.fromLine, lead.toLine) : [],
+      kickerLines: [],
+    }
+    const dirs = directives.get(page)
+    if (!dirs?.kicker && before) {
+      const text = state.doc.lineAt(before.from).text.trim()
+      if (text) {
+        ensure(directives, page).kicker = text
+        role.kickerLines = lineRange(before.fromLine, before.toLine)
+      }
+    }
+    roles.set(page, role)
+  }
+  return roles
+}
+
+/** 把注释块里的 `key: value` 行收进回调；不认识的键直接跳过。 */
+function applyFields(
+  source: string,
+  keys: Set<string>,
+  apply: (key: string, value: string) => void,
+): void {
+  for (const raw of source.split('\n')) {
+    const line = raw.trim()
+    if (!line) continue
+    const hit = PAGE_FIELD_RE.exec(line)
+    if (!hit || !keys.has(hit[1])) continue
+    const value = hit[2].replace(/-->\s*$/, '').trim()
+    if (value) apply(hit[1], value)
+  }
 }
 
 /** 扫一篇文档的幻灯片指令。纯函数：同样的 state 永远得到同样的结果。 */
@@ -118,12 +251,13 @@ export function scanSlideDirectives(state: EditorState): SlideScan {
   const text = state.doc.toString()
   const front = frontmatterRange(text)
   const pageOf = pageOfLines(state, front)
-  const firstContent = firstContentLines(state, pageOf)
 
   const directives = new Map<number, PageDirectives>()
   const linesByPage = new Map<number, number[]>()
   const directiveLines: number[] = []
   const deck: DeckChrome = {}
+  const comments: CommentBlock[] = []
+  const commentLines = new Set<number>()
 
   // 页行表：后面打行装饰要按页归行，这里顺便把每页的行都记下来。
   for (let n = 1; n <= state.doc.lines; n++) {
@@ -138,10 +272,17 @@ export function scanSlideDirectives(state: EditorState): SlideScan {
     // HTMLBlock；指令注释只可能是前者，但两个都认，防止方言差异。
     if (node.name !== 'CommentBlock' && node.name !== 'HTMLBlock') return
     const source = state.doc.sliceString(node.from, node.to).trim()
+    if (!source.startsWith('<!--')) return
     const fromLine = state.doc.lineAt(node.from).number
-    const toLine = state.doc.lineAt(node.to - 1).number
-    const page = pageOf[fromLine - 1]
+    const toLine = state.doc.lineAt(Math.max(node.from, node.to - 1)).number
+    comments.push({ source, from: node.from, to: node.to, fromLine, toLine, page: pageOf[fromLine - 1] })
+    for (let n = fromLine; n <= toLine; n++) commentLines.add(n)
+  })
 
+  const firstContent = firstContentLines(state, pageOf, commentLines)
+
+  for (const comment of comments) {
+    const { source, fromLine, toLine, page } = comment
     const layout = LAYOUT_RE.exec(source)
     if (layout) {
       pushAll(directiveLines, fromLine, toLine)
@@ -151,30 +292,49 @@ export function scanSlideDirectives(state: EditorState): SlideScan {
       if (content === undefined || fromLine < content) {
         const dirs = ensure(directives, page)
         dirs.layout = layout[1]
+        applyFields(layout[2], PAGE_FIELD_KEYS, (key, value) => {
+          dirs[key as 'kicker' | 'label' | 'chapter'] = value
+        })
       }
-      return
+      continue
+    }
+    const deckBlock = DECK_BLOCK_RE.exec(source)
+    if (deckBlock) {
+      pushAll(directiveLines, fromLine, toLine)
+      applyFields(deckBlock[1] ?? '', DECK_FIELD_KEYS, (key, value) => {
+        deck[key as keyof DeckChrome] = value
+      })
+      continue
+    }
+    const pageKey = PAGE_KEY_RE.exec(source)
+    if (pageKey) {
+      pushAll(directiveLines, fromLine, toLine)
+      ensure(directives, page)[pageKey[1] as 'kicker' | 'label' | 'chapter'] =
+        pageKey[2].replace(/\s+/g, ' ').trim()
+      continue
     }
     const deckHit = DECK_RE.exec(source)
     if (deckHit) {
       pushAll(directiveLines, fromLine, toLine)
       // 同名多条取最后一条：deck 指令没有「页」的归属，写哪都一样。
       deck[deckHit[1] as keyof DeckChrome] = deckHit[2].trim()
-      return
+      continue
     }
     const css = CSS_RE.exec(source)
     if (css) {
       pushAll(directiveLines, fromLine, toLine)
       ensure(directives, page).css.push(css[1].trim())
-      return
+      continue
     }
     const js = JS_RE.exec(source)
     if (js) {
       pushAll(directiveLines, fromLine, toLine)
       ensure(directives, page).js.push(js[1].trim())
     }
-  })
+  }
 
-  return { directives, linesByPage, directiveLines, deck }
+  const roles = collectRoles(state, front, pageOf, directives)
+  return { directives, linesByPage, directiveLines, deck, roles }
 }
 
 /**
@@ -203,6 +363,7 @@ function ensure(map: Map<number, PageDirectives>, page: number): PageDirectives 
 let snapshot: Map<number, PageDirectives> = new Map()
 let deckSnapshot: DeckChrome = {}
 let pageCountSnapshot = 0
+let documentBaseSnapshot: string | null = null
 
 export function publishSlideDirectives(directives: Map<number, PageDirectives>): void {
   snapshot = directives
@@ -224,6 +385,15 @@ export function getDeckChrome(): DeckChrome {
 
 export function getDeckPageCount(): number {
   return pageCountSnapshot
+}
+
+/** 当前文档的 URL。deck-logo 写相对路径时，用它解析成能加载的绝对地址。 */
+export function publishDocumentBase(url: string | null): void {
+  documentBaseSnapshot = url
+}
+
+export function getDocumentBase(): string | null {
+  return documentBaseSnapshot
 }
 
 // ─── 页内 CSS 的作用域化 ─────────────────────────────────────────────────────

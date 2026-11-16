@@ -1,21 +1,26 @@
 /* 幻灯片版式包（slides.css）
  *
- * 一页在 markdown 里声明版式：`---` 后第一行写 `<!-- slide: cover -->`，
- * 该页所有行便带上 `cm-md-slide-<版式>` 类（editor/slide-layout.ts 打的），这里的
- * 规则在放映（body.presenting）与导出（body.slides-printing）时命中，编辑视图里
- * 一条也不生效。版式名与 markdown 结构（标题/列表/引用）共同构成公开契约：自定义
- * 主题或用户 CSS 可以覆盖任何一条，也可以照样新增自己的版式。
+ * 一页在 markdown 里声明版式：`---` 后写一个页头块，第一行是 `<!-- slide: cover`，
+ * 后续可写 kicker / label / chapter 字段；该页所有行便带上 `cm-md-slide-<版式>` 类
+ * （editor/slide-layout.ts 打的），这里的规则在放映（body.presenting）与导出
+ * （body.slides-printing）时命中，编辑视图里一条也不生效。版式名与 markdown 结构
+ * （标题/列表/引用）共同构成公开契约：自定义主题或用户 CSS 可以覆盖任何一条，
+ * 也可以照样新增自己的版式。
  *
- * 整副牌还有 deck 级公共元素（chrome）：`<!-- deck-logo / deck-brand / deck-title /
- * deck-meta: … -->` 写在文档任意处（惯例顶部），放映与导出的每页固定位置呈现，
- * DOM 由 slides-enhance.ts 挂载（.slide-chrome / .slide-foot / .slide-ghost）。
+ * 页角色也由 Markdown 结构给出：一页第一个标题是页标题（cm-md-page-title），标题
+ * 后第一段是导语（cm-md-page-lead），标题前紧邻的段落兜底当 kicker。
+ *
+ * 整副牌还有 deck 级公共元素（chrome）：一个 `<!-- deck … -->` 块（logo / brand /
+ * title / meta）写在文档顶部，放映与导出的每页固定位置呈现，DOM 由 slides-enhance.ts
+ * 挂载（.slide-chrome / .slide-foot / .slide-ghost）。
  *
  * 设计语言（学杂志风网页 PPT 与报告类 PPTX 的共性，色彩仍只引 themes/contract.json
  * 的活变量，随主题走）：
  *   - 字体三件套：衬线（标题/大数字/金句）、无衬线（正文）、等宽（chrome、页码、标签）
  *   - 细线代替色块：1px 分隔线、tag 边框、卡片描边
  *   - 全出血：内容占满 16:9 纸面，只留 6vw 边距，不再聚在中央窄栏
- *   - 幽灵装饰：右下角超大低透明度页码（放映），幕封页 chrome 自动淡出
+ *   - 幽灵装饰：右下角超大低透明度页码（放映）；封面与章节页保留 chrome，
+ *     只有收束页淡出
  *
  * 两种作用域写法，各有分工：
  *   - 容器级：放映时 slides-enhance 会把当前页版式写进 #editor 的 data-slide-layout
@@ -25,10 +30,105 @@
  *     inline-block 在纸面上排出来（页首行保持 block，分页符 break-before 依赖它）。
  */
 
+/* ─── 版式令牌：主题与导入 CSS 的入口 ────────────────────────────────
+ * 默认值放在 :root，内置主题用 body.theme-* 覆盖；用户导入的 CSS 在
+ * slides.css 之后加载，写 `body { --slide-*: … }` 即可定义自己的 PPT 气质。
+ * 想直接改结构，也可以覆写 body.presenting .cm-md-page-title 这类规则。 */
+:root {
+  --slide-serif: 'Songti SC', 'Noto Serif CJK SC', 'Noto Serif SC', 'Source Han Serif SC',
+    'STSong', 'SimSun', Georgia, serif;
+  --slide-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, 'Menlo', monospace;
+
+  --slide-title-font: var(--slide-serif);
+  --slide-title-size: 4.2em;
+  --slide-title-weight: 700;
+  --slide-subhead-weight: 600;
+  --slide-title-tracking: -0.01em;
+  --slide-title-line-height: 1.08;
+  --slide-cover-title-size: 6.8em;
+  --slide-cover-title-line-height: 0.98;
+  --slide-cover-title-tracking: -0.02em;
+  --slide-section-title-size: 5.2em;
+  --slide-closing-title-size: 4.2em;
+
+  --slide-lead-size: 1.25em;
+  --slide-kicker-size: clamp(11px, 0.72vw, 15px);
+  --slide-kicker-tracking: 0.3em;
+  --slide-kicker-transform: uppercase;
+
+  --slide-chrome-opacity: 0.68;
+  --slide-chrome-transform: uppercase;
+  --slide-kpi-number-size: 3.8em;
+  --slide-quote-size: 2.4em;
+
+  --slide-page-pad-x: 6vw;
+  --slide-page-top-pad: 72px;
+  --slide-page-top-pad-print: 64px;
+  --slide-cover-text-align: left;
+  --slide-cover-lead-inline: 0;
+}
+
+/* 主题气质：不只换色，标题字体、字号与 chrome 的声音也跟主题走。
+ * 默认 light 保留杂志式衬线；Notion 走无衬线居中封面，Writer 走等宽标题。 */
+body.theme-notion {
+  --slide-title-font: 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  --slide-title-weight: 600;
+  --slide-title-tracking: -0.02em;
+  --slide-cover-title-size: 5.4em;
+  --slide-section-title-size: 4.4em;
+  --slide-kicker-size: clamp(10px, 0.64vw, 13px);
+  --slide-kicker-tracking: 0.16em;
+  --slide-kicker-transform: none;
+  --slide-chrome-transform: none;
+  --slide-chrome-opacity: 0.55;
+  --slide-cover-text-align: center;
+  --slide-cover-lead-inline: auto;
+}
+
+body.theme-writer {
+  --slide-title-font: var(--slide-mono);
+  --slide-title-weight: 500;
+  --slide-title-tracking: 0;
+  --slide-cover-title-size: 5.2em;
+  --slide-section-title-size: 4.2em;
+  --slide-kicker-tracking: 0.18em;
+  --slide-kicker-transform: none;
+}
+
+body.theme-elegant {
+  --slide-title-font: var(--slide-serif);
+  --slide-title-weight: 600;
+  --slide-cover-title-size: 7.2em;
+}
+
+body.theme-sepia {
+  --slide-title-font: var(--slide-serif);
+  --slide-title-weight: 700;
+  --slide-cover-title-size: 6.4em;
+}
+
+body.theme-bear {
+  --slide-title-font: var(--slide-serif);
+  --slide-title-weight: 800;
+  --slide-cover-title-size: 6.2em;
+  --slide-title-tracking: -0.02em;
+}
+
+body.theme-dark,
+body.theme-solarized-dark,
+body.theme-nord,
+body.theme-gruvbox,
+body.theme-dracula,
+body.theme-midnight {
+  --slide-title-weight: 600;
+  --slide-chrome-opacity: 0.82;
+}
+
 /* ─── 页首安全区与指令行 ──────────────────────────────────────────────
  * chrome 悬在页顶（约 60px 高），每页第一条线（cm-md-page-start）统一留出
  * padding-top 当安全区。指令行往往是 page-start：它自己压成零内容盒
- * （visibility + 字号 0），padding 照常生效——这就是它同时承担页首安全区的原因。
+ * （visibility + 字号 0），padding 只留一次——多行指令块的其他行绝不能再吃
+ * 一次 84/96px，否则四行页头块就是三百多像素的空白。
  * 导出不能用 display:none（page-start 藏了 break-before 就失效），正好同构。 */
 body.presenting #editor .cm-md-slide-directive {
   font-size: 0 !important;
@@ -36,7 +136,6 @@ body.presenting #editor .cm-md-slide-directive {
   visibility: hidden;
   margin: 0 !important;
   padding: 0 !important;
-  padding-top: 96px !important;
   border: none !important;
 }
 
@@ -46,17 +145,47 @@ body.slides-printing #editor .cm-md-slide-directive {
   visibility: hidden;
   margin: 0 !important;
   padding: 0 !important;
-  padding-top: 84px !important;
   border: none !important;
+}
+
+/* 只有整块指令的第一行（页首）承担安全区，后续字段行零高度。 */
+body.presenting #editor .cm-md-slide-directive.cm-md-page-start {
+  padding-top: var(--slide-page-top-pad) !important;
+}
+
+body.slides-printing #editor .cm-md-slide-directive.cm-md-page-start {
+  padding-top: var(--slide-page-top-pad-print) !important;
+}
+
+/* 结构兜底的 kicker：标题前那段文字在放映/导出里不占位，文字由标题行的
+ * ::before 显示，源行留在编辑器里照常可改。不能用 display:none：这一行
+ * 可能就是 page-start，分页符依赖它。 */
+body.presenting .cm-md-page-kicker,
+body.slides-printing .cm-md-page-kicker {
+  font-size: 0 !important;
+  line-height: 0 !important;
+  visibility: hidden;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* kicker 源行正好是页首时，它还得承担页顶安全区：文字藏掉，内距留下。 */
+body.presenting .cm-md-page-kicker.cm-md-page-start {
+  padding-top: var(--slide-page-top-pad) !important;
+}
+
+body.slides-printing .cm-md-page-kicker.cm-md-page-start {
+  padding-top: var(--slide-page-top-pad-print) !important;
 }
 
 /* 没写指令的页：安全区落在第一条内容行上。 */
 body.presenting .cm-md-page-start {
-  padding-top: 96px;
+  padding-top: var(--slide-page-top-pad);
 }
 
 body.slides-printing .cm-md-page-start {
-  padding-top: 84px;
+  padding-top: var(--slide-page-top-pad-print);
 }
 
 /* ─── deck chrome ─────────────────────────────────────────────────── */
@@ -76,12 +205,12 @@ body.slides-printing .cm-md-page-start {
   z-index: 40;
   display: none;
   align-items: center;
-  padding: 24px 6vw 0;
+  padding: clamp(20px, 3.2vh, 40px) var(--slide-page-pad-x) 0;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.18em;
-  text-transform: uppercase;
-  opacity: 0.68;
+  text-transform: var(--slide-chrome-transform, uppercase);
+  opacity: var(--slide-chrome-opacity, 0.68);
 }
 
 body.presenting .slide-chrome,
@@ -113,8 +242,10 @@ body.slides-printing .slide-chrome {
 }
 
 .slide-chrome-logo {
-  height: 22px;
+  height: clamp(18px, 1.6vw, 30px);
   width: auto;
+  max-width: 180px;
+  object-fit: contain;
   display: block;
 }
 
@@ -127,10 +258,10 @@ body.slides-printing .slide-chrome {
   display: none;
   align-items: baseline;
   justify-content: space-between;
-  padding: 0 6vw 22px;
+  padding: 0 var(--slide-page-pad-x) clamp(16px, 2.4vh, 28px);
   font-size: 11px;
   letter-spacing: 0.16em;
-  text-transform: uppercase;
+  text-transform: var(--slide-chrome-transform, uppercase);
   opacity: 0.55;
 }
 
@@ -140,7 +271,7 @@ body.slides-printing .slide-foot {
 }
 
 .slide-foot-brand {
-  font-family: var(--slide-serif, Georgia, serif);
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -154,7 +285,7 @@ body.slides-printing .slide-foot {
   bottom: 7vh;
   z-index: 0;
   display: none;
-  font-family: var(--slide-serif, Georgia, serif);
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
   font-weight: 800;
   font-size: 26vh;
   line-height: 1;
@@ -174,63 +305,55 @@ body.slides-printing .slide-foot-num {
   display: none !important;
 }
 
-/* 幕封页（cover/section/closing）自动淡出 chrome——学参考对 hero 页的处理。 */
+/* chrome/foot/幽灵页码统一走透明度过渡，翻到收束页时一起淡出。 */
 body.presenting .slide-chrome,
 body.presenting .slide-foot,
 body.presenting .slide-ghost {
   transition: opacity 0.45s ease;
 }
 
-body.presenting:has(#editor[data-slide-layout='cover']) .slide-chrome,
-body.presenting:has(#editor[data-slide-layout='section']) .slide-chrome,
+/* 封面和章节页保留 chrome：logo、报告名和章节文案是模板封面的一部分，
+ * 只有收束页整页压淡时才把 chrome 一起淡出。 */
 body.presenting:has(#editor[data-slide-layout='closing']) .slide-chrome,
-body.presenting:has(#editor[data-slide-layout='cover']) .slide-foot,
-body.presenting:has(#editor[data-slide-layout='section']) .slide-foot,
 body.presenting:has(#editor[data-slide-layout='closing']) .slide-foot {
   opacity: 0;
 }
 
-body.presenting:has(#editor[data-slide-layout='cover']) .slide-ghost {
+body.presenting:has(#editor[data-slide-layout='cover']) .slide-ghost,
+body.presenting:has(#editor[data-slide-layout='section']) .slide-ghost,
+body.presenting:has(#editor[data-slide-layout='closing']) .slide-ghost {
   opacity: 0;
 }
 
 /* ─── 版式字体族与全出血 ────────────────────────────────────────────
  * 衬线栈把中文衬线排在前面（宋体系）：杂志感来自中文衬线的骨架，只在
  * 拉丁字母上找 Georgia 是不够的。等宽栈同理，中文等宽缺字时退回系统字体。 */
-/* 变量挂在 body 上而不是 #editor 上：chrome 的 fixed 元素是 body 的直接
- * 子节点，不在 #editor 里面，挂在 #editor 上它们只能拿到兜底的 Georgia。 */
-body.presenting,
-body.slides-printing {
-  --slide-serif: 'Songti SC', 'Noto Serif CJK SC', 'Noto Serif SC', 'Source Han Serif SC',
-    'STSong', 'SimSun', Georgia, serif;
-  --slide-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, 'Menlo', monospace;
-}
-
 /* 全出血：正文铺满纸面，只留 6vw 边距——幻灯片不是文档，不要阅读列宽。 */
 body.presenting #editor .cm-content {
   width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
-  padding: 0 6vw !important;
+  padding: 0 var(--slide-page-pad-x) !important;
 }
 
 /* 放映的基准字号：PPT 的字号要跟画面走，不能跟主题的阅读字号走。
- * 1080p 全屏 ≈ 26px 正文 → h1 ≈ 62px、cover 主标题 ≈ 83px；窄窗口退到 17px。
+ * 1080p 全屏 ≈ 26px 正文 → 内容标题 ≈ 109px、封面主标题 ≈ 177px；窄窗口退到 17px。
  * 下面的字号阶梯全部是相对它的 em，一处调整整副牌等比缩放。 */
 body.presenting #editor .cm-content {
   font-size: clamp(17px, 1.35vw, 26px);
 }
 
 /* ─── 通用字号阶梯（全出血后的 PPT 惯例）────────────────────────────
- * 标题用衬线、去文档式下划线；版式自己的标题规则（cover 3.2em、section 2.4em）
- * 选择器更具体，照样优先。与主题文档样式同权重时本文件在打包顺序里排最后。 */
+ * 标题用衬线、去文档式下划线。真正决定页标题大小的是下面的
+ * .cm-md-page-title：不管 Markdown 写成 h1 还是 h2，一页只认第一个标题。
+ * 与主题文档样式同权重时本文件在打包顺序里排最后。 */
 body.presenting .cm-md-atxheading1,
 body.slides-printing .cm-md-atxheading1 {
-  font-family: var(--slide-serif, Georgia, serif);
-  font-size: 2.4em;
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
+  font-size: 3.2em;
+  font-weight: var(--slide-title-weight, 700);
+  line-height: 1.18;
+  letter-spacing: var(--slide-title-tracking, -0.01em);
   border-bottom: none;
   padding-top: 0;
   margin-bottom: 0.45em;
@@ -238,10 +361,10 @@ body.slides-printing .cm-md-atxheading1 {
 
 body.presenting .cm-md-atxheading2,
 body.slides-printing .cm-md-atxheading2 {
-  font-family: var(--slide-serif, Georgia, serif);
-  font-size: 1.6em;
-  font-weight: 600;
-  line-height: 1.35;
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
+  font-size: 2.2em;
+  font-weight: var(--slide-subhead-weight, 600);
+  line-height: 1.3;
   border-bottom: none;
   padding-top: 0;
   margin-bottom: 0.4em;
@@ -249,9 +372,9 @@ body.slides-printing .cm-md-atxheading2 {
 
 body.presenting .cm-md-atxheading3,
 body.slides-printing .cm-md-atxheading3 {
-  font-family: var(--slide-serif, Georgia, serif);
-  font-size: 1.28em;
-  font-weight: 600;
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
+  font-size: 1.5em;
+  font-weight: var(--slide-subhead-weight, 600);
   line-height: 1.4;
   border-bottom: none;
   padding-top: 0;
@@ -260,11 +383,92 @@ body.slides-printing .cm-md-atxheading3 {
 
 body.presenting .cm-md-atxheading4,
 body.slides-printing .cm-md-atxheading4 {
-  font-size: 1.08em;
-  font-weight: 600;
+  font-size: 1.15em;
+  font-weight: var(--slide-subhead-weight, 600);
   border-bottom: none;
   padding-top: 0;
   margin-bottom: 0.3em;
+}
+
+/* 页标题：一页的第一个标题，h1 与 h2 同权。 */
+body.presenting .cm-md-page-title,
+body.slides-printing .cm-md-page-title {
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
+  font-size: var(--slide-title-size, 4.2em);
+  font-weight: var(--slide-title-weight, 700);
+  line-height: var(--slide-title-line-height, 1.08);
+  letter-spacing: var(--slide-title-tracking, -0.01em);
+  border-bottom: none;
+  padding-top: 0;
+  margin: 0 0 0.35em;
+}
+
+/* kicker：标题上方的等宽小字，文字来自行属性，画成标题行的一部分。 */
+body.presenting .cm-md-page-title[data-slide-kicker]::before,
+body.slides-printing .cm-md-page-title[data-slide-kicker]::before {
+  content: attr(data-slide-kicker);
+  display: block;
+  margin-bottom: 0.9em;
+  font-family: var(--slide-mono, ui-monospace, Consolas, monospace);
+  font-size: var(--slide-kicker-size, clamp(11px, 0.72vw, 15px));
+  font-weight: 500;
+  letter-spacing: var(--slide-kicker-tracking, 0.3em);
+  line-height: 1.4;
+  text-transform: var(--slide-kicker-transform, uppercase);
+  color: var(--text-muted);
+}
+
+/* 导语：标题后的第一段，压淡放大，和正文拉开层次。 */
+body.presenting .cm-md-page-lead,
+body.slides-printing .cm-md-page-lead {
+  font-size: var(--slide-lead-size, 1.25em);
+  line-height: 1.55;
+  color: var(--text-secondary, var(--text-muted));
+  margin-top: 0;
+  margin-bottom: 1.4em;
+  max-width: 68%;
+}
+
+/* 默认页 = 文章版式：没写 slide 块的页自动走这里，标题收小、正文压紧，
+ * 行宽收一收，一页能装下更多段落。 */
+body.presenting .cm-line.cm-md-page-default,
+body.slides-printing .cm-line.cm-md-page-default {
+  font-size: 0.95em;
+  line-height: 1.8;
+  max-width: 82%;
+}
+
+body.presenting .cm-md-page-default.cm-md-page-title,
+body.slides-printing .cm-md-page-default.cm-md-page-title {
+  font-size: 3.4em;
+  line-height: 1.16;
+  letter-spacing: -0.015em;
+  max-width: 13em;
+  margin-bottom: 0.45em;
+}
+
+body.presenting .cm-md-page-default.cm-md-page-lead,
+body.slides-printing .cm-md-page-default.cm-md-page-lead {
+  font-size: 1.05em;
+  line-height: 1.7;
+  max-width: 82%;
+  margin-bottom: 1em;
+}
+
+/* 纸上再压一档：默认文章页的目标是「一页读完」，不是把屏幕比例原样搬过去。 */
+body.slides-printing .cm-line.cm-md-page-default {
+  font-size: 0.9em;
+  line-height: 1.7;
+}
+
+body.slides-printing .cm-md-page-default.cm-md-page-title {
+  font-size: 3em;
+}
+
+body.slides-printing .cm-md-page-default.cm-md-page-lead {
+  font-size: 1em;
+  line-height: 1.6;
+  margin-bottom: 0.8em;
 }
 
 /* 行高放映与导出同值：不一致会让同一份稿子在屏幕上和纸上换行位置不同。 */
@@ -293,81 +497,81 @@ body.slides-printing .cm-md-li {
 
 /* 容器级版式（整页 flex 居中或分栏）里，页首安全区要交还给布局本身：
  * 指令行改成真正不占位（display:none），page-start 的上内距归零——否则
- * 那 96px 会被 flex 当成一项内容，整页内容被推得偏下。这些页的 chrome
- * 本来就是淡出的，不需要安全区。 */
+ * 那截安全区会被 flex 当成一项内容，整页内容被推得偏下。这些页靠 flex
+ * 自己居中，不需要页首安全区。 */
 body.presenting #editor[data-slide-layout='cover'] .cm-md-slide-directive,
 body.presenting #editor[data-slide-layout='section'] .cm-md-slide-directive,
 body.presenting #editor[data-slide-layout='closing'] .cm-md-slide-directive,
-body.presenting #editor[data-slide-layout='two-col'] .cm-md-slide-directive {
+body.presenting #editor[data-slide-layout='two-col'] .cm-md-slide-directive,
+body.presenting #editor[data-slide-layout='figure'] .cm-md-slide-directive {
   display: none;
 }
 
 body.presenting #editor[data-slide-layout='cover'] .cm-md-page-start,
 body.presenting #editor[data-slide-layout='section'] .cm-md-page-start,
 body.presenting #editor[data-slide-layout='closing'] .cm-md-page-start,
-body.presenting #editor[data-slide-layout='two-col'] .cm-md-page-start {
+body.presenting #editor[data-slide-layout='two-col'] .cm-md-page-start,
+body.presenting #editor[data-slide-layout='figure'] .cm-md-page-start {
   padding-top: 0;
 }
 
 /* ════ cover · 主视觉封面（dsh-ppt: cover.hero）════
  *
- * 约定：一个 h1 当主标题，一个 h2 当副标题，再多一行普通文字当署名。
- * 杂志封面式左对齐：超大衬线标题 + 强调色短杠，副标题压淡。 */
+ * 约定：h1 主标题，h2 副标题，标题后的第一段当导语，kicker 写在页头块里。
+ * 杂志封面式左对齐，chrome（logo 与报告名）保留在页顶，不再整条淡出。 */
 body.presenting #editor[data-slide-layout='cover'] .cm-content {
   display: flex;
   flex-direction: column;
   justify-content: center;
   min-height: 92vh;
+  text-align: var(--slide-cover-text-align, left);
 }
 
-body.presenting #editor[data-slide-layout='cover'] .cm-md-atxheading1 {
-  font-size: 3.2em;
-  line-height: 1.15;
-  border-bottom: none;
+body.presenting #editor[data-slide-layout='cover'] .cm-md-page-title {
+  font-size: var(--slide-cover-title-size, 6.8em);
+  line-height: var(--slide-cover-title-line-height, 0.98);
+  letter-spacing: var(--slide-cover-title-tracking, -0.02em);
+  max-width: 14em;
   animation: slide-rise 0.7s ease-out both;
-}
-
-body.presenting #editor[data-slide-layout='cover'] .cm-md-atxheading1::after {
-  content: '';
-  display: block;
-  width: 3.5em;
-  height: 3px;
-  margin-top: 0.45em;
-  background: var(--pele-accent);
 }
 
 body.presenting #editor[data-slide-layout='cover'] .cm-md-atxheading2,
 body.presenting #editor[data-slide-layout='cover'] .cm-md-atxheading3 {
-  font-family: var(--slide-serif, Georgia, serif);
-  font-size: 1.25em;
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
+  font-size: 2.2em;
   font-weight: 400;
+  line-height: 1.25;
   color: var(--text-muted);
   border-bottom: none;
+  margin-bottom: 0.5em;
   animation: slide-rise 0.7s ease-out both;
 }
 
-/* 导出降级：行级左对齐同样成立（标题行本身是全宽 block）。 */
-body.slides-printing .cm-md-slide-cover.cm-md-atxheading1 {
-  border-bottom: none;
+body.presenting #editor[data-slide-layout='cover'] .cm-md-page-lead {
+  max-width: 60%;
+  margin-bottom: 1.2em;
+  margin-inline: var(--slide-cover-lead-inline, 0);
 }
 
-body.slides-printing .cm-md-slide-cover.cm-md-atxheading1::after {
-  content: '';
-  display: block;
-  width: 3.5em;
-  height: 3px;
-  margin-top: 0.45em;
-  background: var(--pele-accent);
+/* 导出：封面是普通块流，标题与副标题按同一阶梯走。 */
+body.slides-printing .cm-md-slide-cover.cm-md-page-title {
+  font-size: calc(var(--slide-cover-title-size, 6.8em) * 0.88);
+  line-height: 1.02;
 }
 
-body.slides-printing .cm-md-slide-cover.cm-md-atxheading2 {
+body.slides-printing .cm-md-slide-cover.cm-md-atxheading2,
+body.slides-printing .cm-md-slide-cover.cm-md-atxheading3 {
   font-weight: 400;
   color: var(--text-muted);
+}
+
+body.slides-printing .cm-md-slide-cover.cm-md-page-lead {
+  max-width: 60%;
 }
 
 /* ════ section · 章节陈述（dsh-ppt: section.statement）════
  *
- * 约定：一个 h1（或 h2）作章节判断，一句就够，剩下的交给留白与幽灵页码。 */
+ * 约定：一个 h1（或 h2）作章节判断，标题后一段一句说明，剩下的交给留白。 */
 body.presenting #editor[data-slide-layout='section'] .cm-content {
   display: flex;
   flex-direction: column;
@@ -375,38 +579,20 @@ body.presenting #editor[data-slide-layout='section'] .cm-content {
   min-height: 92vh;
 }
 
-body.presenting #editor[data-slide-layout='section'] .cm-md-atxheading1,
-body.presenting #editor[data-slide-layout='section'] .cm-md-atxheading2 {
-  font-size: 2.4em;
-  border-bottom: none;
+body.presenting #editor[data-slide-layout='section'] .cm-md-page-title {
+  font-size: var(--slide-section-title-size, 5.2em);
+  line-height: 1.02;
+  max-width: 14em;
   animation: slide-rise 0.6s ease-out both;
 }
 
-body.presenting #editor[data-slide-layout='section'] .cm-md-atxheading1::after,
-body.presenting #editor[data-slide-layout='section'] .cm-md-atxheading2::after {
-  content: '';
-  display: block;
-  width: 3em;
-  height: 3px;
-  margin-top: 0.6em;
-  background: var(--pele-accent);
+body.presenting #editor[data-slide-layout='section'] .cm-md-page-lead {
+  max-width: 55%;
 }
 
-body.slides-printing .cm-md-slide-section.cm-md-atxheading1,
-body.slides-printing .cm-md-slide-section.cm-md-atxheading2 {
-  border-bottom: none;
-  padding-top: 84px;
-  padding-bottom: 0.5em;
-}
-
-body.slides-printing .cm-md-slide-section.cm-md-atxheading1::after,
-body.slides-printing .cm-md-slide-section.cm-md-atxheading2::after {
-  content: '';
-  display: block;
-  width: 3em;
-  height: 3px;
-  margin-top: 0.6em;
-  background: var(--pele-accent);
+body.slides-printing .cm-md-slide-section.cm-md-page-title {
+  font-size: calc(var(--slide-section-title-size, 5.2em) * 0.88);
+  padding-bottom: 0.3em;
 }
 
 /* ════ agenda · 结构列表（dsh-ppt: agenda.simple）════
@@ -425,7 +611,7 @@ body.slides-printing .cm-md-slide-agenda.cm-md-li {
 
 body.presenting .cm-md-slide-agenda .cm-md-listmark,
 body.slides-printing .cm-md-slide-agenda .cm-md-listmark {
-  font-family: var(--slide-serif, Georgia, serif);
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
   font-size: 1.5em;
   font-weight: 700;
   color: var(--pele-accent);
@@ -435,18 +621,21 @@ body.slides-printing .cm-md-slide-agenda .cm-md-listmark {
 
 /* ════ kpi · 关键概览（dsh-ppt: overview.kpi）════
  *
- * 约定：一个列表，2-4 项，每项 `**数字** 说明`。全宽统计卡：顶部强调色粗线
- * 代替整圈描边，大数字衬线等宽（tnum），杂志数据版式。 */
+ * 约定：一个列表，2-6 项，每项 `**数字** 说明`。参考模板的 stat-card：
+ * 一根细线定标，大数字用衬线等宽（tnum），说明压到次要色。 */
 body.presenting .cm-md-slide-kpi.cm-md-li,
 body.slides-printing .cm-md-slide-kpi.cm-md-li {
   display: inline-block;
-  width: 30%;
-  margin: 0 1% 1.5em 0;
-  padding: 1.1em 1em 1em;
-  border-top: 2px solid var(--pele-accent);
+  width: 31%;
+  margin: 0 1.2% 1.4em 0;
+  padding: 1em 0.9em 1.1em;
+  border-top: 1px solid currentColor;
+  border-color: color-mix(in srgb, currentColor 32%, transparent);
   vertical-align: top;
   text-align: left;
   list-style: none;
+  font-size: 0.92em;
+  line-height: 1.55;
 }
 
 body.presenting .cm-md-slide-kpi .cm-md-listmark,
@@ -457,12 +646,14 @@ body.slides-printing .cm-md-slide-kpi .cm-md-listmark {
 body.presenting .cm-md-slide-kpi .cm-md-strong,
 body.slides-printing .cm-md-slide-kpi .cm-md-strong {
   display: block;
-  font-family: var(--slide-serif, Georgia, serif);
-  font-size: 2.8em;
-  font-weight: 700;
-  line-height: 1.15;
-  color: var(--pele-accent);
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
+  font-size: var(--slide-kpi-number-size, 3.8em);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--text-color);
   font-feature-settings: 'tnum';
+  margin-bottom: 0.12em;
 }
 
 body.presenting .cm-md-slide-kpi,
@@ -508,7 +699,7 @@ body.slides-printing .cm-md-slide-timeline {
 body.presenting .cm-md-slide-timeline .cm-md-strong,
 body.slides-printing .cm-md-slide-timeline .cm-md-strong {
   display: block;
-  font-family: var(--slide-serif, Georgia, serif);
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
   font-size: 1.2em;
   color: var(--text-color);
 }
@@ -542,7 +733,7 @@ body.slides-printing .cm-md-slide-steps .cm-md-strong {
   border-radius: 50%;
   background: var(--pele-accent);
   color: var(--bg-color);
-  font-family: var(--slide-serif, Georgia, serif);
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
   font-size: 1.05em;
 }
 
@@ -569,7 +760,7 @@ body.slides-printing .cm-md-slide-matrix .cm-md-listmark {
 body.presenting .cm-md-slide-matrix .cm-md-strong,
 body.slides-printing .cm-md-slide-matrix .cm-md-strong {
   display: block;
-  font-family: var(--slide-serif, Georgia, serif);
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
   font-size: 1.15em;
   color: var(--pele-accent);
   margin-bottom: 0.3em;
@@ -599,6 +790,76 @@ body.slides-printing .cm-md-slide-two-col:not(.cm-md-page-start) {
   vertical-align: top;
 }
 
+/* ════ figure · 图表 / 图片独立页 ════
+ *
+ * 约定：标题 + 一张 Mermaid / SVG / 图片，标题退成小注，图独占一屏。
+ * 放映时整页 flex 居中；导出时仍是块流，靠 hero 居中把图放到纸面中间。 */
+body.presenting #editor[data-slide-layout='figure'] .cm-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 92vh;
+  text-align: center;
+}
+
+body.presenting #editor[data-slide-layout='figure'] .cm-md-page-title {
+  font-size: 2em;
+  line-height: 1.2;
+  max-width: 18em;
+  margin-bottom: 0.7em;
+  animation: slide-rise 0.6s ease-out both;
+}
+
+body.presenting #editor[data-slide-layout='figure'] .cm-md-page-lead {
+  font-size: 0.95em;
+  max-width: 70%;
+  margin-bottom: 0.8em;
+}
+
+body.presenting #editor[data-slide-layout='figure'] .cm-md-mermaid,
+body.presenting #editor[data-slide-layout='figure'] .cm-md-image {
+  max-width: 92%;
+  margin: 0 auto;
+}
+
+body.presenting #editor[data-slide-layout='figure'] .cm-md-mermaid svg,
+body.presenting #editor[data-slide-layout='figure'] .cm-md-image img {
+  max-width: 100%;
+  max-height: 70vh;
+  width: auto;
+  height: auto;
+}
+
+body.slides-printing .cm-md-slide-figure {
+  text-align: center;
+}
+
+body.slides-printing .cm-md-slide-figure.cm-md-page-title {
+  font-size: 2em;
+  margin-bottom: 0.7em;
+}
+
+body.slides-printing .cm-md-slide-figure.cm-md-page-lead {
+  font-size: 0.95em;
+  max-width: 70%;
+  margin-inline: auto;
+  margin-bottom: 0.8em;
+}
+
+body.slides-printing .cm-md-slide-figure .cm-md-mermaid,
+body.slides-printing .cm-md-slide-figure .cm-md-image {
+  max-width: 92%;
+  margin: 0 auto;
+}
+
+body.slides-printing .cm-md-slide-figure .cm-md-mermaid svg,
+body.slides-printing .cm-md-slide-figure .cm-md-image img {
+  max-height: 70vh;
+  width: auto;
+  height: auto;
+}
+
 /* ════ quote · 引言页 ════
  *
  * 约定：一段引用（> …），引用后一行普通文字可作署名（右对齐）。
@@ -607,10 +868,11 @@ body.presenting .cm-md-slide-quote .cm-md-blockquote,
 body.slides-printing .cm-md-slide-quote .cm-md-blockquote {
   border-left: none;
   text-align: left;
-  font-family: var(--slide-serif, Georgia, serif);
-  font-size: 1.5em;
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
+  font-size: var(--slide-quote-size, 2.4em);
   font-style: italic;
-  line-height: 1.5;
+  line-height: 1.45;
+  max-width: 78%;
   color: var(--text-secondary);
 }
 
@@ -636,10 +898,10 @@ body.presenting #editor[data-slide-layout='closing'] .cm-content {
   min-height: 92vh;
 }
 
-body.presenting #editor[data-slide-layout='closing'] .cm-md-atxheading1,
-body.presenting #editor[data-slide-layout='closing'] .cm-md-atxheading2 {
-  font-size: 2.2em;
-  border-bottom: none;
+body.presenting #editor[data-slide-layout='closing'] .cm-md-page-title {
+  font-size: var(--slide-closing-title-size, 4.2em);
+  line-height: 1.1;
+  max-width: 16em;
   animation: slide-rise 0.6s ease-out both;
 }
 
@@ -664,10 +926,8 @@ body.slides-printing .cm-md-slide-closing.cm-md-li::before {
   color: var(--pele-accent);
 }
 
-body.slides-printing .cm-md-slide-closing.cm-md-atxheading1,
-body.slides-printing .cm-md-slide-closing.cm-md-atxheading2 {
-  border-bottom: none;
-  padding-top: 84px;
+body.slides-printing .cm-md-slide-closing.cm-md-page-title {
+  font-size: calc(var(--slide-closing-title-size, 4.2em) * 0.9);
 }
 
 /* ════ 内容元素：列表 / 强调 / 代码 / 引用 / 表格 / 图片 ════
@@ -692,7 +952,7 @@ body.slides-printing .cm-md-strong {
 
 body.presenting .cm-md-em,
 body.slides-printing .cm-md-em {
-  font-family: var(--slide-serif, Georgia, serif);
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
 }
 
 /* 行内代码：缩到正文的 0.86，去掉文档式边框，用极淡的同色底。 */
@@ -736,7 +996,7 @@ body.slides-printing .cm-md-table-widget table {
 
 body.presenting .cm-md-table-widget th,
 body.slides-printing .cm-md-table-widget th {
-  font-family: var(--slide-serif, Georgia, serif);
+  font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
   padding: 0.5em 0.7em;
   border-bottom: 2px solid var(--pele-accent);
 }

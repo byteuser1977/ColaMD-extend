@@ -52,6 +52,22 @@ function wipe(path) {
  * 的探针。杀完再确认一次，所以这里连 SIGKILL 都要来一遍。
  */
 export function stopVerifyApp(marker = ROOT) {
+  if (process.platform === 'win32') {
+    // Windows 没有 pkill。按命令行里的 profile 路径找 Electron，排除 PowerShell
+    // 自己（它的命令行也带着这段路径），否则清理脚本会把自己杀掉。
+    const escaped = marker.replaceAll("'", "''")
+    spawnSync(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        `Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like '*${escaped}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`,
+      ],
+      { stdio: 'ignore' },
+    )
+    return
+  }
   for (const signal of ['-TERM', '-KILL']) {
     spawnSync('pkill', [signal, '-f', marker], { stdio: 'ignore' })
   }

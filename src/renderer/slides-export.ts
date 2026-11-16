@@ -12,6 +12,7 @@
 // 的底色一起带走。
 
 import { PAGE_CLASS_PREFIX, PAGE_START_CLASS } from './editor/live-preview'
+import { getSlideDirectives } from './editor/slide-directives'
 import { deckPages } from './slideshow'
 import { renderWholeDocument, restoreViewport } from './print-layout'
 
@@ -146,7 +147,16 @@ export async function enterPrintLayout(): Promise<SlidesSheet | false> {
     const ownMargin = parseFloat(getComputedStyle(first).marginTop)
     const owned = last.getBoundingClientRect().bottom - first.getBoundingClientRect().top
     const used = owned + (Number.isFinite(ownMargin) ? ownMargin : 0)
-    const above = Math.max(0, Math.floor((PAGE_HEIGHT_PX - SAFETY_PX - used) / 2))
+    // 封面、章节、收束、金句、图表是 hero 页，内容垂直居中；其余内容页顶部对齐，
+    // 不再把标题推到半空中——这是「一页一屏」的关键。
+    const layout = getSlideDirectives().get(page)?.layout
+    const hero =
+      layout === 'cover' ||
+      layout === 'section' ||
+      layout === 'closing' ||
+      layout === 'quote' ||
+      layout === 'figure'
+    const above = hero ? Math.max(0, Math.floor((PAGE_HEIGHT_PX - SAFETY_PX - used) / 2)) : 0
     const target = `.cm-content > .${PAGE_CLASS_PREFIX}${page}.${PAGE_START_CLASS}`
     if (order > 0) rules.push(`body.${PRINT_CLASS} #editor ${target} { break-before: page; }`)
     if (above > 0) {

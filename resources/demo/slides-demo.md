@@ -1,32 +1,37 @@
-<!-- deck-logo: data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%23c44b2b' stroke-width='4'/%3E%3C/svg%3E -->
-
-<!-- deck-brand: ColaMD Extend -->
-
-<!-- deck-title: 幻灯片版式系统 -->
-
-<!-- deck-meta: 2026-11 · 内部演示 -->
+<!-- deck
+logo: data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%23c44b2b' stroke-width='4'/%3E%3C/svg%3E
+brand: ColaMD Extend
+title: 幻灯片版式系统
+meta: 2026-11 · 内部演示
+-->
 
 # 幻灯片版式示例
 
-一篇文档切完 `---` 之后，每一页可以声明一种版式：分隔线后第一行写 `<!-- slide: 版式名 -->`。这份示例每种版式一页，放映（⌘⇧P）看效果。
+一篇文档切完 `---` 之后，每一页可以声明一种版式。页头块的第一行是版式，后面可以写 kicker、label、chapter 三个字段；标题后的第一段自动成为导语。这份示例每种版式一页，另外再给一页不写版式的默认文章页，放映（⌘⇧P）看效果。
 
-文件顶部那几行 `<!-- deck-*: … -->` 是 deck 级公共元素：logo、品牌名、标题、副标题，放映与导出时印在每页的固定位置，cover/section/closing 幕封页自动隐藏。
-
-内置版式十种：cover（封面）、section（章节）、agenda（议程）、kpi（关键数字）、timeline（时间轴）、steps（步骤）、matrix（卡片矩阵）、two-col（双栏）、quote（引言）、closing（收束）。页内还可以写 `<!-- slide-css -->` 微调本页样式、`<!-- slide-js -->` 挂放映脚本（跑在沙箱里，离场即回收），示例见「页内样式微调」与「会动的章节条」两页。
+文件顶部那个 `deck` 块是 deck 级公共元素：logo、品牌名、标题、日期。它们印在每页的固定位置，封面和章节页也保留。
 
 ---
 
-<!-- slide: cover -->
+<!-- slide: cover
+kicker: Cover · 主视觉封面
+label: 幻灯片版式系统
+chapter: 开场
+-->
 
 # 幻灯片版式
 
-## cover · 主视觉封面
+## 十一种版式，一页一句话
 
-标题放大，副标题压淡，标题下一段强调色短杠
+标题放大，副标题压淡，标题后第一段自动成为导语。
 
 ---
 
-<!-- slide: agenda -->
+<!-- slide: agenda
+kicker: Agenda · 今日议程
+label: 幻灯片版式系统
+chapter: Act I · 版式基础
+-->
 
 ## 今日议程
 
@@ -37,17 +42,27 @@
 
 ---
 
-<!-- slide: section -->
+<!-- slide: section
+kicker: Act I · 数据的讲法
+label: 幻灯片版式系统
+chapter: Act I · 版式基础
+-->
 
 ## 第一幕 · 数据的讲法
 
-数字自己会说话，版式只负责给它一个台子
+数字自己会说话，版式只负责给它一个台子。
 
 ---
 
-<!-- slide: kpi -->
+<!-- slide: kpi
+kicker: Executive Summary
+label: 年度关键数字
+chapter: Act I · 数据
+-->
 
 ## 年度关键数字
+
+决策者一分钟能读完的版本。
 
 - **3.2 亿** 用户规模
 - **47%** 年增长率
@@ -56,7 +71,11 @@
 
 ---
 
-<!-- slide: timeline -->
+<!-- slide: timeline
+kicker: History
+label: 三年历程
+chapter: Act I · 历程
+-->
 
 ## 三年历程
 
@@ -66,17 +85,25 @@
 
 ---
 
-<!-- slide: steps -->
+<!-- slide: steps
+kicker: Process
+label: 三步上手
+chapter: Act I · 方法
+-->
 
 ## 三步上手
 
-- **一** 在页首写指令
+- **一** 在页首写页头块
 - **二** 放映看效果
 - **三** 导出成 PDF
 
 ---
 
-<!-- slide: matrix -->
+<!-- slide: matrix
+kicker: Details
+label: 页内样式微调
+chapter: Act I · 微调
+-->
 
 ## 页内样式微调
 
@@ -93,11 +120,34 @@
 
 ---
 
-<!-- slide: section -->
+<!-- slide: figure
+kicker: Diagram
+label: 图表独立页
+chapter: Act I · 图表
+-->
+
+## 图表独立页
+
+Mermaid、SVG 与普通图片都走这一版式，图独占一屏，标题退成小注。
+
+```mermaid
+flowchart LR
+  A[Markdown] --> B[版式层]
+  B --> C[放映]
+  B --> D[PDF]
+```
+
+---
+
+<!-- slide: section
+kicker: Motion
+label: 会动的章节条
+chapter: Act I · 脚本
+-->
 
 ## 会动的章节条
 
-脚本每 0.7 秒推进一步 CSS 变量，下面的横线就自己长满整页——`slide.setVar` 与 `slide.setClass` 是放映脚本影响页面的仅有的两个出口，脚本本体跑在沙箱 iframe 里，离场即回收。
+脚本每 0.7 秒推进一步 CSS 变量，下面的横线就自己长满整页。`slide.setVar` 与 `slide.setClass` 是放映脚本影响页面的仅有的两个出口，脚本本体跑在沙箱 iframe 里，离场即回收。
 
 <!-- slide-css
 .cm-md-hr {
@@ -121,9 +171,11 @@
 
 ***
 
----
-
-<!-- slide: two-col -->
+<!-- slide: two-col
+kicker: Comparison
+label: 双栏的用法
+chapter: Act II · 对比
+-->
 
 ## 双栏的用法
 
@@ -135,14 +187,35 @@ Markdown 的标题、列表、图表在两栏里各自渲染，`---` 仍然是�
 
 ---
 
-<!-- slide: quote -->
+## 默认页：把一页写满
+
+这是没有写 slide 块的默认页：标题收小、行距放宽、行宽收窄，一页能装下更多段落。
+
+默认页把标题收小，正文行距放到 1.8，行宽收到 82%，一页能落下六七百字。版式系统解决的是信息密度，不是装饰。
+
+- **先给结论** 第一段就让读者知道这页要说什么。
+- **再拆关系** 并列项用列表，因果链用步骤或时间轴。
+- **最后收口** 一页只留一个判断，下一页再展开。
+
+---
+
+<!-- slide: quote
+kicker: Key Takeaway
+label: 核心判断
+chapter: Act III · 收束
+-->
+
 > 版式是内容的礼服：合身的时候没人注意到它，不合身的时候人人都在议论它。
 
 匿名设计师
 
 ---
 
-<!-- slide: closing -->
+<!-- slide: closing
+kicker: Closing
+label: 回家作业
+chapter: Act III · 收束
+-->
 
 ## 回家作业
 
@@ -152,4 +225,4 @@ Markdown 的标题、列表、图表在两栏里各自渲染，`---` 仍然是�
 
 ---
 
-这就是全部十种版式。自定义主题可以覆盖任何一页的任何细节——版式类名（`cm-md-slide-*`）与 Markdown 结构（标题、列表、引用）就是全部的约定。
+这就是全部十一种版式；不写 slide 块的页会自动走默认文章版式。自定义主题可以覆盖任何一页的任何细节：版式类名（`cm-md-slide-*`）、页角色（`cm-md-page-title`、`cm-md-page-lead`）与 Markdown 结构（标题、列表、引用）就是全部的约定。

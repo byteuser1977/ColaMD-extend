@@ -1,7 +1,8 @@
 // 幻灯片放映/导出的页面增强宿主：页内 CSS 注入 + 受限 JS 沙箱。
 //
-// 这是一个刻意的「孤岛」模块：slideshow.ts、slides-export.ts、live-preview.ts
-// 一行都不改。进出场靠观察 body 的 presenting / slides-printing 类；翻页靠观察
+// 这是一个刻意的「孤岛」模块：live-preview.ts 一行都不改；slideshow / slides-export
+// 只补了页数与 hero 居中这两个必要的小口，不把版式逻辑塞回去。进出场靠观察
+// body 的 presenting / slides-printing 类；翻页靠观察
 // #slideshow-rules 的样式文本——放映层每翻一页就把隐藏规则重写成
 // `:not(.cm-md-page-N)`，从这里提取 N 就是当前页码。若上游某天改掉这个 id 或
 // 写法，本模块的表现是版式安静失效（编辑一切正常），补一行即可。
@@ -18,8 +19,15 @@
 // 应用自身的 script-src 依然不许内联。
 
 import './themes/slides.css'
-import { getDeckChrome, getDeckPageCount, getSlideDirectives, scopeSlideCSS } from './editor/slide-directives'
+import {
+  getDeckChrome,
+  getDeckPageCount,
+  getDocumentBase,
+  getSlideDirectives,
+  scopeSlideCSS,
+} from './editor/slide-directives'
 import { PAGE_CLASS_PREFIX } from './editor/live-preview'
+import { deckPages } from './slideshow'
 
 const PRESENTING_CLASS = 'presenting'
 const PRINT_CLASS = 'slides-printing'
@@ -142,13 +150,13 @@ function applyCurrentPage(): void {
 
 // ─── deck chrome：每页的公共元素（logo / 标题 / meta / 品牌名 / 页码） ─────────
 //
-// 学杂志版式的 chrome/foot 构造（参考 D:\temp\ppt\index.html）：顶部一条等宽小字
+// 学杂志版式的 chrome/foot 构造（参考 D:\temp\wanhua-ppt\index.html）：顶部一条等宽小字
 // 的 meta 条，底部一行品牌名加页码，右下角一个巨大的幽灵页码。内容全部来自
 // `<!-- deck-*: … -->` 指令，一条没写就整条不出现。文本一律 textContent（不拼
 // innerHTML），logo 用 img.src 属性赋值——注入面与 slide-js 的沙箱同级收紧。
 //
-// 放映：fixed 覆盖在纸面上，翻页时随 applyCurrentPage 刷新页码；cover/section/
-// closing 幕封页由 CSS（:has）自动淡出，学参考对 hero 页的处理。
+// 放映：fixed 覆盖在纸面上，翻页时随 applyCurrentPage 刷新页码；封面与章节页
+// 保留 chrome，只有收束页由 CSS（:has）淡出，学参考对 hero 页的处理。
 // 导出：Chromium 打印会把 fixed 元素复刻到每一张纸的同一位置，页码与幽灵数字
 // （每页各不相同的东西）在打印里由 CSS 藏掉，只留静态的 logo/标题/meta/品牌。
 
@@ -183,10 +191,32 @@ function ensureChromeDom(): void {
 
 const pad2 = (n: number): string => String(n).padStart(2, '0')
 
+/** deck-logo 写相对路径时按当前文档目录解析；绝对协议原样放行。 */
+function resolveAsset(raw: string): string {
+  const value = raw.trim().replace(/^<|>$/g, '')
+  if (/^(?:https?:|file:|data:|blob:)/i.test(value)) return value
+  const base = getDocumentBase()
+  if (!base) return value
+  try {
+    return new URL(value.replaceAll('\\', '/'), base).href
+  } catch {
+    return value
+  }
+}
+
 function syncChrome(): void {
   ensureChromeDom()
   const deck = getDeckChrome()
-  const total = Math.max(getDeckPageCount(), 1)
+  const dirs = getSlideDirectives().get(currentPage)
+  const pages = deckPages()
+  const total = Math.max(pages.length || getDeckPageCount(), 1)
+  // 空白页被过滤后，原始页码会跳号；页脚要的是「第几张」，不是原始页号。
+  const at = pages.indexOf(currentPage)
+  const ordinal = at >= 0 ? at + 1 : currentPage + 1
+  // 放映按页切换文案；打印是 fixed 元素复刻到每张纸，逐页不同的字没法跟着换，
+  // 所以纸张上退回 deck 级的静态文案。
+  const label = (printing ? deck.title : dirs?.label || deck.title) ?? ''
+  const chapter = (printing ? deck.meta : dirs?.chapter || deck.meta) ?? ''
 
   const left = chrome!.firstElementChild as HTMLElement
   const right = chrome!.lastElementChild as HTMLElement
@@ -198,25 +228,25 @@ function syncChrome(): void {
       chromeLogo.className = 'slide-chrome-logo'
       chromeLogo.alt = ''
     }
-    chromeLogo.src = deck.logo
+    chromeLogo.src = resolveAsset(deck.logo)
     left.appendChild(chromeLogo)
   } else {
     chromeLogo = null
   }
-  if (deck.title) {
+  if (label) {
     const t = document.createElement('span')
     t.className = 'slide-chrome-title'
-    t.textContent = deck.title
+    t.textContent = label
     left.appendChild(t)
   }
-  if (deck.meta) {
+  if (chapter) {
     const m = document.createElement('span')
     m.className = 'slide-chrome-meta'
-    m.textContent = deck.meta
+    m.textContent = chapter
     right.appendChild(m)
   }
   // 顶部三个槽全空就整条收起，别留一根空线。
-  chrome!.style.display = deck.logo || deck.title || deck.meta ? '' : 'none'
+  chrome!.style.display = deck.logo || label || chapter ? '' : 'none'
 
   foot!.textContent = ''
   if (deck.brand) {
@@ -227,10 +257,10 @@ function syncChrome(): void {
   }
   const num = document.createElement('span')
   num.className = 'slide-foot-num'
-  num.textContent = `${pad2(currentPage + 1)} / ${pad2(total)}`
+  num.textContent = `${pad2(ordinal)} / ${pad2(total)}`
   foot!.appendChild(num)
 
-  ghost!.textContent = pad2(currentPage + 1)
+  ghost!.textContent = pad2(ordinal)
 }
 
 // ─── JS 沙箱 ─────────────────────────────────────────────────────────────────
