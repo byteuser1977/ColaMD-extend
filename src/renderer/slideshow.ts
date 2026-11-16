@@ -10,6 +10,7 @@
 // 也没有第二个渲染器要同步。
 
 import { PAGE_CLASS_PREFIX, PAGE_START_CLASS } from './editor/live-preview'
+import { renderWholeDocument, restoreViewport } from './print-layout'
 
 export type Page = {
   /** 页码，就是行装饰里的那个 N。 */
@@ -30,6 +31,8 @@ const RULE_STYLE_ID = 'slideshow-rules'
 const DRAG_SLOP = 4
 
 let presenting = false
+/** 起手中的闸：startSlideshow 里有一段 await，挡住等待期间的重入。 */
+let starting = false
 let pages: number[] = []
 let index = 0
 let rules: HTMLStyleElement | null = null
@@ -208,13 +211,32 @@ function onContextMenu(event: MouseEvent): void {
   show(index - 1)
 }
 
-export function startSlideshow(next: SlideshowOptions = {}): boolean {
-  if (presenting) return true
+export async function startSlideshow(next: SlideshowOptions = {}): Promise<boolean> {
+  // 起手要先渲染整篇再数页（有 await），闸门要在这之前落下：自动重复的快捷键
+  // 会在渲染等待的几帧里再次进来，没有这道闸就是两套监听器、两个隐藏规则。
+  if (presenting || starting) return presenting
+  starting = true
+  try {
+    return await beginSlideshow(next)
+  } finally {
+    starting = false
+  }
+}
+
+async function beginSlideshow(next: SlideshowOptions = {}): Promise<boolean> {
   const editor = editorElement()
   const root = documentRoot()
   if (!editor || !root) return false
+  // 页码必须数在整篇上：CodeMirror 只为视口附近的行建 DOM，直接读 DOM 会把
+  // 视口之外的页漏掉——放映走到「已绘制部分的末尾」就凭空到顶（2026-11-16 报的，
+  // 与导出路径 2026-09-26 修的是同一个病，见 print-layout 的头注释）。
+  // 整篇渲染保持到散场：跳到远处页（End/Home）时那些行也得在 DOM 里。
+  await renderWholeDocument()
   const deck = pageNumbers(root)
-  if (deck.length === 0) return false
+  if (deck.length === 0) {
+    restoreViewport()
+    return false
+  }
 
   pages = deck
   options = next
@@ -261,6 +283,8 @@ export function stopSlideshow(): void {
   window.removeEventListener('resize', layout)
   watch?.disconnect()
   watch = null
+  // 放映期间整篇渲染（进场时为数页码打开的），散场还给编辑器视口渲染。
+  restoreViewport()
 
   document.body.classList.remove(PRESENTING_CLASS)
   rules?.remove()

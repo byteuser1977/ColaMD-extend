@@ -19,6 +19,7 @@ import { searchHighlightField } from './search-highlight'
 import { stateExtensions, editableCompartment, bodyStart } from './state'
 import { editorTheme } from './source-theme'
 import { cursorColors } from './cursor-colors'
+import { slideLayout } from './slide-layout'
 
 export interface EditorOptions {
   /** 初始文本。就是文件的字节。 */
@@ -125,6 +126,9 @@ function editorExtensions(
     // 「没改过的字节不许变」这条纪律。源码模式把它收起来，剩下的就是带 markdown
     // 语法高亮的原文（高亮在 state.ts 的 markdown 扩展里，跟模式无关）。
     livePreviewCompartment.of(sourceMode ? [] : livePreview),
+    // 幻灯片版式：独立于 live-preview 的行装饰（slide-layout.ts），给声明了版式的
+    // 页打 cm-md-slide-* 类。常驻安装：样式只在放映/导出时命中，平时零影响。
+    slideLayout,
     // 焦点变化要重算装饰：只有**正在编辑**的那一行才显示源码（见 live-preview 的 setEditorFocus）。
     // 用 DOM 事件而不是 EditorView.focusChangeEffect，是因为后者在创建时就已带焦点的编辑器上
     // 不会触发；下面创建完 view 之后补了一次初始值。

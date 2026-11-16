@@ -16,6 +16,7 @@ import './themes/base.css'
 import './themes/premium.css'
 import './themes/editor-preview.css'
 import './themes/document.css'
+import './slides-enhance'
 import { installCapacitorAPI, isAndroidApp, startIntentPolling } from './capacitor-api'
 
 // 移动端（Capacitor WebView）挂替身；Electron 桌面 no-op。必须在任何 electronAPI 触达之前。
@@ -1772,7 +1773,7 @@ async function toggleSlideshow(): Promise<void> {
     })
   }
 
-  const started = startSlideshow({
+  const started = await startSlideshow({
     onStart: () => {
       setEditorEditable(false)
       void window.electronAPI.setSlideshowFullscreen(true)

@@ -120,6 +120,19 @@ function fixture() {
     '',
     // 查找跳转的靶子：这一条在文档最末尾，一屏高的视口里绝对看不见。
     'NEEL 后半段的锚点。',
+    '',
+    // 幻灯片版式夹具：一页声明 cover 版式，页内再写一段 slide-css。
+    // 断言钉住三件事：版式类落到该页的每一行、指令注释本身不进正文、
+    // slide-css 指令行也不进正文（见 checkSlideLayouts）。
+    '---',
+    '',
+    '<!-- slide: cover -->',
+    '',
+    '# 版式验收封面',
+    '',
+    '<!-- slide-css',
+    'h1 { letter-spacing: 0.1em; }',
+    '-->',
     ''
   ].join('\n')
 }
@@ -589,6 +602,22 @@ function reportChecks() {
     ? `\n✗ ${failed.length}/${checks.length} 条没通过`
     : `\n✓ ${checks.length} 条全通过`)
   if (failed.length) process.exitCode = 1
+}
+
+/** 幻灯片版式验收：版式类要落到声明页的每一行，指令注释一行也不进正文。 */
+async function checkSlideLayouts(renderer) {
+  const got = JSON.parse(await evaluate(renderer, `(() => {
+    const content = document.querySelector('#editor .cm-content')
+    const coverLines = content.querySelectorAll('.cm-md-slide-cover')
+    const directiveLines = content.querySelectorAll('.cm-md-slide-directive')
+    return {
+      cover: coverLines.length,
+      directive: directiveLines.length,
+      leak: [...directiveLines].some((el) => el.textContent.includes('slide:'))
+    }
+  })()`))
+  check('幻灯片版式类落到整页', got.cover >= 4, JSON.stringify(got))
+  check('幻灯片指令不进正文', got.directive >= 2 && !got.leak, JSON.stringify(got))
 }
 
 /** 复用当前窗口逐主题截图取色，检查选区是否真的画在引用和代码背景之上。 */
@@ -1405,6 +1434,7 @@ function main() {
         await sleep(250)
       }
       check('夹具已加载', loaded, `编辑器里有没有这份夹具：${loaded}`)
+      await checkSlideLayouts(renderer)
       await checkCodeCursor(renderer)
       if (process.argv.includes('--cursor-only')) {
         reportChecks()

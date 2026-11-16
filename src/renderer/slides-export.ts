@@ -23,9 +23,11 @@ const PAGE_HEIGHT_INCHES = 7.5
 const PX_PER_INCH = 96
 const PAGE_WIDTH_PX = Math.round(PAGE_WIDTH_INCHES * PX_PER_INCH)
 const PAGE_HEIGHT_PX = Math.round(PAGE_HEIGHT_INCHES * PX_PER_INCH)
-/** The deck's column and type size at this page, so a sheet reads as a slide. */
-const COLUMN_EM = 38
-const FONT_SIZE_PX = 20
+/** The deck's column and type size at this page, so a sheet reads as a slide.
+ *  栏宽与字号按 PPT 惯例取：正文约占纸面九成宽，基线字号让 16:9 纸上的正文
+ *  读起来是「幻灯片正文」而不是「文档正文」；标题阶梯见 themes/slides.css。 */
+const COLUMN_EM = 52
+const FONT_SIZE_PX = 22
 /** A page that fills its sheet exactly is a page that spills over it: leave a hair. */
 const SAFETY_PX = 4
 
@@ -75,7 +77,7 @@ body.${PRINT_CLASS} #editor .cm-editor { height: auto !important; }
 body.${PRINT_CLASS} #editor .cm-scroller { display: block !important; height: auto !important; overflow: visible !important; }
 body.${PRINT_CLASS} #editor .cm-content {
   display: block !important;
-  width: min(${COLUMN_EM}em, ${Math.round(PAGE_WIDTH_PX * 0.86)}px) !important;
+  width: min(${COLUMN_EM}em, ${Math.round(PAGE_WIDTH_PX * 0.89)}px) !important;
   max-width: none !important;
   margin: 0 auto !important;
   padding: 0 !important;
