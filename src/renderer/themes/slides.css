@@ -704,15 +704,21 @@ body.slides-printing .cm-md-slide-timeline .cm-md-strong {
 
 /* ════ steps · 步骤流程（dsh-ppt: process.steps）════
  *
- * 约定：一个列表，3-5 项，每项 `**步骤名** 说明`。衬线数字的强调色圆号。 */
+ * 约定：一个列表，3-5 项，每项 `**步骤名** 说明`。整行时间轴式步骤条：
+ * 左侧强调线，步骤名用描边胶囊，说明占满剩余宽度。不再用三列窄栏，
+ * 避免长句被挤成两三行，也避免浅色主题下圆号与文字对比度不足。 */
 body.presenting .cm-md-slide-steps.cm-md-li,
 body.slides-printing .cm-md-slide-steps.cm-md-li {
-  display: inline-block;
-  width: 30%;
-  margin: 0 1.5% 1.5em 0;
-  vertical-align: top;
-  text-align: left;
+  display: flex;
+  align-items: flex-start;
+  gap: 1em;
+  width: 100%;
+  margin: 0 0 1em;
+  padding: 0.75em 0 0.75em 1.1em;
+  border-left: 3px solid var(--pele-accent);
+  border-bottom: 1px solid var(--border-color);
   list-style: none;
+  text-align: left;
 }
 
 body.presenting .cm-md-slide-steps .cm-md-listmark,
@@ -725,14 +731,16 @@ body.slides-printing .cm-md-slide-steps .cm-md-strong {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   min-width: 2em;
-  height: 2em;
-  margin-bottom: 0.45em;
-  border-radius: 50%;
-  background: var(--pele-accent);
-  color: var(--bg-color);
+  padding: 0.15em 0.7em;
+  border: 1px solid var(--pele-accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pele-accent);
   font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
-  font-size: 1.05em;
+  font-size: 0.95em;
+  white-space: nowrap;
 }
 
 /* ════ matrix · 主题矩阵（dsh-ppt: product.matrix）════
