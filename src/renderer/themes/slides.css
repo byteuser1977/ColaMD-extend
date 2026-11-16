@@ -62,8 +62,8 @@
   --slide-quote-size: 2.4em;
 
   --slide-page-pad-x: 6vw;
-  --slide-page-top-pad: 72px;
-  --slide-page-top-pad-print: 64px;
+  --slide-page-top-pad: 61px;
+  --slide-page-top-pad-print: 54px;
   --slide-cover-text-align: left;
   --slide-cover-lead-inline: 0;
 }
@@ -721,25 +721,33 @@ body.slides-printing .cm-md-slide-steps.cm-md-li {
   text-align: left;
 }
 
-body.presenting .cm-md-slide-steps .cm-md-listmark,
-body.slides-printing .cm-md-slide-steps .cm-md-listmark {
+/* 序号由主题的列表标记提供，steps 用步骤名胶囊代替，避免两个编号并排。
+ * 这里带 #editor .cm-content：主题常在 `#editor .cm-content .cm-md-listmark`
+ * 上写 display，单靠 body.presenting 的权重压不住。 */
+body.presenting #editor .cm-content .cm-md-slide-steps .cm-md-listmark,
+body.slides-printing #editor .cm-content .cm-md-slide-steps .cm-md-listmark {
   display: none;
 }
 
-body.presenting .cm-md-slide-steps .cm-md-strong,
-body.slides-printing .cm-md-slide-steps .cm-md-strong {
+/* 步骤名做成实心强调色标签块：圆角矩形而不是被文字拉扁的椭圆；
+ * 文字用页面底色（深底主题即近黑），压在强调色上始终有对比。
+ * 主题的 `#editor .cm-content .cm-md-strong` 会把加粗染成强调色，
+ * 这里必须带 #editor .cm-content 才能把文字颜色改回来。 */
+body.presenting #editor .cm-content .cm-md-slide-steps .cm-md-strong,
+body.slides-printing #editor .cm-content .cm-md-slide-steps .cm-md-strong {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  min-width: 2em;
-  padding: 0.15em 0.7em;
-  border: 1px solid var(--pele-accent);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--pele-accent);
+  min-width: 2.4em;
+  padding: 0.28em 0.85em;
+  border: none;
+  border-radius: 4px;
+  background: var(--pele-accent);
+  color: var(--bg-color);
   font-family: var(--slide-title-font, var(--slide-serif, Georgia, serif));
   font-size: 0.95em;
+  line-height: 1.25;
   white-space: nowrap;
 }
 
