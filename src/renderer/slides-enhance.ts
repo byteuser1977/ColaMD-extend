@@ -18,7 +18,7 @@
 // 应用自身的 script-src 依然不许内联。
 
 import './themes/slides.css'
-import { getSlideDirectives, scopeSlideCSS } from './editor/slide-directives'
+import { getDeckChrome, getDeckPageCount, getSlideDirectives, scopeSlideCSS } from './editor/slide-directives'
 import { PAGE_CLASS_PREFIX } from './editor/live-preview'
 
 const PRESENTING_CLASS = 'presenting'
@@ -124,6 +124,7 @@ function applyCurrentPage(): void {
     const css = (dirs?.css ?? []).map((block) => scopeSlideCSS(block, `${PAGE_CLASS_PREFIX}${currentPage}`, `body.${PRESENTING_CLASS}`))
     pageStyle.textContent = css.join('\n')
   }
+  syncChrome()
   // 当前页版式写给 #editor 的 data-slide-layout：版式包里容器级的规则
   // （居中、双栏）靠它选中「正在放映的这一页」。属性值换走再换回来，
   // CSS 动画就重播一次，正好是「每次翻到这页都进场」。
@@ -137,6 +138,99 @@ function applyCurrentPage(): void {
   resetApplied()
   const js = dirs?.js.join('\n;\n')
   if (js) mountHost(js)
+}
+
+// ─── deck chrome：每页的公共元素（logo / 标题 / meta / 品牌名 / 页码） ─────────
+//
+// 学杂志版式的 chrome/foot 构造（参考 D:\temp\ppt\index.html）：顶部一条等宽小字
+// 的 meta 条，底部一行品牌名加页码，右下角一个巨大的幽灵页码。内容全部来自
+// `<!-- deck-*: … -->` 指令，一条没写就整条不出现。文本一律 textContent（不拼
+// innerHTML），logo 用 img.src 属性赋值——注入面与 slide-js 的沙箱同级收紧。
+//
+// 放映：fixed 覆盖在纸面上，翻页时随 applyCurrentPage 刷新页码；cover/section/
+// closing 幕封页由 CSS（:has）自动淡出，学参考对 hero 页的处理。
+// 导出：Chromium 打印会把 fixed 元素复刻到每一张纸的同一位置，页码与幽灵数字
+// （每页各不相同的东西）在打印里由 CSS 藏掉，只留静态的 logo/标题/meta/品牌。
+
+let chrome: HTMLElement | null = null
+let chromeLogo: HTMLImageElement | null = null
+let foot: HTMLElement | null = null
+let ghost: HTMLElement | null = null
+
+function ensureChromeDom(): void {
+  if (chrome && foot && ghost) return
+  chrome = document.createElement('div')
+  chrome.id = 'slideshow-chrome'
+  chrome.className = 'slide-chrome'
+  chrome.setAttribute('aria-hidden', 'true')
+  const left = document.createElement('div')
+  left.className = 'slide-chrome-left'
+  const right = document.createElement('div')
+  right.className = 'slide-chrome-right'
+  chrome.append(left, right)
+
+  foot = document.createElement('div')
+  foot.id = 'slideshow-foot'
+  foot.className = 'slide-foot'
+  foot.setAttribute('aria-hidden', 'true')
+
+  ghost = document.createElement('div')
+  ghost.className = 'slide-ghost'
+  ghost.setAttribute('aria-hidden', 'true')
+
+  document.body.append(chrome, foot, ghost)
+}
+
+const pad2 = (n: number): string => String(n).padStart(2, '0')
+
+function syncChrome(): void {
+  ensureChromeDom()
+  const deck = getDeckChrome()
+  const total = Math.max(getDeckPageCount(), 1)
+
+  const left = chrome!.firstElementChild as HTMLElement
+  const right = chrome!.lastElementChild as HTMLElement
+  left.textContent = ''
+  right.textContent = ''
+  if (deck.logo) {
+    if (!chromeLogo) {
+      chromeLogo = document.createElement('img')
+      chromeLogo.className = 'slide-chrome-logo'
+      chromeLogo.alt = ''
+    }
+    chromeLogo.src = deck.logo
+    left.appendChild(chromeLogo)
+  } else {
+    chromeLogo = null
+  }
+  if (deck.title) {
+    const t = document.createElement('span')
+    t.className = 'slide-chrome-title'
+    t.textContent = deck.title
+    left.appendChild(t)
+  }
+  if (deck.meta) {
+    const m = document.createElement('span')
+    m.className = 'slide-chrome-meta'
+    m.textContent = deck.meta
+    right.appendChild(m)
+  }
+  // 顶部三个槽全空就整条收起，别留一根空线。
+  chrome!.style.display = deck.logo || deck.title || deck.meta ? '' : 'none'
+
+  foot!.textContent = ''
+  if (deck.brand) {
+    const b = document.createElement('span')
+    b.className = 'slide-foot-brand'
+    b.textContent = deck.brand
+    foot!.appendChild(b)
+  }
+  const num = document.createElement('span')
+  num.className = 'slide-foot-num'
+  num.textContent = `${pad2(currentPage + 1)} / ${pad2(total)}`
+  foot!.appendChild(num)
+
+  ghost!.textContent = pad2(currentPage + 1)
 }
 
 // ─── JS 沙箱 ─────────────────────────────────────────────────────────────────
@@ -267,6 +361,8 @@ function mountPrintCss(): void {
   printStyle.id = PRINT_CSS_ID
   printStyle.textContent = rules.join('\n')
   document.head.appendChild(printStyle)
+  // 打印的 chrome 同步一遍：fixed 元素会被 Chromium 复刻到每张纸上。
+  syncChrome()
 }
 
 function unmountPrintCss(): void {

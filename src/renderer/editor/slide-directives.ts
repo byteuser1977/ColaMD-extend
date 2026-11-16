@@ -27,6 +27,18 @@ export type PageDirectives = {
   js: string[]
 }
 
+/**
+ * 整副牌的公共元素（deck chrome）：logo、品牌名、主标题、副标题/日期。
+ * 写法 `<!-- deck-logo: … -->` 等，单行，文档任意处（惯例是顶部），
+ * 同名多条取最后一条。放映与导出在每页的固定位置呈现，见 slides.css。
+ */
+export type DeckChrome = {
+  logo?: string
+  brand?: string
+  title?: string
+  meta?: string
+}
+
 /** 一次扫描的全部产出：按页码归档的指令，加上打装饰要用的行号信息。 */
 export type SlideScan = {
   /** 页码 → 指令。只有写了指令的页才在表里。 */
@@ -35,11 +47,14 @@ export type SlideScan = {
   linesByPage: Map<number, number[]>
   /** 指令块（含未生效的）的起始行号，打 cm-md-slide-directive 用。 */
   directiveLines: number[]
+  /** deck 级公共元素；一条都没写就是空对象，chrome 整条不出现。 */
+  deck: DeckChrome
 }
 
 const LAYOUT_RE = /^<!--\s*slide:\s*([a-z][a-z0-9-]*)\s*-->$/
 const CSS_RE = /^<!--\s*slide-css\b\s*([\s\S]*?)-->$/
 const JS_RE = /^<!--\s*slide-js\b\s*([\s\S]*?)-->$/
+const DECK_RE = /^<!--\s*deck-(logo|brand|title|meta)\s*:\s*([\s\S]*?)-->$/
 
 function inRange(range: { from: number; to: number }, at: number): boolean {
   return at >= range.from && at < range.to
@@ -91,6 +106,8 @@ function firstContentLines(state: EditorState, pageOf: number[]): Map<number, nu
     // 分隔线自己不算内容：`---` 归前页，但下一页的「第一行」不该是它。
     if (state.doc.line(n).text.trim() === '') continue
     if (/^ {0,3}(?:---|\*\*\*|___)\s*$/.test(state.doc.line(n).text)) continue
+    // 注释也不算内容：deck 指令惯例写在页首，不能把同一页的 slide 声明挤下位。
+    if (/^\s*<!--/.test(state.doc.line(n).text)) continue
     first.set(page, n)
   }
   return first
@@ -106,6 +123,7 @@ export function scanSlideDirectives(state: EditorState): SlideScan {
   const directives = new Map<number, PageDirectives>()
   const linesByPage = new Map<number, number[]>()
   const directiveLines: number[] = []
+  const deck: DeckChrome = {}
 
   // 页行表：后面打行装饰要按页归行，这里顺便把每页的行都记下来。
   for (let n = 1; n <= state.doc.lines; n++) {
@@ -127,11 +145,20 @@ export function scanSlideDirectives(state: EditorState): SlideScan {
     const layout = LAYOUT_RE.exec(source)
     if (layout) {
       pushAll(directiveLines, fromLine, toLine)
-      // 仅页首生效：不是第一个非空行就当普通注释，既不报错也不落类。
-      if (firstContent.get(page) === fromLine) {
+      // 仅页首生效：在本页任何真实内容（非注释、非空行）之前就行，写在页中间
+      // 就当普通注释。deck 指令也在页首，与 slide 声明的先后随意。
+      const content = firstContent.get(page)
+      if (content === undefined || fromLine < content) {
         const dirs = ensure(directives, page)
         dirs.layout = layout[1]
       }
+      return
+    }
+    const deckHit = DECK_RE.exec(source)
+    if (deckHit) {
+      pushAll(directiveLines, fromLine, toLine)
+      // 同名多条取最后一条：deck 指令没有「页」的归属，写哪都一样。
+      deck[deckHit[1] as keyof DeckChrome] = deckHit[2].trim()
       return
     }
     const css = CSS_RE.exec(source)
@@ -147,7 +174,7 @@ export function scanSlideDirectives(state: EditorState): SlideScan {
     }
   })
 
-  return { directives, linesByPage, directiveLines }
+  return { directives, linesByPage, directiveLines, deck }
 }
 
 /**
@@ -174,6 +201,8 @@ function ensure(map: Map<number, PageDirectives>, page: number): PageDirectives 
 // 仿 live-preview 的 documentFileUrl：field 每次重算时 publish，跨 EditorState 也在。
 
 let snapshot: Map<number, PageDirectives> = new Map()
+let deckSnapshot: DeckChrome = {}
+let pageCountSnapshot = 0
 
 export function publishSlideDirectives(directives: Map<number, PageDirectives>): void {
   snapshot = directives
@@ -181,6 +210,20 @@ export function publishSlideDirectives(directives: Map<number, PageDirectives>):
 
 export function getSlideDirectives(): Map<number, PageDirectives> {
   return snapshot
+}
+
+/** deck 公共元素与总页数随同一条快照发布（总页数给放映层的页码 `03 / 12` 用）。 */
+export function publishDeckChrome(deck: DeckChrome, pageCount: number): void {
+  deckSnapshot = deck
+  pageCountSnapshot = pageCount
+}
+
+export function getDeckChrome(): DeckChrome {
+  return deckSnapshot
+}
+
+export function getDeckPageCount(): number {
+  return pageCountSnapshot
 }
 
 // ─── 页内 CSS 的作用域化 ─────────────────────────────────────────────────────

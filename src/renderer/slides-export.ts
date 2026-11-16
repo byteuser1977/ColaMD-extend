@@ -23,11 +23,14 @@ const PAGE_HEIGHT_INCHES = 7.5
 const PX_PER_INCH = 96
 const PAGE_WIDTH_PX = Math.round(PAGE_WIDTH_INCHES * PX_PER_INCH)
 const PAGE_HEIGHT_PX = Math.round(PAGE_HEIGHT_INCHES * PX_PER_INCH)
-/** The deck's column and type size at this page, so a sheet reads as a slide.
- *  栏宽与字号按 PPT 惯例取：正文约占纸面九成宽，基线字号让 16:9 纸上的正文
- *  读起来是「幻灯片正文」而不是「文档正文」；标题阶梯见 themes/slides.css。 */
-const COLUMN_EM = 52
+/** The deck's type size at this page, so a sheet reads as a slide.
+ *  全出血排版：正文铺满纸面、只留左右 64px 边距（slides.css 同一决定），基线字号
+ *  让 16:9 纸上的正文读起来是「幻灯片正文」而不是「文档正文」；标题阶梯见
+ *  themes/slides.css。页首上方的安全区（chrome 的高度）由 page-start 的
+ *  padding-top 承担，也写在 slides.css。 */
 const FONT_SIZE_PX = 22
+/** 纸面左右边距：6vw 是放映侧的值，打印里纸宽固定，直接给像素。 */
+const PAGE_MARGIN_PX = 77
 /** A page that fills its sheet exactly is a page that spills over it: leave a hair. */
 const SAFETY_PX = 4
 
@@ -60,9 +63,13 @@ function pageOfLine(line: Element): number | null {
 }
 
 function layoutRules(background: string): string {
+  // 底色在主题底色上极轻地拌一点强调色：白纸不刺眼、深纸不死黑，整副牌更柔和，
+  // 也和主题的强调色同调（放映侧同一配方，见 themes/slides.css 的「幻灯片底色」）。
+  // 不支持 color-mix 的旧内核忽略第二条声明，自动落回纯底色。
+  const softened = `color-mix(in srgb, ${background} 95%, var(--pele-accent))`
   return `/* The sheet is the page: what margins exist in here are the document's own. */
-@page { size: ${PAGE_WIDTH_INCHES}in ${PAGE_HEIGHT_INCHES}in; margin: 0; background: ${background}; }
-html, body { display: block !important; height: auto !important; overflow: visible !important; background: ${background} !important; }
+@page { size: ${PAGE_WIDTH_INCHES}in ${PAGE_HEIGHT_INCHES}in; margin: 0; background: ${background}; background: ${softened}; }
+html, body { display: block !important; height: auto !important; overflow: visible !important; background: ${background} !important; background: ${softened} !important; }
 body.${PRINT_CLASS} #editor {
   position: static !important;
   inset: auto !important;
@@ -70,6 +77,7 @@ body.${PRINT_CLASS} #editor {
   overflow: visible !important;
   padding: 0 !important;
   background: ${background} !important;
+  background: ${softened} !important;
 }
 /* 纸是普通的块流：CM6 的编辑器/滚动容器都是 flex 或 auto 高度，强制断开的分页在
    它们里面不会生效，所以这里把它们摊平成块。 */
@@ -77,10 +85,10 @@ body.${PRINT_CLASS} #editor .cm-editor { height: auto !important; }
 body.${PRINT_CLASS} #editor .cm-scroller { display: block !important; height: auto !important; overflow: visible !important; }
 body.${PRINT_CLASS} #editor .cm-content {
   display: block !important;
-  width: min(${COLUMN_EM}em, ${Math.round(PAGE_WIDTH_PX * 0.89)}px) !important;
+  width: auto !important;
   max-width: none !important;
-  margin: 0 auto !important;
-  padding: 0 !important;
+  margin: 0 !important;
+  padding: 0 ${PAGE_MARGIN_PX}px !important;
   font-size: ${FONT_SIZE_PX}px !important;
   line-height: 1.6;
 }

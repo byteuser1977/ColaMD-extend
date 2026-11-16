@@ -34,9 +34,28 @@
 - `<!-- slide-css … -->`：页内 CSS，可多行，页内任意位置，多条按出现顺序拼接。
 - `<!-- slide-js … -->`：页内脚本，放映进入该页时执行、离开即清理；导出 PDF 一律不执行。
 
-### 内置版式（十种，角色分类参考 dsh-ppt）
+### 全出血杂志式排版（2026-11-16 按用户反馈重画）
 
-放映与导出共用一套**通用字号阶梯**（`slides.css`）：一级标题 ≈2.2em、二级 ≈1.6em、三级 ≈1.3em，列表比文档疏，文档式的标题下划线在幻灯片里去掉；导出纸面（`slides-export.ts`）正文基线 22px、栏宽约占 16:9 纸面 89%。这是 2026-11-16 按用户反馈重排的——原基线 20px/38em 且标题沿用文档样式，在幻灯片上「标题正文太小」。版式自己的标题规则（cover 2.6em、section 2em）选择器更具体，优先于通用阶梯。
+参考杂志风网页 PPT 与报告类 PPTX 重画，色彩仍只引主题活变量：内容铺满 16:9 纸面、只留 6vw 边距（放映 6vw、导出 64px），不再聚在中央窄栏；字体三件套——衬线（标题/大数字/金句）、无衬线（正文）、等宽（chrome/页码/标签），一级标题 2.4em、二级 1.6em、三级 1.25em，文档式的标题下划线一律去掉；细线代替色块（tag 边框、卡片描边、chrome 中缝线）；底色为主题底色 95% + 强调色 5% 的柔和调和。每页第一条线（`cm-md-page-start`）统一留出页顶安全区给 chrome；cover 改为杂志封面式左对齐、副标题压淡、强调色短杠。
+
+### deck 公共元素（chrome）
+
+在文档任意处（惯例顶部）写 deck 级指令，放映与导出的每页固定位置呈现：
+
+```markdown
+<!-- deck-logo: https://…/logo.png -->
+<!-- deck-brand: ColaMD Extend -->
+<!-- deck-title: 幻灯片版式系统 -->
+<!-- deck-meta: 2026-11 · 内部分享 -->
+```
+
+- **顶部 chrome 条**（等宽小字 + 大字距）：左 = logo（没有则跳过）+ deck-title，中缝 1px 细线，右 = deck-meta
+- **底部 foot**：左 = deck-brand（衬线小字），右 = 自动页码 `03 / 12`（仅放映；打印里 fixed 元素随 Chromium 复刻到每张纸，各页相同的 logo/标题/meta/品牌照印，页码与幽灵数字藏掉）
+- **右下角幽灵页码**：超大衬线数字、透明度 5%，随翻页变化（仅放映）
+- cover/section/closing 幕封页 chrome 自动淡出（`:has()` 实现）
+- 一条 deck 指令都没写就整条不出现，页面保持纯净；文本一律 `textContent`、logo 走 `img.src` 属性赋值，无 innerHTML 注入面
+
+### 内置版式（十种，角色分类参考 dsh-ppt）
 
 | 版式名 | dsh-ppt 对应 | 效果 |
 |---|---|---|
@@ -57,9 +76,9 @@
 
 实现刻意做成独立模块，避免对上游工程的合并影响：
 
-- **独立 CM6 扩展打类**（`editor/slide-layout.ts` + `editor/slide-directives.ts`）：自己扫描语法树（HorizontalRule 分页 + CommentBlock 指令注释），与 live-preview 的 collectPages 平行、同行类叠加（CM6 行装饰可叠加），`live-preview.ts` 与 `slides-export.ts` **零改动**。
-- **放映/导出宿主独立**（`slides-enhance.ts`）：进出场观察 body 的 presenting / slides-printing 类；翻页观察 `#slideshow-rules` 的样式文本（放映层每翻一页重写隐藏规则，页码就在里面），`slideshow.ts` 同样**零改动**。若上游重构掉某个观察点，表现是版式安静失效（编辑一切正常），补回即可。
-- **上游挂载点总共三处三行**：`editor/core.ts` 扩展注册 +1、`main.ts` 副作用导入 +1、`index.html` CSP 补 `frame-src blob:`（沙箱 iframe 必需）。`slideshow.ts` 的版式相关接线**零改动**（另有上述放映翻页的 bug 修复，见「顺手修复」）。
+- **独立 CM6 扩展打类**（`editor/slide-layout.ts` + `editor/slide-directives.ts`）：自己扫描语法树（HorizontalRule 分页 + CommentBlock/HTMLBlock 指令注释），与 live-preview 的 collectPages 平行、同行类叠加（CM6 行装饰可叠加），`live-preview.ts` **零改动**。
+- **放映/导出宿主独立**（`slides-enhance.ts`）：进出场观察 body 的 presenting / slides-printing 类；翻页观察 `#slideshow-rules` 的样式文本（放映层每翻一页重写隐藏规则，页码就在里面），`slideshow.ts` 的版式相关接线**零改动**（另有放映翻页 bug 修复，见「顺手修复」）。若上游重构掉某个观察点，表现是版式安静失效（编辑一切正常），补回即可。
+- **上游挂载点**：`editor/core.ts` 扩展注册 +1、`main.ts` 副作用导入 +1、`index.html` CSP 补 `frame-src blob:`（沙箱 iframe 必需）；另有 `slides-export.ts` 的纸面排版基线（全出血、字号、底色——本就是导出路径的版式实现，2026-11-16 重画时一并调整）。
 - 版式色只引主题契约活变量（`--pele-accent`、`--text-*`、`--border-color`），换主题即换整套版式的皮；`.cm-md-slide-*` 类名与页面 Markdown 结构（标题/列表/引用）是公开契约，自定义主题与用户 CSS 可覆盖任何细节、可新增自有版式。
 
 ### 安全模型

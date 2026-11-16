@@ -6,32 +6,251 @@
  * 一条也不生效。版式名与 markdown 结构（标题/列表/引用）共同构成公开契约：自定义
  * 主题或用户 CSS 可以覆盖任何一条，也可以照样新增自己的版式。
  *
- * 版式分类学参考 dsh-ppt 的角色体系（cover.hero / section.statement / agenda.simple /
- * overview.kpi / history.timeline / process.steps / product.matrix /
- * comparison.two-column / closing.summary），颜色只引 themes/contract.json 的活变量，
- * 随主题走：换主题就是换整套版式的皮。
+ * 整副牌还有 deck 级公共元素（chrome）：`<!-- deck-logo / deck-brand / deck-title /
+ * deck-meta: … -->` 写在文档任意处（惯例顶部），放映与导出的每页固定位置呈现，
+ * DOM 由 slides-enhance.ts 挂载（.slide-chrome / .slide-foot / .slide-ghost）。
+ *
+ * 设计语言（学杂志风网页 PPT 与报告类 PPTX 的共性，色彩仍只引 themes/contract.json
+ * 的活变量，随主题走）：
+ *   - 字体三件套：衬线（标题/大数字/金句）、无衬线（正文）、等宽（chrome、页码、标签）
+ *   - 细线代替色块：1px 分隔线、tag 边框、卡片描边
+ *   - 全出血：内容占满 16:9 纸面，只留 6vw 边距，不再聚在中央窄栏
+ *   - 幽灵装饰：右下角超大低透明度页码（放映），幕封页 chrome 自动淡出
  *
  * 两种作用域写法，各有分工：
  *   - 容器级：放映时 slides-enhance 会把当前页版式写进 #editor 的 data-slide-layout
- *     属性，页面级布局（居中、双栏）用它选；只在放映时存在，导出是流式分纸，
+ *     属性，页面级布局（双栏、封面排版）用它选；只在放映时存在，导出是流式分纸，
  *     没有「当前页」可言。
  *   - 行级：直接选 .cm-md-slide-* 的行，放映导出都生效；导出的双栏/卡片用
  *     inline-block 在纸面上排出来（页首行保持 block，分页符 break-before 依赖它）。
  */
 
-/* 指令行自己不占版面：放映时整行藏掉（分页符只在导出里才有，这里放心 display:none）；
-   导出时不能 display:none——版式声明行往往是 page-start，藏了它 break-before 就失效，
-   所以只压成零高。 */
+/* ─── 页首安全区与指令行 ──────────────────────────────────────────────
+ * chrome 悬在页顶（约 60px 高），每页第一条线（cm-md-page-start）统一留出
+ * padding-top 当安全区。指令行往往是 page-start：它自己压成零内容盒
+ * （visibility + 字号 0），padding 照常生效——这就是它同时承担页首安全区的原因。
+ * 导出不能用 display:none（page-start 藏了 break-before 就失效），正好同构。 */
 body.presenting #editor .cm-md-slide-directive {
-  display: none !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  visibility: hidden;
+  margin: 0 !important;
+  padding: 0 !important;
+  padding-top: 96px !important;
+  border: none !important;
 }
 
 body.slides-printing #editor .cm-md-slide-directive {
-  height: 0 !important;
-  min-height: 0 !important;
-  padding: 0 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  visibility: hidden;
   margin: 0 !important;
-  overflow: hidden;
+  padding: 0 !important;
+  padding-top: 84px !important;
+  border: none !important;
+}
+
+/* 没写指令的页：安全区落在第一条内容行上。 */
+body.presenting .cm-md-page-start {
+  padding-top: 96px;
+}
+
+body.slides-printing .cm-md-page-start {
+  padding-top: 84px;
+}
+
+/* ─── deck chrome ─────────────────────────────────────────────────── */
+.slide-chrome,
+.slide-foot,
+.slide-ghost {
+  /* 等宽小字是 chrome 的声音（杂志风惯例）；衬线留给标题与品牌名。 */
+  font-family: var(--slide-mono, ui-monospace, Consolas, monospace);
+  color: var(--text-color);
+}
+
+.slide-chrome {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: none;
+  align-items: center;
+  padding: 24px 6vw 0;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.68;
+}
+
+body.presenting .slide-chrome,
+body.slides-printing .slide-chrome {
+  display: flex;
+}
+
+.slide-chrome-left,
+.slide-chrome-right {
+  display: flex;
+  align-items: center;
+  gap: 1.4em;
+  min-width: 0;
+}
+
+/* 左组与右组之间拉一根 1px 细线，杂志 chrome 的标准做法。 */
+.slide-chrome-left {
+  flex: 1;
+}
+
+.slide-chrome-left::after {
+  content: '';
+  flex: 1;
+  min-width: 3em;
+  height: 1px;
+  margin-left: 0.5em;
+  background: currentColor;
+  opacity: 0.35;
+}
+
+.slide-chrome-logo {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+
+.slide-foot {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: none;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 6vw 22px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+body.presenting .slide-foot,
+body.slides-printing .slide-foot {
+  display: flex;
+}
+
+.slide-foot-brand {
+  font-family: var(--slide-serif, Georgia, serif);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: none;
+}
+
+/* 幽灵页码：右下角超大衬线数字，透明度压到几乎看不见，翻页跟着换数。 */
+.slide-ghost {
+  position: fixed;
+  right: 4vw;
+  bottom: 7vh;
+  z-index: 0;
+  display: none;
+  font-family: var(--slide-serif, Georgia, serif);
+  font-weight: 800;
+  font-size: 26vh;
+  line-height: 1;
+  opacity: 0.05;
+  pointer-events: none;
+  font-feature-settings: 'tnum';
+}
+
+body.presenting .slide-ghost {
+  display: block;
+}
+
+/* 打印里每页各不相同的东西（页码、幽灵数字）没法随纸复刻，藏掉；
+   logo/标题/meta/品牌名是静态的，fixed 元素会被 Chromium 复刻到每张纸。 */
+body.slides-printing .slide-ghost,
+body.slides-printing .slide-foot-num {
+  display: none !important;
+}
+
+/* 幕封页（cover/section/closing）自动淡出 chrome——学参考对 hero 页的处理。 */
+body.presenting .slide-chrome,
+body.presenting .slide-foot,
+body.presenting .slide-ghost {
+  transition: opacity 0.45s ease;
+}
+
+body.presenting:has(#editor[data-slide-layout='cover']) .slide-chrome,
+body.presenting:has(#editor[data-slide-layout='section']) .slide-chrome,
+body.presenting:has(#editor[data-slide-layout='closing']) .slide-chrome,
+body.presenting:has(#editor[data-slide-layout='cover']) .slide-foot,
+body.presenting:has(#editor[data-slide-layout='section']) .slide-foot,
+body.presenting:has(#editor[data-slide-layout='closing']) .slide-foot {
+  opacity: 0;
+}
+
+body.presenting:has(#editor[data-slide-layout='cover']) .slide-ghost {
+  opacity: 0;
+}
+
+/* ─── 版式字体族与全出血 ──────────────────────────────────────────── */
+body.presenting #editor,
+body.slides-printing #editor {
+  --slide-serif: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', Georgia, serif;
+  --slide-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+/* 全出血：正文铺满纸面，只留 6vw 边距——幻灯片不是文档，不要阅读列宽。 */
+body.presenting #editor .cm-content {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 6vw !important;
+}
+
+/* ─── 通用字号阶梯（全出血后的 PPT 惯例）────────────────────────────
+ * 标题用衬线、去文档式下划线；版式自己的标题规则（cover 3.2em、section 2.4em）
+ * 选择器更具体，照样优先。与主题文档样式同权重时本文件在打包顺序里排最后。 */
+body.presenting .cm-md-atxheading1,
+body.slides-printing .cm-md-atxheading1 {
+  font-family: var(--slide-serif, Georgia, serif);
+  font-size: 2.4em;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  border-bottom: none;
+  padding-top: 0;
+  margin-bottom: 0.45em;
+}
+
+body.presenting .cm-md-atxheading2,
+body.slides-printing .cm-md-atxheading2 {
+  font-family: var(--slide-serif, Georgia, serif);
+  font-size: 1.6em;
+  font-weight: 600;
+  line-height: 1.35;
+  border-bottom: none;
+  padding-top: 0;
+  margin-bottom: 0.4em;
+}
+
+body.presenting .cm-md-atxheading3,
+body.slides-printing .cm-md-atxheading3 {
+  font-size: 1.25em;
+  border-bottom: none;
+  padding-top: 0;
+}
+
+body.presenting #editor,
+body.slides-printing #editor .cm-content {
+  line-height: 1.7;
+}
+
+body.presenting .cm-md-li,
+body.slides-printing .cm-md-li {
+  margin-top: 0.45em;
+  margin-bottom: 0.45em;
 }
 
 @keyframes slide-rise {
@@ -45,104 +264,76 @@ body.slides-printing #editor .cm-md-slide-directive {
   }
 }
 
-/* ════ 通用字号阶梯（PPT 惯例，dsh-ppt 同款比例）════
- * 没有声明版式的页也按幻灯片排：标题要读得像标题——一级 ≈2.2em、二级 ≈1.6em、
- * 三级 ≈1.3em，列表比文档疏一口气；文档式的标题下划线在幻灯片里一律去掉。
- * 刻意写成选择阶梯的最低一档（不带 #editor）：各版式自己的标题规则（cover 2.6em、
- * section 2em）与卡片边距都更具体，照样优先；与主题文档样式同权重时，本文件在
- * 打包顺序里排最后（main.ts 里 slides-enhance 在 document.css 之后引入），这里赢。 */
-body.presenting .cm-md-atxheading1,
-body.slides-printing .cm-md-atxheading1 {
-  font-size: 2.2em;
-  line-height: 1.3;
-  border-bottom: none;
-  padding-top: 0;
-  margin-bottom: 0.45em;
-}
-
-body.presenting .cm-md-atxheading2,
-body.slides-printing .cm-md-atxheading2 {
-  font-size: 1.6em;
-  line-height: 1.35;
-  border-bottom: none;
-  padding-top: 0;
-  margin-bottom: 0.4em;
-}
-
-body.presenting .cm-md-atxheading3,
-body.slides-printing .cm-md-atxheading3 {
-  font-size: 1.3em;
-  border-bottom: none;
-  padding-top: 0;
-}
-
-body.presenting .cm-md-li,
-body.slides-printing .cm-md-li {
-  margin-top: 0.45em;
-  margin-bottom: 0.45em;
-}
-
 /* ════ cover · 主视觉封面（dsh-ppt: cover.hero）════
  *
  * 约定：一个 h1 当主标题，一个 h2 当副标题，再多一行普通文字当署名。
- * h1 放大居中，副标题压淡，底部一条强调色；进场淡入上移。 */
+ * 杂志封面式左对齐：超大衬线标题 + 强调色短杠，副标题压淡。 */
 body.presenting #editor[data-slide-layout='cover'] .cm-content {
   display: flex;
   flex-direction: column;
   justify-content: center;
   min-height: 92vh;
-  text-align: center;
 }
 
 body.presenting #editor[data-slide-layout='cover'] .cm-md-atxheading1 {
-  font-size: 2.6em;
+  font-size: 3.2em;
+  line-height: 1.15;
   border-bottom: none;
-  padding-top: 0;
   animation: slide-rise 0.7s ease-out both;
+}
+
+body.presenting #editor[data-slide-layout='cover'] .cm-md-atxheading1::after {
+  content: '';
+  display: block;
+  width: 3.5em;
+  height: 3px;
+  margin-top: 0.45em;
+  background: var(--pele-accent);
 }
 
 body.presenting #editor[data-slide-layout='cover'] .cm-md-atxheading2,
 body.presenting #editor[data-slide-layout='cover'] .cm-md-atxheading3 {
-  font-size: 1.2em;
+  font-family: var(--slide-serif, Georgia, serif);
+  font-size: 1.25em;
   font-weight: 400;
   color: var(--text-muted);
   border-bottom: none;
+  animation: slide-rise 0.7s ease-out both;
 }
 
-body.presenting #editor[data-slide-layout='cover'] .cm-md-atxheading1 {
-  border-bottom: 2px solid var(--pele-accent);
-  padding-bottom: 0.4em;
-}
-
-/* 导出降级：没有容器可居中，行级居中同样成立（标题行本身是全宽 block）。 */
+/* 导出降级：行级左对齐同样成立（标题行本身是全宽 block）。 */
 body.slides-printing .cm-md-slide-cover.cm-md-atxheading1 {
-  text-align: center;
   border-bottom: none;
-  padding-top: 2.5em;
+}
+
+body.slides-printing .cm-md-slide-cover.cm-md-atxheading1::after {
+  content: '';
+  display: block;
+  width: 3.5em;
+  height: 3px;
+  margin-top: 0.45em;
+  background: var(--pele-accent);
 }
 
 body.slides-printing .cm-md-slide-cover.cm-md-atxheading2 {
-  text-align: center;
   font-weight: 400;
   color: var(--text-muted);
 }
 
 /* ════ section · 章节陈述（dsh-ppt: section.statement）════
  *
- * 约定：一个 h1（或 h2）作章节判断，一句就够，剩下的交给留白。 */
+ * 约定：一个 h1（或 h2）作章节判断，一句就够，剩下的交给留白与幽灵页码。 */
 body.presenting #editor[data-slide-layout='section'] .cm-content {
   display: flex;
   flex-direction: column;
   justify-content: center;
   min-height: 92vh;
-  text-align: center;
 }
 
 body.presenting #editor[data-slide-layout='section'] .cm-md-atxheading1,
 body.presenting #editor[data-slide-layout='section'] .cm-md-atxheading2 {
-  font-size: 2em;
+  font-size: 2.4em;
   border-bottom: none;
-  padding-top: 0;
   animation: slide-rise 0.6s ease-out both;
 }
 
@@ -152,52 +343,64 @@ body.presenting #editor[data-slide-layout='section'] .cm-md-atxheading2::after {
   display: block;
   width: 3em;
   height: 3px;
-  margin: 1em auto 0;
+  margin-top: 0.6em;
   background: var(--pele-accent);
 }
 
 body.slides-printing .cm-md-slide-section.cm-md-atxheading1,
 body.slides-printing .cm-md-slide-section.cm-md-atxheading2 {
-  text-align: center;
   border-bottom: none;
-  padding-top: 2em;
-  padding-bottom: 1em;
+  padding-top: 84px;
+  padding-bottom: 0.5em;
+}
+
+body.slides-printing .cm-md-slide-section.cm-md-atxheading1::after,
+body.slides-printing .cm-md-slide-section.cm-md-atxheading2::after {
+  content: '';
+  display: block;
+  width: 3em;
+  height: 3px;
+  margin-top: 0.6em;
+  background: var(--pele-accent);
 }
 
 /* ════ agenda · 结构列表（dsh-ppt: agenda.simple）════
  *
- * 约定：一个有序列表（1. 2. 3.），每项一句话。序号是源码里的真文字，
- * 没有列表容器可数，所以不做圆圈序号，改为强调色加粗放大。 */
+ * 约定：一个有序列表（1. 2. 3.），每项一句话。整页宽的条目行，顶部细线分隔，
+ * 序号用衬线强调色放大——目录页的经典画法。 */
 body.presenting .cm-md-slide-agenda.cm-md-li,
 body.slides-printing .cm-md-slide-agenda.cm-md-li {
-  font-size: 1.25em;
-  margin: 0.8em 0;
+  font-size: 1.2em;
+  margin: 0;
+  padding-top: 1em;
+  padding-bottom: 1em;
+  border-top: 1px solid var(--border-color);
+  list-style: none;
 }
 
 body.presenting .cm-md-slide-agenda .cm-md-listmark,
 body.slides-printing .cm-md-slide-agenda .cm-md-listmark {
-  color: var(--pele-accent);
+  font-family: var(--slide-serif, Georgia, serif);
+  font-size: 1.5em;
   font-weight: 700;
-}
-
-body.presenting .cm-md-slide-agenda .cm-md-strong,
-body.slides-printing .cm-md-slide-agenda .cm-md-strong {
-  font-size: 1.1em;
+  color: var(--pele-accent);
+  margin-right: 0.5em;
+  font-feature-settings: 'tnum';
 }
 
 /* ════ kpi · 关键概览（dsh-ppt: overview.kpi）════
  *
- * 约定：一个列表，2-4 项，每项 `**数字** 说明`。卡片横排，数字大写强调。 */
+ * 约定：一个列表，2-4 项，每项 `**数字** 说明`。全宽统计卡：顶部强调色粗线
+ * 代替整圈描边，大数字衬线等宽（tnum），杂志数据版式。 */
 body.presenting .cm-md-slide-kpi.cm-md-li,
 body.slides-printing .cm-md-slide-kpi.cm-md-li {
   display: inline-block;
-  width: 29%;
-  margin: 0 1%;
-  padding: 1em 0.6em;
-  border: 1px solid var(--border-color);
-  border-radius: var(--pele-radius, 8px);
+  width: 30%;
+  margin: 0 1% 1.5em 0;
+  padding: 1.1em 1em 1em;
+  border-top: 2px solid var(--pele-accent);
   vertical-align: top;
-  text-align: center;
+  text-align: left;
   list-style: none;
 }
 
@@ -209,20 +412,28 @@ body.slides-printing .cm-md-slide-kpi .cm-md-listmark {
 body.presenting .cm-md-slide-kpi .cm-md-strong,
 body.slides-printing .cm-md-slide-kpi .cm-md-strong {
   display: block;
-  font-size: 2.6em;
-  line-height: 1.2;
+  font-family: var(--slide-serif, Georgia, serif);
+  font-size: 2.8em;
+  font-weight: 700;
+  line-height: 1.15;
   color: var(--pele-accent);
+  font-feature-settings: 'tnum';
+}
+
+body.presenting .cm-md-slide-kpi,
+body.slides-printing .cm-md-slide-kpi {
+  color: var(--text-secondary);
 }
 
 /* ════ timeline · 历程时间轴（dsh-ppt: history.timeline）════
  *
- * 约定：一个列表，3-6 项，每项 `**阶段名** 说明`。左侧轴线加圆点。 */
+ * 约定：一个列表，3-6 项，每项 `**阶段名** 说明`。左侧细轴线加圆点。 */
 body.presenting .cm-md-slide-timeline.cm-md-li,
 body.slides-printing .cm-md-slide-timeline.cm-md-li {
   position: relative;
   margin-left: 0.6em;
   padding-left: 2.2em;
-  border-left: 2px solid var(--border-color);
+  border-left: 1px solid var(--border-color);
   padding-bottom: 1.4em;
   list-style: none;
 }
@@ -236,18 +447,12 @@ body.presenting .cm-md-slide-timeline.cm-md-li::before,
 body.slides-printing .cm-md-slide-timeline.cm-md-li::before {
   content: '';
   position: absolute;
-  left: -8px;
-  top: 0.35em;
-  width: 12px;
-  height: 12px;
+  left: -6px;
+  top: 0.4em;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: var(--pele-accent);
-}
-
-body.presenting .cm-md-slide-timeline .cm-md-strong,
-body.slides-printing .cm-md-slide-timeline .cm-md-strong {
-  display: block;
-  font-size: 1.15em;
 }
 
 body.presenting .cm-md-slide-timeline,
@@ -257,20 +462,22 @@ body.slides-printing .cm-md-slide-timeline {
 
 body.presenting .cm-md-slide-timeline .cm-md-strong,
 body.slides-printing .cm-md-slide-timeline .cm-md-strong {
+  display: block;
+  font-family: var(--slide-serif, Georgia, serif);
+  font-size: 1.2em;
   color: var(--text-color);
 }
 
 /* ════ steps · 步骤流程（dsh-ppt: process.steps）════
  *
- * 约定：一个列表，3-5 项，每项 `**步骤名** 说明`。步骤名包成圆号，
- * 项之间画连接线（最后一条的线出头，是流程图的常见画法）。 */
+ * 约定：一个列表，3-5 项，每项 `**步骤名** 说明`。衬线数字的强调色圆号。 */
 body.presenting .cm-md-slide-steps.cm-md-li,
 body.slides-printing .cm-md-slide-steps.cm-md-li {
   display: inline-block;
-  width: 28%;
-  margin: 0 1%;
+  width: 30%;
+  margin: 0 1.5% 1.5em 0;
   vertical-align: top;
-  text-align: center;
+  text-align: left;
   list-style: none;
 }
 
@@ -286,22 +493,23 @@ body.slides-printing .cm-md-slide-steps .cm-md-strong {
   justify-content: center;
   min-width: 2em;
   height: 2em;
-  margin-bottom: 0.4em;
+  margin-bottom: 0.45em;
   border-radius: 50%;
   background: var(--pele-accent);
   color: var(--bg-color);
+  font-family: var(--slide-serif, Georgia, serif);
   font-size: 1.05em;
 }
 
 /* ════ matrix · 主题矩阵（dsh-ppt: product.matrix）════
  *
- * 约定：一个列表，3-8 项，每项 `**主题名** 说明`。卡片网格。 */
+ * 约定：一个列表，3-8 项，每项 `**主题名** 说明`。描边卡片网格。 */
 body.presenting .cm-md-slide-matrix.cm-md-li,
 body.slides-printing .cm-md-slide-matrix.cm-md-li {
   display: inline-block;
   width: 30%;
-  margin: 0 1%;
-  padding: 1em;
+  margin: 0 1.5% 1.5em 0;
+  padding: 1.1em 1.1em 1em;
   border: 1px solid var(--border-color);
   border-radius: var(--pele-radius, 8px);
   vertical-align: top;
@@ -316,25 +524,33 @@ body.slides-printing .cm-md-slide-matrix .cm-md-listmark {
 body.presenting .cm-md-slide-matrix .cm-md-strong,
 body.slides-printing .cm-md-slide-matrix .cm-md-strong {
   display: block;
+  font-family: var(--slide-serif, Georgia, serif);
+  font-size: 1.15em;
   color: var(--pele-accent);
   margin-bottom: 0.3em;
 }
 
+body.presenting .cm-md-slide-matrix,
+body.slides-printing .cm-md-slide-matrix {
+  color: var(--text-secondary);
+}
+
 /* ════ two-col · 双栏对比（dsh-ppt: comparison.two-column）════
  *
- * 约定：放映时整页分两栏（data-slide-layout 选容器）；导出是流式分纸，
- * 退化为行级 inline-block：页首行（通常是标题）保持 block 占全宽，其余行
- * 两条一排——break-before: page 依赖 block 级的页首行，不能一起 inline。 */
+ * 约定：放映时整页分两栏（data-slide-layout 选容器），中缝一根细线；导出是
+ * 流式分纸，退化为行级 inline-block：页首行（通常是标题）保持 block 占全宽，
+ * 其余行两条一排——break-before: page 依赖 block 级的页首行，不能一起 inline。 */
 body.presenting #editor[data-slide-layout='two-col'] .cm-content {
   column-count: 2;
-  column-gap: 3em;
-  height: 92vh;
+  column-gap: 4em;
+  column-rule: 1px solid var(--border-color);
+  height: 88vh;
   column-fill: auto;
 }
 
 body.slides-printing .cm-md-slide-two-col:not(.cm-md-page-start) {
   display: inline-block;
-  width: 47%;
+  width: 47.5%;
   vertical-align: top;
 }
 
@@ -345,9 +561,11 @@ body.slides-printing .cm-md-slide-two-col:not(.cm-md-page-start) {
 body.presenting .cm-md-slide-quote .cm-md-blockquote,
 body.slides-printing .cm-md-slide-quote .cm-md-blockquote {
   border-left: none;
-  text-align: center;
-  font-size: 1.4em;
+  text-align: left;
+  font-family: var(--slide-serif, Georgia, serif);
+  font-size: 1.5em;
   font-style: italic;
+  line-height: 1.5;
   color: var(--text-secondary);
 }
 
@@ -355,8 +573,8 @@ body.presenting .cm-md-slide-directive + .cm-md-blockquote.cm-md-slide-quote::be
 body.slides-printing .cm-md-slide-directive + .cm-md-blockquote.cm-md-slide-quote::before {
   content: '\201C';
   display: block;
-  height: 0.5em;
-  font-size: 3em;
+  height: 0.55em;
+  font-size: 3.2em;
   font-style: normal;
   line-height: 0.6;
   color: var(--pele-accent);
@@ -364,19 +582,18 @@ body.slides-printing .cm-md-slide-directive + .cm-md-blockquote.cm-md-slide-quot
 
 /* ════ closing · 结论收束（dsh-ppt: closing.summary）════
  *
- * 约定：一句 h1/h2 收束判断，加一个行动清单。整体居中压淡，
+ * 约定：一句 h1/h2 收束判断，加一个行动清单。整体压淡，
  * 清单项换 ▸ 前缀（原列表符号藏掉）。 */
 body.presenting #editor[data-slide-layout='closing'] .cm-content {
   display: flex;
   flex-direction: column;
   justify-content: center;
   min-height: 92vh;
-  text-align: center;
 }
 
 body.presenting #editor[data-slide-layout='closing'] .cm-md-atxheading1,
 body.presenting #editor[data-slide-layout='closing'] .cm-md-atxheading2 {
-  font-size: 2em;
+  font-size: 2.2em;
   border-bottom: none;
   animation: slide-rise 0.6s ease-out both;
 }
@@ -404,7 +621,6 @@ body.slides-printing .cm-md-slide-closing.cm-md-li::before {
 
 body.slides-printing .cm-md-slide-closing.cm-md-atxheading1,
 body.slides-printing .cm-md-slide-closing.cm-md-atxheading2 {
-  text-align: center;
   border-bottom: none;
-  padding-top: 2em;
+  padding-top: 84px;
 }

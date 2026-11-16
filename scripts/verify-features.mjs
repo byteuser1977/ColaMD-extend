@@ -121,10 +121,14 @@ function fixture() {
     // 查找跳转的靶子：这一条在文档最末尾，一屏高的视口里绝对看不见。
     'NEEL 后半段的锚点。',
     '',
-    // 幻灯片版式夹具：一页声明 cover 版式，页内再写一段 slide-css。
-    // 断言钉住三件事：版式类落到该页的每一行、指令注释本身不进正文、
-    // slide-css 指令行也不进正文（见 checkSlideLayouts）。
+    // 幻灯片版式夹具：deck 级公共元素指令 + 一页声明 cover 版式 + 页内 slide-css。
+    // 断言钉住：版式类落到该页每一行、指令注释（含 deck-*）不进正文
+    // （见 checkSlideLayouts）。
     '---',
+    '',
+    '<!-- deck-brand: ColaMD 验收 -->',
+    '<!-- deck-title: 版式验收 -->',
+    '<!-- deck-meta: 2026-11 -->',
     '',
     '<!-- slide: cover -->',
     '',
@@ -610,14 +614,20 @@ async function checkSlideLayouts(renderer) {
     const content = document.querySelector('#editor .cm-content')
     const coverLines = content.querySelectorAll('.cm-md-slide-cover')
     const directiveLines = content.querySelectorAll('.cm-md-slide-directive')
+    // 指令行的 textContent 本来就含指令原文；要钉的是「别的行」不出现指令源码。
+    const leak = [...content.querySelectorAll('.cm-line')]
+      .some((el) => !el.classList.contains('cm-md-slide-directive')
+        && /slide:|slide-css|slide-js|deck-(logo|brand|title|meta)/.test(el.textContent))
     return {
       cover: coverLines.length,
       directive: directiveLines.length,
-      leak: [...directiveLines].some((el) => el.textContent.includes('slide:'))
+      deckLines: [...directiveLines].filter((el) => el.textContent.includes('deck-')).length,
+      leak
     }
   })()`))
   check('幻灯片版式类落到整页', got.cover >= 4, JSON.stringify(got))
-  check('幻灯片指令不进正文', got.directive >= 2 && !got.leak, JSON.stringify(got))
+  check('幻灯片指令不进正文', got.directive >= 5 && !got.leak, JSON.stringify(got))
+  check('deck 指令按注释行处理', got.deckLines >= 3, JSON.stringify(got))
 }
 
 /** 复用当前窗口逐主题截图取色，检查选区是否真的画在引用和代码背景之上。 */

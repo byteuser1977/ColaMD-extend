@@ -15,7 +15,7 @@
 
 import { Decoration, EditorView, type DecorationSet } from '@codemirror/view'
 import { RangeSetBuilder, StateField, type EditorState, type Extension } from '@codemirror/state'
-import { scanSlideDirectives, publishSlideDirectives } from './slide-directives'
+import { scanSlideDirectives, publishSlideDirectives, publishDeckChrome } from './slide-directives'
 import { decorationsRefreshEffect } from './live-preview'
 
 export const SLIDE_CLASS_PREFIX = 'cm-md-slide-'
@@ -30,6 +30,7 @@ function buildDecorations(state: EditorState): DecorationSet {
   const scan = scanSlideDirectives(state)
   // 快照给放映/导出层读：field 重算的时机就是指令变化的时机。
   publishSlideDirectives(scan.directives)
+  publishDeckChrome(scan.deck, scan.linesByPage.size)
 
   const builder = new RangeSetBuilder<Decoration>()
   type Pending = { from: number; cls: string }

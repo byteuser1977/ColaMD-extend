@@ -1,3 +1,11 @@
+<!-- deck-logo: data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%23c44b2b' stroke-width='4'/%3E%3C/svg%3E -->
+
+<!-- deck-brand: ColaMD Extend -->
+
+<!-- deck-title: 幻灯片版式系统 -->
+
+<!-- deck-meta: 2026-11 · 内部演示 -->
+
 # 幻灯片版式示例
 
 一篇文档切完 `---` 之后，每一页可以声明一种版式：分隔线后第一行写 `<!-- slide: 版式名 -->`。这份示例每种版式一页，放映（⌘⇧P）看效果。
