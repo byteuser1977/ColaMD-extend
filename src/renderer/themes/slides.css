@@ -636,8 +636,11 @@ body.slides-printing .cm-md-slide-kpi.cm-md-li {
   line-height: 1.55;
 }
 
-body.presenting .cm-md-slide-kpi .cm-md-listmark,
-body.slides-printing .cm-md-slide-kpi .cm-md-listmark {
+/* 带 #editor .cm-content 提权：主题常在 `#editor .cm-content .cm-md-listmark`
+ * 上写 display，单靠 body.presenting 的权重压不住（kpi/timeline/matrix/closing
+ * 四处同此，见 steps 处的说明）。 */
+body.presenting #editor .cm-content .cm-md-slide-kpi .cm-md-listmark,
+body.slides-printing #editor .cm-content .cm-md-slide-kpi .cm-md-listmark {
   display: none;
 }
 
@@ -672,8 +675,8 @@ body.slides-printing .cm-md-slide-timeline.cm-md-li {
   list-style: none;
 }
 
-body.presenting .cm-md-slide-timeline .cm-md-listmark,
-body.slides-printing .cm-md-slide-timeline .cm-md-listmark {
+body.presenting #editor .cm-content .cm-md-slide-timeline .cm-md-listmark,
+body.slides-printing #editor .cm-content .cm-md-slide-timeline .cm-md-listmark {
   display: none;
 }
 
@@ -767,8 +770,8 @@ body.slides-printing .cm-md-slide-matrix.cm-md-li {
   list-style: none;
 }
 
-body.presenting .cm-md-slide-matrix .cm-md-listmark,
-body.slides-printing .cm-md-slide-matrix .cm-md-listmark {
+body.presenting #editor .cm-content .cm-md-slide-matrix .cm-md-listmark,
+body.slides-printing #editor .cm-content .cm-md-slide-matrix .cm-md-listmark {
   display: none;
 }
 
@@ -912,8 +915,8 @@ body.slides-printing .cm-md-slide-closing.cm-md-li {
   list-style: none;
 }
 
-body.presenting .cm-md-slide-closing .cm-md-listmark,
-body.slides-printing .cm-md-slide-closing .cm-md-listmark {
+body.presenting #editor .cm-content .cm-md-slide-closing .cm-md-listmark,
+body.slides-printing #editor .cm-content .cm-md-slide-closing .cm-md-listmark {
   display: none;
 }
 

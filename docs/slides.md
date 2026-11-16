@@ -1,6 +1,6 @@
 # Markdown PPT 配置说明
 
-这份文档只讲「怎么写」。实现背景、版本取舍见 [release-2.7.13-rc.2.md](release-2.7.13-rc.2.md)；可直接套用的骨架在 [resources/templates/slides.md](../resources/templates/slides.md)，完整示例在 [resources/demo/slides-demo.md](../resources/demo/slides-demo.md)。
+这份文档只讲「怎么写」。实现背景、版本取舍见 [release-2.7.13.md](release-2.7.13.md)；可直接套用的骨架在 [resources/templates/slides.md](../resources/templates/slides.md)，完整示例在 [resources/demo/slides-demo.md](../resources/demo/slides-demo.md)。
 
 ## 最小可用稿
 

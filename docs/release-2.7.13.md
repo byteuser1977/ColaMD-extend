@@ -1,6 +1,6 @@
-# ColaMD Extend v2.7.13-rc.2 版本说明
+# ColaMD Extend v2.7.13 版本说明
 
-本文件记录 `2.7.13-rc.2` 的代码改动、验证结果与发布注意事项。本版一个新功能：**幻灯片版式系统**——放映（⌘⇧P）与导出的每一页可以声明版式，内置十一种，页内还能写微调 CSS 与放映脚本；同一版把 Markdown 写法收敛成 deck 块与页头块，并按模板重画标题阶梯；外加一个放映修复（长文档翻页凭空到顶，见「顺手修复」）。v2.7.13-rc.1 的维护内容（导出修复、验收脚本、依赖安全）见 `docs/release-2.7.13-rc.1.md`。
+本文件记录 `2.7.13` 的代码改动、验证结果与发布注意事项。本版一个新功能：**幻灯片版式系统**——放映（⌘⇧P）与导出的每一页可以声明版式，内置十一种，页内还能写微调 CSS 与放映脚本；同一版把 Markdown 写法收敛成 deck 块与页头块，并按模板重画标题阶梯；外加一个放映修复（长文档翻页凭空到顶，见「顺手修复」）。v2.7.13-rc.1 的维护内容（导出修复、验收脚本、依赖安全）见 `docs/release-2.7.13-rc.1.md`。
 
 ## 功能说明
 
@@ -89,7 +89,7 @@ meta: 2026-11 · 内部分享
 | `quote` | — | 引言：引用居中放大，指令行后紧跟的首个引用行加大引号 |
 | `closing` | closing.summary | 收束：整体居中压淡，清单换 ▸ 前缀 |
 
-标准模板在 `resources/templates/slides.md`，示例文档 `resources/demo/slides-demo.md` 每种版式一页，另有一页不写版式的默认文章页，在文件面板点开即可放映。完整的页头字段、版式约定、主题令牌与导出差异见 [slides.md](slides.md)。
+标准模板在 `resources/templates/slides.md`，示例文档 `resources/demo/slides-demo.md` 每种版式一页，另有两页不写版式的默认文章页（一页示范信息密度、一页收纳表格与代码的内容元素画法），在文件面板点开即可放映。完整的页头字段、版式约定、主题令牌与导出差异见 [slides.md](slides.md)。
 
 ### 架构：孤岛模块，最小化上游冲突面
 
@@ -122,12 +122,12 @@ meta: 2026-11 · 内部分享
 
 ## 版本同步
 
-- `package.json` / `package-lock.json` / `themes/contract.json`：`2.7.13-rc.2`
-- `resources/demo/changelog.md`：新增 v2.7.13-rc.2 段落（该段落即 GitHub Release 正文来源），rc.1 段落恢复纯维护版描述
-- `README.md` / `README_CN.md`：新增 v2.7.13-rc.2 条目，rc.1 条目恢复
+- `package.json` / `package-lock.json` / `themes/contract.json`：`2.7.13`（转正，去掉 `-rc.2` 后缀）
+- `resources/demo/changelog.md`：v2.7.13 段落（该段落即 GitHub Release 正文来源；rc.2 期间以 rc 段落试发，转正时标题改为正式版）
+- `README.md` / `README_CN.md`：v2.7.13 条目，rc.1 条目保留
 - `docs/packaging.md`：当前版本引用更新
 
-Android 的 `versionName` 由 `android/app/build.gradle` 从 `package.json` 读取，跟随为 `2.7.13-rc.2`（`versionCode` = 20713，取数字部分，rc 后缀无影响）。
+Android 的 `versionName` 由 `android/app/build.gradle` 从 `package.json` 读取，跟随为 `2.7.13`（`versionCode` = 20713，取数字部分）。
 
 ## 涉及文件
 
@@ -139,7 +139,7 @@ Android 的 `versionName` 由 `android/app/build.gradle` 从 `package.json` 读�
 - `src/renderer/themes/slides.css`（十一种内置版式）
 - `resources/templates/slides.md`（标准 Markdown PPT 模板）
 - `resources/demo/slides-demo.md`（版式示例文稿）
-- `docs/release-2.7.13-rc.2.md`（本文件）
+- `docs/release-2.7.13.md`（本文件，rc.2 期间名为 `release-2.7.13-rc.2.md`，转正时更名）
 
 修改：
 
@@ -158,7 +158,7 @@ Android 的 `versionName` 由 `android/app/build.gradle` 从 `package.json` 读�
 
 - 五份 `tsconfig` 类型检查全过
 - `npm run build`（electron-vite，三端产物正常）
-- `npm run verify:theme-contract`（`2.7.13-rc.2`，slides.css 只用活变量）
+- `npm run verify:theme-contract`（`2.7.13`，slides.css 只用活变量）
 - `npm run verify:markdown`（93 SAME / 0 DIFF）
 - `scanSlideDirectives` 与 `scopeSlideCSS` 纯函数断言（esbuild 打包后 Node 直跑）：页归属与 collectPages 语义一致、页中指令降级为普通注释、多行指令整块覆盖、CSS 白名单拒 position:fixed/z-index、@keyframes/@media 递归、括号不配平整段丢弃
 
@@ -171,7 +171,6 @@ Android 的 `versionName` 由 `android/app/build.gradle` 从 `package.json` 读�
 
 ## 发布注意
 
-- tag `v2.7.13-rc.2` 全新 tag，推送触发 `.github/workflows/release.yml` 三平台构建；Release 正文从 `resources/demo/changelog.md` 提取以 `## v2.7.13-rc.2` 开头的段落，compare 起点取上一版本 `v2.7.13-rc.1`，当前段落写法与提取规则兼容。
-- rc.1 若已发过 tag/Release，rc.2 的 compare 起点是它；若 rc.1 未正式发版，按仓库惯例仍以 `v2.7.12` 为 compare 起点并在 Release 里注明包含 rc.1 修复。
+- tag `v2.7.13` 全新 tag，推送触发 `.github/workflows/release.yml` 三平台构建；Release 正文从 `resources/demo/changelog.md` 提取以 `## v2.7.13` 开头的段落，compare 起点取上一版本——rc.1 已发过 tag/Release 则取 `v2.7.13-rc.1`，否则按仓库惯例取 `v2.7.12` 并在 Release 里注明包含 rc.1 修复。当前段落写法与提取规则兼容。
 - 发布桌面安装包只跑 `npm run build`，不要先跑 `build:lib`。
-- 转正时（2.7.13）：`package.json` / `package-lock.json` / `themes/contract.json` 去掉 `-rc.2` 后缀，changelog 段落标题同步改，中英文 README 的 rc 条目合并。
+- 转正已完成：三处版本号去掉 `-rc.2` 后缀，changelog 段落标题与中英文 README 条目改为 v2.7.13，本文件由 `release-2.7.13-rc.2.md` 更名为 `release-2.7.13.md`。
