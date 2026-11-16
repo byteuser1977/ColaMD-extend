@@ -809,6 +809,14 @@ body.slides-printing .cm-md-slide-two-col:not(.cm-md-page-start) {
  *
  * 约定：标题与 kpi 页同一档（标准 4.2em、左对齐），图占画面约七成并居中，
  * 不再铺满整屏；最高 66vh，避免压到页脚。 */
+
+/* 放映与导出都是「看图」场景，图表的缩放控件（.pele-zoom）没有意义，
+ * 一律藏掉——普通文章打印（body.paper）在 print-layout.ts 已经这么做了。 */
+body.presenting .pele-zoom,
+body.slides-printing .pele-zoom {
+  display: none !important;
+}
+
 body.presenting #editor[data-slide-layout='figure'] .cm-md-page-lead {
   margin-bottom: 0.6em;
 }
