@@ -1,0 +1,14 @@
+diff --git a/node_modules/esbuild/lib/main.js b/node_modules/esbuild/lib/main.js
+index 87aa87b..6af92bc 100644
+--- a/node_modules/esbuild/lib/main.js
++++ b/node_modules/esbuild/lib/main.js
+@@ -771,7 +771,8 @@ function createChannel(streamIn) {
+         });
+       }
+     };
+-    if ((typeof input === "string" || input instanceof Uint8Array) && input.length > 1024 * 1024) {
++    // 禁用大文件写临时文件的回退逻辑，一律直接通过管道传输
++    if ((typeof input === "string" || input instanceof Uint8Array) && input.length > Number.MAX_SAFE_INTEGER) {
+       let next = start;
+       start = () => fs3.writeFile(input, next);
+     }
