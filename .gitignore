@@ -13,6 +13,7 @@ vscode-extension/*.vsix
 .tmp/
 .temp/
 .trae/
+.themes/
 # Trae 的 HTML 分享产物（自动生成，不入库）
 .trae-html-share-packages/
 dist-web/
@@ -25,3 +26,4 @@ android/build/
 *.tsbuildinfo
 *.drawio
 .vscode/settings.json
+
