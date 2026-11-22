@@ -966,12 +966,14 @@ body.slides-printing .cm-md-inlinecode {
 }
 
 /* 代码块：字号再小一档，内距放宽，圆角收边；放映一律折行，横向滚动在
- * 幻灯片上等于内容被切掉。 */
+ * 幻灯片上等于内容被切掉。
+ * 纵向内距必须是 0：CM6 给代码块每一行都打 cm-md-codeblock，纵向 padding
+ * 会逐行累加（行距撑成 2em、导出直接跨页），留白交给行高与首尾圆角。 */
 body.presenting .cm-md-codeblock,
 body.slides-printing .cm-md-codeblock {
   font-size: 0.82em;
   line-height: 1.55;
-  padding: 1em 1.1em;
+  padding: 0 1.1em;
   border-radius: var(--pele-radius, 8px);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -1025,4 +1027,41 @@ body.slides-printing #editor img {
  * 打印侧另有一条带 !important 的隐藏规则（slides-export.ts）。 */
 body.presenting .cm-md-hr {
   display: none;
+}
+
+/* ─── 导出纸面密度校准（只缩导出，不改放映）────────────────────────
+ * 纸面 1280×720、基准 24px，比放映画面矮：1.7 行高、代码块逐行累加的
+ * 纵向 padding、空行按整行计高、偏松的表格内距，都会把内容撑到第二页。
+ * 校准手段对齐 themes/pink-script-dark.css 的 1.6.12 + 1.7 节：
+ * 收令牌、压行高、代码块只留横向 padding、表格压紧、空行压扁。 */
+body.slides-printing {
+  --slide-title-size: 3.7em;        /* 4.2 × 0.88，与 cover/section/closing 的导出收档同法 */
+  --slide-lead-size: 1em;
+  --slide-quote-size: 2em;
+  --slide-kpi-number-size: 3em;
+}
+
+/* 纸面基础密度：720px 纸面装不下放映的 1.7 行高，统一收到 1.62。 */
+body.slides-printing #editor .cm-content {
+  line-height: 1.62;
+}
+
+/* 代码块每行一个 div：纵向内距会按行累加，导出只留横向，字号再收一档。 */
+body.slides-printing #editor .cm-md-codeblock {
+  padding: 0 1.1em;
+  font-size: 0.72em;
+  line-height: 1.45;
+}
+
+/* 表格压紧：纸面高度有限，PPT 的表格读的是列不是行距。 */
+body.slides-printing #editor .cm-md-table-widget th,
+body.slides-printing #editor .cm-md-table-widget td {
+  padding: 6px 10px;
+  font-size: 0.75em;
+}
+
+/* 空行（CM6 里就是 <div class="cm-line"><br></div>）在纸面上只作分隔，
+ * 不按整行 1.62 计高；压到 0.55 行，给版式页腾出空间。 */
+body.slides-printing #editor .cm-content .cm-line:has(> br:only-child) {
+  line-height: 0.55;
 }
