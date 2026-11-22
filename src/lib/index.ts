@@ -20,12 +20,16 @@ import type { EditorHandle } from '../renderer/editor/core'
 import { applyTheme as applyBodyTheme } from '../renderer/themes/theme-manager'
 import { documentHTMLFrom } from '../renderer/editor/clean-html'
 import { enterPaperLayout, exitPaperLayout } from '../renderer/print-layout'
+import { enterPrintLayout, exitPrintLayout } from '../renderer/slides-export'
 import { collectExportStyles } from './export-styles'
 
 import '../renderer/themes/base.css'
 import '../renderer/themes/premium.css'
 import '../renderer/themes/editor-preview.css'
 import '../renderer/themes/document.css'
+// 幻灯片版式：slides.css 令牌 + body.presenting/slides-printing 观察器。
+// 下游幻灯片导出只需要 CSS 与《切片为纸》的排版，不需要放映 UI。
+import '../renderer/slides-enhance'
 
 export { THEME_CONTRACT, CONTRACT_VERSION } from './contract'
 export type { ThemeContract } from './contract'
@@ -50,6 +54,14 @@ export interface ColaMDRendererHandle {
   ensureAllPluginsRendered(): Promise<void>
   /** 产出一份可以离线打开的完整 HTML。 */
   buildExportHTML(options?: { title?: string }): Promise<string>
+  /**
+   * 把编辑面摊成 16:9 幻灯片纸（分页 + hero 垂直居中 + 打印 chrome）。
+   * 返回纸型（英寸）；文档里没有 `---` 分页时返回 false。
+   * 调用后必须配对 `exitSlidesPrintLayout()`（或 destroy）。
+   */
+  enterSlidesPrintLayout(): Promise<{ width: number; height: number } | false>
+  /** 还原编辑面。 */
+  exitSlidesPrintLayout(): void
   /** 销毁编辑器。 */
   destroy(): void
 }
@@ -141,6 +153,17 @@ export async function createColaMDEditor(options: ColaMDEditorOptions = {}): Pro
       return readEditorMarkdown()
     },
     ensureAllPluginsRendered,
+    async enterSlidesPrintLayout(): Promise<{ width: number; height: number } | false> {
+      // 先等 mermaid/图片/字体就绪，再切到幻灯片纸。ensureAllPluginsRendered
+      // 内部会临时进入文档纸版式，切纸前还原，避免两套 @page 规则叠加。
+      await ensureAllPluginsRendered()
+      exitPaperLayout()
+      const sheet = await enterPrintLayout()
+      return sheet === false ? false : { width: sheet.width, height: sheet.height }
+    },
+    exitSlidesPrintLayout(): void {
+      exitPrintLayout()
+    },
     async buildExportHTML(exportOptions: { title?: string } = {}): Promise<string> {
       setCleanExport(true)
       document.body.classList.add('exporting')
@@ -159,6 +182,7 @@ export async function createColaMDEditor(options: ColaMDEditorOptions = {}): Pro
     destroy(): void {
       handle?.destroy()
       handle = null
+      exitPrintLayout()
       exitPaperLayout()
     }
   }
