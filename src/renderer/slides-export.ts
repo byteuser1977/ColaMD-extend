@@ -91,7 +91,6 @@ body.${PRINT_CLASS} #editor .cm-content {
   margin: 0 !important;
   padding: 0 ${PAGE_MARGIN_PX}px !important;
   font-size: ${FONT_SIZE_PX}px !important;
-  line-height: 1.7;
 }
 /* 分隔线是分页边界，不是正文里的一行。 */
 body.${PRINT_CLASS} #editor .cm-line.cm-md-hr { display: none !important; }

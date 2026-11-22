@@ -1065,3 +1065,48 @@ body.slides-printing #editor .cm-md-table-widget td {
 body.slides-printing #editor .cm-content .cm-line:has(> br:only-child) {
   line-height: 0.55;
 }
+
+/* ─── 版式条目：导出防跨页 + 密度收档（放映不动）────────────────────
+ * kpi/matrix 卡片、timeline 节点、steps 步骤行、two-col 单元在导出下都是
+ * 流式排在纸上的：间距沿用放映值会把内容撑到第二页，条目还会被拦腰切到
+ * 两页上。这里整体收到导出密度，并加 break-inside: avoid——宁可整条挪到
+ * 下一页，不在半截切断。 */
+body.slides-printing .cm-md-slide-kpi.cm-md-li,
+body.slides-printing .cm-md-slide-matrix.cm-md-li,
+body.slides-printing .cm-md-slide-timeline.cm-md-li,
+body.slides-printing .cm-md-slide-steps.cm-md-li {
+  break-inside: avoid;
+}
+
+body.slides-printing .cm-md-slide-kpi.cm-md-li {
+  padding: 0.7em 0.8em 0.8em;
+  margin: 0 1.2% 0.9em 0;
+  line-height: 1.45;
+}
+
+body.slides-printing .cm-md-slide-matrix.cm-md-li {
+  padding: 0.8em 0.9em 0.7em;
+  margin: 0 1.5% 1em 0;
+}
+
+/* timeline 没有自己的上下 margin，会漏吃通用 .cm-md-li 的 0.45em：六个节点
+ * 就是 130px 纯空白，导出下清零，间距交给 padding-bottom。 */
+body.slides-printing .cm-md-slide-timeline.cm-md-li {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-bottom: 0.9em;
+}
+
+body.slides-printing .cm-md-slide-steps.cm-md-li {
+  padding: 0.5em 0 0.5em 1.1em;
+  margin-bottom: 0.7em;
+}
+
+body.slides-printing .cm-md-slide-two-col:not(.cm-md-page-start) {
+  break-inside: avoid;
+}
+
+/* 导语的收尾留白也收一档：标题块到正文的过渡在纸面上不需要 1.4em。 */
+body.slides-printing .cm-md-page-lead {
+  margin-bottom: 1em;
+}
