@@ -82,8 +82,8 @@ Android 版是 Capacitor 壳里的同一个渲染层（`src/renderer`），构�
 ## 参考
 
 - 发版流程与资产核对清单：`PRINCIPLES.md` 第 9 节
-- 当前 2.7.13 系列的上游同步内容：`docs/social/v2.7.9.md`、`docs/social/v2.7.8.md`
-- Extend 功能改动与验证记录：`docs/release-2.7.13.md`、`docs/release-2.7.13-rc.1.md`、`docs/release-2.7.10-rc.1.md`、`docs/release-2.7.8-rc.2.md`、`docs/release-2.7.8-rc.1.md`；v2.7.13-fix1（幻灯片导出与放映对齐）见 `resources/demo/changelog.md` 对应段落
+- 2.7.x 系列的上游同步内容：`docs/social/v2.7.9.md`、`docs/social/v2.7.8.md`
+- Extend 功能改动与验证记录：`docs/release-2.7.13.md`、`docs/release-2.7.13-rc.1.md`、`docs/release-2.7.10-rc.1.md`、`docs/release-2.7.8-rc.2.md`、`docs/release-2.7.8-rc.1.md`；v2.7.13-fix1（幻灯片导出与放映对齐）与 v2.8.0（重写列表交互、块级 widget 整块导出）见 `resources/demo/changelog.md` 对应段落，对外文案见 `docs/social/`
 - Word 导出实现方案：`docs/word-export.md`
 - CI 配置：`.github/workflows/release.yml`
 - 打包配置：`electron-builder.yml`
