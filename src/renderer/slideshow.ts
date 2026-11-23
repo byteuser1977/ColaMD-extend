@@ -10,6 +10,7 @@
 // 也没有第二个渲染器要同步。
 
 import { PAGE_CLASS_PREFIX, PAGE_START_CLASS } from './editor/live-preview'
+import { DIRECTIVE_CLASS, SLIDE_CLASS_PREFIX } from './editor/slide-layout'
 import { renderWholeDocument, restoreViewport } from './print-layout'
 
 export type Page = {
@@ -95,23 +96,35 @@ export function deckPages(): number[] {
  * 直接子节点，不是 `.cm-line`，拿不到页码类。放映规则按「不是当前页就藏」
  * 工作，它们会被一起藏掉——图页只剩标题和导语。这里按文档顺序把前一条
  * 带页码的行的类补给它，让整块 widget 跟着所属页一起显示。
+ *
+ * 版式类（`cm-md-slide-figure` 等）也是行装饰打的，同样落不到 widget 上。
+ * 少了它，导出的 figure 规则选不中图，图退回固有尺寸，和放映里「占 70% 宽、
+ * 66vh 高」不是一个大小（2026-11-24 报的）。所以这里页码类与版式类一起继承；
+ * 指令行自己的 `cm-md-slide-directive` 除外——把它带给图会把图一起藏掉。
  */
 export function tagBlockWidgets(root: Element): void {
-  // 先清掉上一次贴的类，文档改过、页码挪过之后不会拿旧页号继续往下贴。
+  // 先清掉上一次贴的类（页码 + 从行继承的版式类），文档改过、页码挪过之后不会拿旧类继续往下贴。
   for (const child of Array.from(root.children)) {
     if (child.classList.contains('cm-line')) continue
     for (const cls of Array.from(child.classList)) {
-      if (cls.startsWith(PAGE_CLASS_PREFIX)) child.classList.remove(cls)
+      if (cls.startsWith(PAGE_CLASS_PREFIX) || cls.startsWith(SLIDE_CLASS_PREFIX)) child.classList.remove(cls)
     }
   }
   let page: string | null = null
+  let layout: string[] = []
+  // 只认 `cm-md-page-<数字>`：`cm-md-page-start` 与 `cm-md-page-default` 也带同一个
+  // 前缀，但它们不是页码，拿去当页码会让 widget 落到错误的页。
+  const pageNumber = new RegExp(`^${PAGE_CLASS_PREFIX}\\d+$`)
   for (const child of Array.from(root.children)) {
-    const own = Array.from(child.classList).find(cls => cls.startsWith(PAGE_CLASS_PREFIX))
-    if (own) {
-      page = own
+    const own = Array.from(child.classList)
+    const ownPage = own.find(cls => pageNumber.test(cls))
+    if (ownPage) {
+      page = ownPage
+      layout = own.filter(cls => cls.startsWith(SLIDE_CLASS_PREFIX) && cls !== DIRECTIVE_CLASS)
       continue
     }
     if (page) child.classList.add(page)
+    for (const cls of layout) child.classList.add(cls)
   }
 }
 

@@ -61,8 +61,8 @@ const PAPER = {
   chromeLogoH: 30,
   /** clamp(16px, 2.4vh, 28px) @1080 */
   footPadY: 25.92,
-  /** 62vh @1080 */
-  imgMaxH: 669.6,
+  /** 72vh @1080 —— 与放映里 base.css 给 img/svg 的高度上限同一个比例 */
+  imgMaxH: 777.6,
   /** 66vh @1080 */
   figureMaxH: 712.8
 }
@@ -93,6 +93,30 @@ function scroller(): HTMLElement | null {
 function pageOfLine(line: Element): number | null {
   const match = new RegExp(`(?:^|\\s)${PAGE_CLASS_PREFIX}(\\d+)(?:\\s|$)`).exec(line.className ?? '')
   return match ? Number(match[1]) : null
+}
+
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => resolve())
+  })
+}
+
+/**
+ * 等所有图（mermaid）画完。
+ *
+ * 整篇渲染会给视口外的行新建 DOM，那些图是刚发起的异步渲染，函数返回时还停在
+ * 「图表渲染中…」占位（见 live-preview 的 MermaidWidget）。不在这里等，纸上印出来
+ * 就是这行占位文案，而不是图（2026-11-24 报的）。渲染失败或超时就放行：图没上纸，
+ * 也比导出卡死好。
+ */
+async function waitForDiagrams(root: HTMLElement, timeoutMs = 15000): Promise<void> {
+  const pending = (): number => root.querySelectorAll(
+    '.cm-md-mermaid:not(.cm-md-mermaid-ready):not(.cm-md-mermaid-failed)',
+  ).length
+  const deadline = Date.now() + timeoutMs
+  while (pending() > 0 && Date.now() < deadline) await nextFrame()
+  // 图比占位高，块高变了：再让一帧，后面量页高才是画完之后的高度。
+  await nextFrame()
 }
 
 /**
@@ -161,6 +185,15 @@ type PagePlan = {
   lines: HTMLElement[]
   used: number
   zoom: number
+  /** 放映里这一版式是整页垂直居中的（cover/section/closing），导出也要居中。 */
+  centered: boolean
+}
+
+/** 放映里 justify-content:center 的版式（slides.css 的容器级规则）。 */
+const CENTERED_LAYOUTS = ['cm-md-slide-cover', 'cm-md-slide-section', 'cm-md-slide-closing']
+
+function isCenteredLayout(first: HTMLElement): boolean {
+  return CENTERED_LAYOUTS.some((cls) => first.classList.contains(cls))
 }
 
 /**
@@ -172,7 +205,7 @@ type PagePlan = {
 function measurePage(
   root: HTMLElement,
   page: number,
-): { lines: HTMLElement[]; used: number } | null {
+): { lines: HTMLElement[]; used: number; centered: boolean } | null {
   const first = root.querySelector(`.${PAGE_CLASS_PREFIX}${page}.${PAGE_START_CLASS}`) as HTMLElement | null
   const lines = Array.from(root.children).filter(
     (line) => pageOfLine(line) === page && !line.classList.contains('cm-md-hr'),
@@ -182,20 +215,22 @@ function measurePage(
   const ownMargin = parseFloat(getComputedStyle(first).marginTop)
   const owned = last.getBoundingClientRect().bottom - first.getBoundingClientRect().top
   const used = owned + (Number.isFinite(ownMargin) ? ownMargin : 0)
-  return { lines, used }
+  return { lines, used, centered: isCenteredLayout(first) }
 }
 
 /**
  * 把纸面规则写出来。
  *
- * 每页第一行带 `break-before: page`，装不下的页带 `zoom`。不撑垂直居中空白：
- * 导出内容一律从页顶安全区开始（见 slides.css 的 .cm-md-page-start 规则）。
+ * 每页第一行带 `break-before: page`，装不下的页带 `zoom`。`spacers` 是每页上方要
+ * 撑的空白：只给 cover/section/closing 这类放映里整页垂直居中的版式撑，普通页
+ * 一律从页顶安全区开始。量页高的时候不给它，给了页就变高了。
  */
 function applySheet(
   sheet: HTMLStyleElement,
   background: string,
   accent: string,
   plans: PagePlan[],
+  spacers: Map<number, number> | null,
 ): void {
   const rules: string[] = []
   plans.forEach((plan, order) => {
@@ -205,6 +240,16 @@ function applySheet(
       rules.push(`body.${PRINT_CLASS} #editor .${PAGE_CLASS_PREFIX}${plan.page} { zoom: ${plan.zoom}; }`)
     }
   })
+  if (spacers) {
+    for (const plan of plans) {
+      const above = spacers.get(plan.page) ?? 0
+      if (above <= 0) continue
+      const start = `.cm-content > .${PAGE_CLASS_PREFIX}${plan.page}.${PAGE_START_CLASS}`
+      // 页首那行在缩放里，::before 的高度写在缩放后的空间里：要的是视觉高度，得除回来。
+      const css = plan.zoom < 1 ? above / plan.zoom : above
+      rules.push(`body.${PRINT_CLASS} #editor ${start}::before { content: ''; display: block; height: ${css}px; }`)
+    }
+  }
   sheet.textContent = layoutRules(background, accent) + rules.join('\n') + '\n'
 }
 
@@ -237,6 +282,8 @@ export async function enterPrintLayout(): Promise<SlidesSheet | false> {
   // Mermaid / 图片 / 表格是块级 widget，包在 .cm-lineWrapping 里，本身没有
   // 页码类；不补类的话，量页高时会把它漏掉。
   tagBlockWidgets(root)
+  // 图是异步画的：整篇渲染刚新建的那些还没内容，等它们画完再量页高、再交给打印。
+  await waitForDiagrams(root)
 
   const deck = deckPages()
   if (deck.length === 0) {
@@ -248,7 +295,7 @@ export async function enterPrintLayout(): Promise<SlidesSheet | false> {
   const plans: PagePlan[] = []
   for (const page of deck) {
     const measured = measurePage(root, page)
-    if (measured) plans.push({ page, lines: measured.lines, used: measured.used, zoom: 1 })
+    if (measured) plans.push({ page, lines: measured.lines, used: measured.used, zoom: 1, centered: measured.centered })
   }
 
   // 装不下的页整页等比缩放：先按高度差估一个系数，量一次再按量的结果修一次。
@@ -264,14 +311,21 @@ export async function enterPrintLayout(): Promise<SlidesSheet | false> {
       }
     }
     if (!changed) break
-    applySheet(sheet, background, accent, plans)
+    applySheet(sheet, background, accent, plans, null)
     for (const plan of plans) {
       const measured = measurePage(root, plan.page)
       if (measured) plan.used = measured.used
     }
   }
 
-  applySheet(sheet, background, accent, plans)
+  // 只给放映里整页垂直居中的版式（cover/section/closing）撑空白居中；普通页顶部对齐。
+  const spacers = new Map<number, number>()
+  for (const plan of plans) {
+    if (!plan.centered) continue
+    const above = Math.max(0, Math.floor((target - plan.used) / 2))
+    if (above > 0) spacers.set(plan.page, above)
+  }
+  applySheet(sheet, background, accent, plans, spacers)
 
   return { width: PAGE_WIDTH_INCHES, height: PAGE_HEIGHT_INCHES }
 }

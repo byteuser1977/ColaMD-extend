@@ -73,7 +73,10 @@
   --slide-chrome-pad-y: clamp(20px, 3.2vh, 40px);
   --slide-chrome-logo-h: clamp(18px, 1.6vw, 30px);
   --slide-foot-pad-y: clamp(16px, 2.4vh, 28px);
-  --slide-img-max-h: 62vh;
+  /* 图的高度上限。放映时 base.css 对 .cm-content 里的 img/svg 统一给 72vh，
+     这里取同一个数，导出才能按纸面 1080 的 72vh 解出一样的大小（之前写 62vh，
+     放映被 base.css 压回 72vh，导出却按 62vh 收，纸上的图小一圈）。 */
+  --slide-img-max-h: 72vh;
   --slide-figure-max-h: 66vh;
   --slide-cover-text-align: left;
   --slide-cover-lead-inline: 0;
@@ -349,6 +352,14 @@ body.slides-printing #editor .cm-content {
   padding: 0 var(--slide-page-pad-x) !important;
 }
 
+/* 行也铺满版心。放映有 base.css 的 `.cm-content > * { max-width: 100% }`，
+ * 把 page-default 的 82%、page-lead 的 68% 一起顶掉；导出没有那一条，行会被
+ * 百分比压窄——figure 页的图再按 70% 缩一次，纸上的图比放映小一圈
+ * （2026-11-24 报的）。这里补上同一条，两边量出来才是同一个宽度。 */
+body.slides-printing #editor .cm-content > * {
+  max-width: 100%;
+}
+
 /* 基准字号：PPT 的字号要跟画面走，不能跟主题的阅读字号走。
  * 1080p 全屏 ≈ 26px 正文 → 内容标题 ≈ 109px、封面主标题 ≈ 177px；窄窗口退到 17px。
  * 下面的字号阶梯全部是相对它的 em，一处调整整副牌等比缩放。
@@ -512,8 +523,14 @@ body.presenting #editor[data-slide-layout='two-col'] .cm-md-page-start {
   padding-top: 0;
 }
 
-/* 导出是流式分纸、没有容器级的 flex 居中：封面/章节/收束/双栏这几页同样
- * 从页顶安全区开始，不垂直居中（放映里的整页居中只属于放映）。 */
+/* 导出是流式分纸、没有容器级的 flex 居中，封面/章节/收束的整页居中由
+ * slides-export.ts 在页前撑空白完成（spacer），页首安全区在这里归零——否则
+ * 那截 padding 会叠在 spacer 之上，内容被推得偏下。双栏页不居中，保留安全区。 */
+body.slides-printing .cm-md-slide-cover.cm-md-page-start,
+body.slides-printing .cm-md-slide-section.cm-md-page-start,
+body.slides-printing .cm-md-slide-closing.cm-md-page-start {
+  padding-top: 0 !important;
+}
 
 /* ════ cover · 主视觉封面（dsh-ppt: cover.hero）════
  *
@@ -848,12 +865,17 @@ body.presenting #editor[data-slide-layout='figure'] .cm-md-image img {
 }
 
 /* 导出：标题/导语走标准页角色，图的高度上限与放映同一档（66vh）。纸面 1080 高，
-   vh 在纸面与在 1920×1080 的窗口里解出同一个数。 */
+   vh 在纸面与在 1920×1080 的窗口里解出同一个数。
+   图是块级 widget，`cm-md-slide-figure` 由 slideshow 的 tagBlockWidgets 补在同一个
+   元素上，所以这里必须写紧凑选择器（.a.b）：原来的后代写法选不中它，图会退回
+   固有尺寸，和放映的 70% 宽不是一个大小。 */
 body.slides-printing .cm-md-slide-figure.cm-md-page-lead {
   margin-bottom: 0.6em;
 }
 
+body.slides-printing .cm-md-slide-figure.cm-md-mermaid,
 body.slides-printing .cm-md-slide-figure .cm-md-mermaid,
+body.slides-printing .cm-md-slide-figure.cm-md-image,
 body.slides-printing .cm-md-slide-figure .cm-md-image {
   width: 70%;
   max-width: 70%;
@@ -861,8 +883,12 @@ body.slides-printing .cm-md-slide-figure .cm-md-image {
   margin: 0 auto;
 }
 
-body.slides-printing .cm-md-slide-figure .cm-md-mermaid svg,
-body.slides-printing .cm-md-slide-figure .cm-md-image img {
+/* 高度上限要带 #editor：图那条通用规则是 (1,1,2)，不带 id 的 figure 规则
+   压不过它，66vh 会被 72vh 顶掉。 */
+body.slides-printing #editor .cm-md-slide-figure.cm-md-mermaid svg,
+body.slides-printing #editor .cm-md-slide-figure .cm-md-mermaid svg,
+body.slides-printing #editor .cm-md-slide-figure.cm-md-image img,
+body.slides-printing #editor .cm-md-slide-figure .cm-md-image img {
   width: 100%;
   max-height: var(--slide-figure-max-h);
   height: auto;
@@ -1027,6 +1053,13 @@ body.slides-printing #editor img {
   max-width: 100%;
   object-fit: contain;
   border-radius: var(--pele-radius, 8px);
+}
+
+/* mermaid 等 SVG 图：放映时受 base.css 的 72vh 上限，导出没有窗口视口，用纸面
+ * 1080 的 72vh 定死同一个比例，否则大图会撑破一页、再被整页 zoom 压小。
+ * 不带 #editor：figure 版式那条（0,4,2）要压得过这一条（0,3,2）。 */
+body.slides-printing .cm-content svg {
+  max-height: var(--slide-img-max-h);
 }
 
 /* 分页符残留：分隔线是分页边界，不是正文的一行，放映时不画。不带 #editor
