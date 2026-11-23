@@ -154,7 +154,7 @@ flowchart LR
 ![系统架构](./assets/architecture.png)
 ```
 
-图表和图片都按正文宽度的 70% 居中显示；放映最高 66vh，导出最高 52vh。标题与普通内容页同档，不再缩成小注。
+图表和图片都按正文宽度的 70% 居中显示；放映与导出同一档，最高 66vh。标题与普通内容页同档，不再缩成小注。
 
 ### 引言
 
@@ -170,8 +170,8 @@ flowchart LR
 
 不写 `slide` 块的页自动走文章版式：
 
-- 页标题 3.4em，正文 0.95em / 行高 1.8，行宽 82%；
-- 导出时再压到 3em / 0.9em / 1.7，尽量一页读完；
+- 页标题 3.4em，正文 0.95em / 行高 1.8；
+- 放映与导出用同一套字号与密度，不再为纸面另收一档；
 - 适合一页多个段落、列表混排的长文；超过三四段建议主动分页，而不是继续缩字号。
 
 ```markdown
@@ -245,7 +245,7 @@ body.theme-custom {
 | `--slide-kpi-number-size` | KPI 大数字字号 |
 | `--slide-quote-size` | 引言字号 |
 | `--slide-page-pad-x` | 左右页边距（默认 6vw） |
-| `--slide-page-top-pad` / `--slide-page-top-pad-print` | 放映 / 导出的页顶安全区 |
+| `--slide-page-top-pad` | 页顶安全区（放映与导出共用） |
 | `--slide-cover-text-align` / `--slide-cover-lead-inline` | 封面对齐方式与导语左右留白 |
 
 内置主题已经按气质预设了一部分令牌：Notion 走无衬线居中封面，Writer 走等宽标题，Elegant / Sepia / Bear 是三种衬线变体，深色主题把顶栏调亮。
@@ -270,11 +270,11 @@ body.presenting .cm-md-page-default .cm-md-page-lead {
 
 ## 放映与导出
 
-- 画布是 16:9。放映时封面、章节、收束、引言垂直居中，内容页（含图表页）顶部对齐；导出不分版式，一律从页顶安全区开始、不垂直居中。
+- 画布是 16:9，纸面与放映是同一块设计空间（1920×1080，PDF 页 20×11.25 英寸）。封面、章节、收束整页垂直居中，其余页（含图表页）从页顶安全区开始；导出的居中规则与放映一致，不再给所有页统一撑上下空白。
 - 每页的 `label` / `chapter` 在放映时逐页切换；PDF 的顶栏是 fixed 元素，每张纸只能印 `deck.title` / `deck.meta`，不逐页变化。
 - PDF 不印页脚页码和右下角幽灵页码；页脚只保留 `brand`。
 - 空白页会被过滤，页脚按「第几张」编号，不会因为空页跳号。
-- Mermaid 是异步渲染的。导出时如果图还没出现，回到图表页稍等再导出。
+- Mermaid 是异步渲染的。导出会先等所有图渲染完成再排版、打印，纸上不会出现「图表渲染中…」的占位；渲染失败或超时会放行。
 
 ## 常见问题
 
@@ -285,7 +285,7 @@ body.presenting .cm-md-page-default .cm-md-page-lead {
 调 `--slide-cover-title-size` / `--slide-section-title-size`，不要直接改 `.cm-md-page-title`，否则会连带内容页。
 
 **图表太小或太大**
-`figure` 页默认图宽 70%，放映最高 66vh，导出最高 52vh。要改宽度，覆盖 `body.presenting #editor[data-slide-layout='figure'] .cm-md-mermaid` 的 `width` / `max-width`；要改高度，改 `max-height`。
+`figure` 页默认图宽 70%，放映与导出同一档、最高 66vh。要改宽度，覆盖 `body.presenting #editor[data-slide-layout='figure'] .cm-md-mermaid` 的 `width` / `max-width`；要改高度，改 `max-height`。
 
 **logo 不显示**
 相对路径按当前 Markdown 所在目录解析；确认文件存在，或改用 URL / data URI。
