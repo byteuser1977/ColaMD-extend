@@ -62,6 +62,7 @@
     "verify:scroll-render": "node scripts/verify-scroll-render.mjs",
     "verify:image-export": "node scripts/verify-image-export.mjs",
     "verify:export-pdf": "node scripts/verify-export-pdf.mjs",
+    "verify:slides-export": "node scripts/verify-slides-export.mjs",
     "verify:themes": "node scripts/verify-themes.mjs",
     "verify:themes:cli": "node scripts/verify-themes-cli.mjs",
     "verify:theme-contract": "node scripts/verify-theme-contract.mjs",

@@ -81,11 +81,11 @@ function inlineBodyVariables(): Array<[string, string]> {
 function rootDeclarations(): string {
   const peleNames = new Set(THEME_CONTRACT.peleVariables)
   const regular = THEME_CONTRACT.liveVariables.filter((name) => !peleNames.has(name))
-  const mermaid = document.querySelector<HTMLElement>('.cm-md-mermaid')
   const values = [
     ...readVariables(document.body, regular),
-    // --pele-* 定义在 .cm-md-mermaid 上，body 上看不到。没有图时不需要输出。
-    ...readVariables(mermaid, THEME_CONTRACT.peleVariables),
+    // --pele-* 定义在 body 上（themes/editor-preview.css），幻灯片强调色与
+    // mermaid 图共用同一组值。文档里没有 mermaid 图时它们照样要输出。
+    ...readVariables(document.body, THEME_CONTRACT.peleVariables),
     ...inlineBodyVariables()
   ]
 

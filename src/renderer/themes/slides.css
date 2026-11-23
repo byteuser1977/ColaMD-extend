@@ -63,7 +63,18 @@
 
   --slide-page-pad-x: 6vw;
   --slide-page-top-pad: 61px;
-  --slide-page-top-pad-print: 54px;
+  /* 放映与导出共用的基准字号。纸面 1280×720 与 1280×720 的窗口是同一块地方，
+     1.35vw 在两处都解出 17.28px：导出不再自带一套字号（2026-11-23 之前导出
+     写死 24px，比放映大 39%，内容因此撑破纸面，稿子看着也不是同一份）。 */
+  --slide-body-size: clamp(17px, 1.35vw, 26px);
+  /* 跟着视口走的几处：chrome 的上下留白、logo 的高、页脚的留白、图的高度上限。
+     做成令牌，是为了让导出能把它们按 1280×720 的纸面定死（见 slides-export.ts）：
+     导出在屏幕布局里量页高，屏幕的视口不是纸面，靠视口的值两处会对不上。 */
+  --slide-chrome-pad-y: clamp(20px, 3.2vh, 40px);
+  --slide-chrome-logo-h: clamp(18px, 1.6vw, 30px);
+  --slide-foot-pad-y: clamp(16px, 2.4vh, 28px);
+  --slide-img-max-h: 62vh;
+  --slide-figure-max-h: 66vh;
   --slide-cover-text-align: left;
   --slide-cover-lead-inline: 0;
 }
@@ -154,7 +165,7 @@ body.presenting #editor .cm-md-slide-directive.cm-md-page-start {
 }
 
 body.slides-printing #editor .cm-md-slide-directive.cm-md-page-start {
-  padding-top: var(--slide-page-top-pad-print) !important;
+  padding-top: var(--slide-page-top-pad) !important;
 }
 
 /* 结构兜底的 kicker：标题前那段文字在放映/导出里不占位，文字由标题行的
@@ -176,7 +187,7 @@ body.presenting .cm-md-page-kicker.cm-md-page-start {
 }
 
 body.slides-printing .cm-md-page-kicker.cm-md-page-start {
-  padding-top: var(--slide-page-top-pad-print) !important;
+  padding-top: var(--slide-page-top-pad) !important;
 }
 
 /* 没写指令的页：安全区落在第一条内容行上。 */
@@ -185,7 +196,7 @@ body.presenting .cm-md-page-start {
 }
 
 body.slides-printing .cm-md-page-start {
-  padding-top: var(--slide-page-top-pad-print);
+  padding-top: var(--slide-page-top-pad);
 }
 
 /* ─── deck chrome ─────────────────────────────────────────────────── */
@@ -205,7 +216,7 @@ body.slides-printing .cm-md-page-start {
   z-index: 40;
   display: none;
   align-items: center;
-  padding: clamp(20px, 3.2vh, 40px) var(--slide-page-pad-x) 0;
+  padding: var(--slide-chrome-pad-y) var(--slide-page-pad-x) 0;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.18em;
@@ -242,7 +253,7 @@ body.slides-printing .slide-chrome {
 }
 
 .slide-chrome-logo {
-  height: clamp(18px, 1.6vw, 30px);
+  height: var(--slide-chrome-logo-h);
   width: auto;
   max-width: 180px;
   object-fit: contain;
@@ -258,7 +269,7 @@ body.slides-printing .slide-chrome {
   display: none;
   align-items: baseline;
   justify-content: space-between;
-  padding: 0 var(--slide-page-pad-x) clamp(16px, 2.4vh, 28px);
+  padding: 0 var(--slide-page-pad-x) var(--slide-foot-pad-y);
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: var(--slide-chrome-transform, uppercase);
@@ -328,19 +339,23 @@ body.presenting:has(#editor[data-slide-layout='closing']) .slide-ghost {
 /* ─── 版式字体族与全出血 ────────────────────────────────────────────
  * 衬线栈把中文衬线排在前面（宋体系）：杂志感来自中文衬线的骨架，只在
  * 拉丁字母上找 Georgia 是不够的。等宽栈同理，中文等宽缺字时退回系统字体。 */
-/* 全出血：正文铺满纸面，只留 6vw 边距——幻灯片不是文档，不要阅读列宽。 */
-body.presenting #editor .cm-content {
+/* 全出血：正文铺满纸面，只留 6vw 边距——幻灯片不是文档，不要阅读列宽。
+ * 放映与导出同一条：纸面 1280×720 与 1280×720 的窗口量出同一个 6vw（76.8px）。 */
+body.presenting #editor .cm-content,
+body.slides-printing #editor .cm-content {
   width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
   padding: 0 var(--slide-page-pad-x) !important;
 }
 
-/* 放映的基准字号：PPT 的字号要跟画面走，不能跟主题的阅读字号走。
+/* 基准字号：PPT 的字号要跟画面走，不能跟主题的阅读字号走。
  * 1080p 全屏 ≈ 26px 正文 → 内容标题 ≈ 109px、封面主标题 ≈ 177px；窄窗口退到 17px。
- * 下面的字号阶梯全部是相对它的 em，一处调整整副牌等比缩放。 */
-body.presenting #editor .cm-content {
-  font-size: clamp(17px, 1.35vw, 26px);
+ * 下面的字号阶梯全部是相对它的 em，一处调整整副牌等比缩放。
+ * 导出用同一个令牌：纸面 1280×720 时 1.35vw 同样是 17.28px。 */
+body.presenting #editor .cm-content,
+body.slides-printing #editor .cm-content {
+  font-size: var(--slide-body-size);
 }
 
 /* ─── 通用字号阶梯（全出血后的 PPT 惯例）────────────────────────────
@@ -455,22 +470,6 @@ body.slides-printing .cm-md-page-default.cm-md-page-lead {
   margin-bottom: 1em;
 }
 
-/* 纸上再压一档：默认文章页的目标是「一页读完」，不是把屏幕比例原样搬过去。 */
-body.slides-printing .cm-line.cm-md-page-default {
-  font-size: 0.9em;
-  line-height: 1.7;
-}
-
-body.slides-printing .cm-md-page-default.cm-md-page-title {
-  font-size: 3em;
-}
-
-body.slides-printing .cm-md-page-default.cm-md-page-lead {
-  font-size: 1em;
-  line-height: 1.6;
-  margin-bottom: 0.8em;
-}
-
 /* 行高放映与导出同值：不一致会让同一份稿子在屏幕上和纸上换行位置不同。 */
 body.presenting #editor .cm-content,
 body.slides-printing #editor .cm-content {
@@ -513,6 +512,17 @@ body.presenting #editor[data-slide-layout='two-col'] .cm-md-page-start {
   padding-top: 0;
 }
 
+/* 导出没有容器级版式（导出是流式分纸，没有「当前页」可言），但封面/章节/
+ * 收束/双栏这几页在放映里是整页居中、页首安全区归零的。导出把它们的页首
+ * 安全区也归零：内容居中由 slides-export.ts 在页前撑空白完成，两边看见的
+ * 是同一份稿子。 */
+body.slides-printing .cm-md-slide-cover.cm-md-page-start,
+body.slides-printing .cm-md-slide-section.cm-md-page-start,
+body.slides-printing .cm-md-slide-closing.cm-md-page-start,
+body.slides-printing .cm-md-slide-two-col.cm-md-page-start {
+  padding-top: 0 !important;
+}
+
 /* ════ cover · 主视觉封面（dsh-ppt: cover.hero）════
  *
  * 约定：h1 主标题，h2 副标题，标题后的第一段当导语，kicker 写在页头块里。
@@ -551,10 +561,13 @@ body.presenting #editor[data-slide-layout='cover'] .cm-md-page-lead {
   margin-inline: var(--slide-cover-lead-inline, 0);
 }
 
-/* 导出：封面是普通块流，标题与副标题按同一阶梯走。 */
+/* 导出：封面是普通块流（没有容器级的 flex 居中），但字号阶梯与放映同一份令牌，
+   不再按纸上高度另收一档——纸面与 1280×720 的窗口是一块地方。 */
 body.slides-printing .cm-md-slide-cover.cm-md-page-title {
-  font-size: calc(var(--slide-cover-title-size, 6.8em) * 0.88);
-  line-height: 1.02;
+  font-size: var(--slide-cover-title-size, 6.8em);
+  line-height: var(--slide-cover-title-line-height, 0.98);
+  letter-spacing: var(--slide-cover-title-tracking, -0.02em);
+  max-width: 14em;
 }
 
 body.slides-printing .cm-md-slide-cover.cm-md-atxheading2,
@@ -589,7 +602,9 @@ body.presenting #editor[data-slide-layout='section'] .cm-md-page-lead {
 }
 
 body.slides-printing .cm-md-slide-section.cm-md-page-title {
-  font-size: calc(var(--slide-section-title-size, 5.2em) * 0.88);
+  font-size: var(--slide-section-title-size, 5.2em);
+  line-height: 1.02;
+  max-width: 14em;
   padding-bottom: 0.3em;
 }
 
@@ -836,11 +851,12 @@ body.presenting #editor[data-slide-layout='figure'] .cm-md-mermaid svg,
 body.presenting #editor[data-slide-layout='figure'] .cm-md-image img {
   width: 100%;
   max-width: 100%;
-  max-height: 66vh;
+  max-height: var(--slide-figure-max-h);
   height: auto;
 }
 
-/* 导出：标题/导语走标准页角色，图收在 52vh，保证一页放得下。 */
+/* 导出：标题/导语走标准页角色，图的高度上限与放映同一档（66vh）。纸面 720 高，
+   vh 在纸面与在 1280×720 的窗口里解出同一个数。 */
 body.slides-printing .cm-md-slide-figure.cm-md-page-lead {
   margin-bottom: 0.6em;
 }
@@ -856,7 +872,7 @@ body.slides-printing .cm-md-slide-figure .cm-md-image {
 body.slides-printing .cm-md-slide-figure .cm-md-mermaid svg,
 body.slides-printing .cm-md-slide-figure .cm-md-image img {
   width: 100%;
-  max-height: 52vh;
+  max-height: var(--slide-figure-max-h);
   height: auto;
 }
 
@@ -927,7 +943,9 @@ body.slides-printing .cm-md-slide-closing.cm-md-li::before {
 }
 
 body.slides-printing .cm-md-slide-closing.cm-md-page-title {
-  font-size: calc(var(--slide-closing-title-size, 4.2em) * 0.9);
+  font-size: var(--slide-closing-title-size, 4.2em);
+  line-height: 1.1;
+  max-width: 16em;
 }
 
 /* ════ 内容元素：列表 / 强调 / 代码 / 引用 / 表格 / 图片 ════
@@ -1009,14 +1027,11 @@ body.slides-printing .cm-md-table-widget td {
   border-bottom: 1px solid var(--border-color);
 }
 
-/* 图片：一张图不该撑破一页。放映按视口高度收；打印的纸高限制在
- * slides-export.ts 的 layoutRules 里（那里知道纸尺寸，vh 在纸上没有意义）。 */
-body.presenting #editor img {
-  max-height: 62vh;
-}
-
+/* 图片：一张图不该撑破一页。放映按视口高度收，导出按纸面高度收——纸面 720 高，
+ * 导出会把令牌定成纸面的那一档（见 slides-export.ts）。 */
 body.presenting #editor img,
 body.slides-printing #editor img {
+  max-height: var(--slide-img-max-h);
   max-width: 100%;
   object-fit: contain;
   border-radius: var(--pele-radius, 8px);
@@ -1029,84 +1044,20 @@ body.presenting .cm-md-hr {
   display: none;
 }
 
-/* ─── 导出纸面密度校准（只缩导出，不改放映）────────────────────────
- * 纸面 1280×720、基准 24px，比放映画面矮：1.7 行高、代码块逐行累加的
- * 纵向 padding、空行按整行计高、偏松的表格内距，都会把内容撑到第二页。
- * 校准手段对齐 themes/pink-script-dark.css 的 1.6.12 + 1.7 节：
- * 收令牌、压行高、代码块只留横向 padding、表格压紧、空行压扁。 */
-body.slides-printing {
-  --slide-title-size: 3.7em;        /* 4.2 × 0.88，与 cover/section/closing 的导出收档同法 */
-  --slide-lead-size: 1em;
-  --slide-quote-size: 2em;
-  --slide-kpi-number-size: 3em;
-}
-
-/* 纸面基础密度：720px 纸面装不下放映的 1.7 行高，统一收到 1.62。 */
-body.slides-printing #editor .cm-content {
-  line-height: 1.62;
-}
-
-/* 代码块每行一个 div：纵向内距会按行累加，导出只留横向，字号再收一档。 */
-body.slides-printing #editor .cm-md-codeblock {
-  padding: 0 1.1em;
-  font-size: 0.72em;
-  line-height: 1.45;
-}
-
-/* 表格压紧：纸面高度有限，PPT 的表格读的是列不是行距。 */
-body.slides-printing #editor .cm-md-table-widget th,
-body.slides-printing #editor .cm-md-table-widget td {
-  padding: 6px 10px;
-  font-size: 0.75em;
-}
-
-/* 空行（CM6 里就是 <div class="cm-line"><br></div>）在纸面上只作分隔，
- * 不按整行 1.62 计高；压到 0.55 行，给版式页腾出空间。 */
-body.slides-printing #editor .cm-content .cm-line:has(> br:only-child) {
-  line-height: 0.55;
-}
-
-/* ─── 版式条目：导出防跨页 + 密度收档（放映不动）────────────────────
+/* ─── 导出防跨页（不改放映的排版）────────────────────────────────────
  * kpi/matrix 卡片、timeline 节点、steps 步骤行、two-col 单元在导出下都是
- * 流式排在纸上的：间距沿用放映值会把内容撑到第二页，条目还会被拦腰切到
- * 两页上。这里整体收到导出密度，并加 break-inside: avoid——宁可整条挪到
- * 下一页，不在半截切断。 */
+ * 流式排在纸上的，条目可能被拦腰切到两页上。这里只加 break-inside: avoid
+ * ——宁可整条挪到下一页，不在半截切断。
+ *
+ * 排版本身（字号、行高、内距）与放映共用同一份规则：纸面 1280×720 就是
+ * 1280×720 的放映窗口，之前那套「导出再收一档」的密度校准（基准 24px、
+ * 行高 1.62、代码块 0.72em、表格 0.75em）连同它的理由一起删掉了——
+ * 它是为了把写死的 24px 塞进纸面，导出字号回到与放映一致后就不再需要
+ * （2026-11-23）。真装不下的页由 slides-export.ts 整页等比压回一页。 */
 body.slides-printing .cm-md-slide-kpi.cm-md-li,
 body.slides-printing .cm-md-slide-matrix.cm-md-li,
 body.slides-printing .cm-md-slide-timeline.cm-md-li,
-body.slides-printing .cm-md-slide-steps.cm-md-li {
-  break-inside: avoid;
-}
-
-body.slides-printing .cm-md-slide-kpi.cm-md-li {
-  padding: 0.7em 0.8em 0.8em;
-  margin: 0 1.2% 0.9em 0;
-  line-height: 1.45;
-}
-
-body.slides-printing .cm-md-slide-matrix.cm-md-li {
-  padding: 0.8em 0.9em 0.7em;
-  margin: 0 1.5% 1em 0;
-}
-
-/* timeline 没有自己的上下 margin，会漏吃通用 .cm-md-li 的 0.45em：六个节点
- * 就是 130px 纯空白，导出下清零，间距交给 padding-bottom。 */
-body.slides-printing .cm-md-slide-timeline.cm-md-li {
-  margin-top: 0;
-  margin-bottom: 0;
-  padding-bottom: 0.9em;
-}
-
-body.slides-printing .cm-md-slide-steps.cm-md-li {
-  padding: 0.5em 0 0.5em 1.1em;
-  margin-bottom: 0.7em;
-}
-
+body.slides-printing .cm-md-slide-steps.cm-md-li,
 body.slides-printing .cm-md-slide-two-col:not(.cm-md-page-start) {
   break-inside: avoid;
-}
-
-/* 导语的收尾留白也收一档：标题块到正文的过渡在纸面上不需要 1.4em。 */
-body.slides-printing .cm-md-page-lead {
-  margin-bottom: 1em;
 }

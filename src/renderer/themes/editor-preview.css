@@ -570,33 +570,32 @@ body.exporting .cm-content .cm-md-frontmatter {
   }
 }
 
-/* ======= mermaid ======= */
+/* ======= pele 变量 ======= */
 
-/* 不带 .cm-content 前缀：导出的 HTML 里 mermaid 块落在 .colamd-document 下，
-   没有 .cm-content 祖先；选择器收在编辑器里，导出文档的 SVG 就解析不到
-   --pele-*，只能吃 pele 自己的兜底色，颜色跟界面对不上（导出 HTML 实测）。 */
-.cm-md-mermaid {
-  display: block;
-  text-align: center;
-  padding: 0.8em 0;
-  color: var(--text-muted);
-  font-size: 0.9em;
+/* Pele 画图用的变量。它的 SVG 里写的是 `var(--pele-*)`，在 SVG 落进的文档里取值，
+   所以换主题不用重画。
 
-  /* Pele 画图用的变量。它的 SVG 里写的是 `var(--pele-*)`，在 SVG 落进的文档里取值，
-     所以换主题不用重画。
+   定义在 body 上，不在 .cm-md-mermaid 上：幻灯片版式（themes/slides.css 的强调色
+   描边、列表符号、步骤胶囊）与幻灯片 PDF 导出都要在同一份作用域里取这组变量。
+   定义在 mermaid 块里时，body 与 :root 都取不到它们——幻灯片的强调色规则一律
+   退化成正文色，导出 PDF 也就没有底色（2026-11-23 实测）。
 
-     取值的依据是图**画在什么底上**。以前这里按「图浮在代码块底色上」取代码块配色，
-     但 mermaid 围栏是**整块替换**：源码行连同 `.cm-md-codeblock` 一起没了，widget 的
-     祖先链是 .cm-content > .cm-lineWrapping > .cm-md-mermaid，没有代码块底色，
-     SVG 画布本身也不画背景（2026-11-14 实测）。于是浅色主题配深色代码块的两个
-     主题——elegant、bear——把 #e0dcd7 这类浅色线条画在了 #f0edea 的纸面上，糊成一片。
+   body 上的自定义属性在 body 处解析，主题的 body.theme-* 覆盖照常生效；
+   放进 .cm-md-mermaid 里时反而要绕一圈才能拿到主题色。
 
-     所以底和字都从**页面**上取：浅色主题得到深字浅底，深色主题得到浅字深底，
-     跟其他浅色主题（light/notion/sepia/writer）现在的表现一致。导出 HTML 和打印
-     走的是同一套变量，纸面上的配色也跟着对了。
+   取值的依据是图**画在什么底上**。以前这里按「图浮在代码块底色上」取代码块配色，
+   但 mermaid 围栏是**整块替换**：源码行连同 `.cm-md-codeblock` 一起没了，widget 的
+   祖先链是 .cm-content > .cm-lineWrapping > .cm-md-mermaid，没有代码块底色，
+   SVG 画布本身也不画背景（2026-11-14 实测）。于是浅色主题配深色代码块的两个
+   主题——elegant、bear——把 #e0dcd7 这类浅色线条画在了 #f0edea 的纸面上，糊成一片。
 
-     百分比是量着定的：节点填充最初取 10%，Nord 上量出来是 #383E49 贴在 #262C37 的底上，
-     只靠一圈描边分界，显得糊（2026-10-19）。18% / 28% / 45% 三档在 9 个主题上都拉开了。 */
+   所以底和字都从**页面**上取：浅色主题得到深字浅底，深色主题得到浅字深底，
+   跟其他浅色主题（light/notion/sepia/writer）现在的表现一致。导出 HTML 和打印
+   走的是同一套变量，纸面上的配色也跟着对了。
+
+   百分比是量着定的：节点填充最初取 10%，Nord 上量出来是 #383E49 贴在 #262C37 的底上，
+   只靠一圈描边分界，显得糊（2026-10-19）。18% / 28% / 45% 三档在 9 个主题上都拉开了。 */
+body {
   --pele-bg: var(--bg-color);
   --pele-fg: var(--text-color);
   --pele-muted: color-mix(in srgb, var(--text-color) 70%, var(--bg-color));
@@ -606,6 +605,20 @@ body.exporting .cm-content .cm-md-frontmatter {
   --pele-border: color-mix(in srgb, var(--text-color) 45%, var(--bg-color));
   --pele-accent: var(--link-color);
   --pele-radius: 6px;
+}
+
+/* ======= mermaid ======= */
+
+/* 不带 .cm-content 前缀：导出的 HTML 里 mermaid 块落在 .colamd-document 下，
+   没有 .cm-content 祖先；选择器收在编辑器里，导出文档的 SVG 就解析不到
+   --pele-*，只能吃 pele 自己的兜底色，颜色跟界面对不上（导出 HTML 实测）。
+   --pele-* 本身定义在 body 上（见上），这里只管图的排版。 */
+.cm-md-mermaid {
+  display: block;
+  text-align: center;
+  padding: 0.8em 0;
+  color: var(--text-muted);
+  font-size: 0.9em;
 }
 
 .cm-md-mermaid svg {
