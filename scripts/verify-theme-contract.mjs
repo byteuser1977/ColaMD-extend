@@ -40,7 +40,7 @@ const contractHooks = uniqueSorted(contract.editorHooks)
 const runtimeHooks = contractHooks.filter((hook) => !cssHooks.includes(hook))
 
 assert.equal(contract.contractVersion, pkg.version, 'contractVersion 必须等于 package.json 的 version')
-assert.equal(contractHooks.length, 50, 'editorHooks 必须是 50 个')
+assert.equal(contractHooks.length, 52, 'editorHooks 必须是 52 个')
 assert.deepEqual(
   contractHooks.filter((hook) => cssHooks.includes(hook)),
   cssHooks,

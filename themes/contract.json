@@ -1,5 +1,5 @@
 {
-  "contractVersion": "2.7.13-fix1",
+  "contractVersion": "2.8.0",
   "liveVariables": [
     "--bg-color",
     "--text-color",
@@ -87,7 +87,9 @@
     "cm-md-li-4",
     "cm-md-li-5",
     "cm-md-li-6",
+    "cm-md-li-blank",
     "cm-md-li-bullet",
+    "cm-md-li-ordered",
     "cm-md-link",
     "cm-md-listmark",
     "cm-md-marker",
