@@ -234,7 +234,10 @@ async function run() {
     check('标题/加粗/行内代码/表格/代码块都在', ['<h1>', '<strong>', '<code>', '<table', '<pre><code>'].every((tag) => body.includes(tag)))
     check('KaTeX 公式已渲染', body.includes('class="katex"'))
     check('Mermaid SVG 已渲染', body.includes('<svg') && html.includes('var(--pele-'))
-    check('没有编辑器行结构', !body.includes('cm-line') && !body.includes('cm-md-'))
+    // 图表的类名是导出契约的一部分：`.cm-md-mermaid` 上挂着 --pele-* 主题变量，
+    // 去掉它导出文档里的图就跟界面不是一个配色。除此之外不该残留编辑器结构。
+    const withoutMermaidShell = body.replace(/class="[^"]*cm-md-mermaid[^"]*"/g, '')
+    check('没有编辑器行结构', !body.includes('cm-line') && !withoutMermaidShell.includes('cm-md-'))
 
     const root = html.match(/:root\s*\{([^}]*)\}/)
     const declarations = root?.[1] ?? ''

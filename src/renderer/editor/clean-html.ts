@@ -60,6 +60,21 @@ function lineKind(line: HTMLElement, includeList = true): LineKind {
   return 'p'
 }
 
+/** 整块替换的 widget（表格、图、块公式）是 `.cm-content` 的直接子元素，不在 `.cm-line` 里。 */
+function blockWidgetKind(node: Node): LineKind | null {
+  if (!(node instanceof HTMLElement)) return null
+  if (node.classList.contains('cm-md-table-widget')) return 'table'
+  if (node.classList.contains('cm-md-mermaid')) return 'mermaid'
+  if (node.classList.contains('cm-md-math-block')) return 'math'
+  return null
+}
+
+/** widget 可能自己就是选择器指向的元素，也可能包在行里。 */
+function widgetIn(container: HTMLElement, selector: string): HTMLElement | null {
+  if (container.matches(selector)) return container
+  return container.querySelector<HTMLElement>(selector)
+}
+
 /** 列表项在源码里的层级（`cm-md-li-N` 的 N）。 */
 function listDepth(line: HTMLElement): number {
   for (let depth = 6; depth >= 0; depth--) {
@@ -232,11 +247,11 @@ function renderGroup(kind: LineKind, lines: HTMLElement[], ownerDepth = -1): str
   // （themes/editor-preview.css），导出文档里没有它，SVG 只能吃 pele 的兜底色，
   // 颜色跟界面对不上。
   if (kind === 'mermaid') {
-    const widget = lines[0].querySelector('.cm-md-mermaid')
+    const widget = widgetIn(lines[0], '.cm-md-mermaid')
     return widget ? `<div class="${widget.className}">${widget.innerHTML}</div>` : ''
   }
   if (kind === 'math') {
-    const widget = lines[0].querySelector('.cm-md-math-block')
+    const widget = widgetIn(lines[0], '.cm-md-math-block')
     return widget ? `<div>${widget.innerHTML}</div>` : ''
   }
   if (kind === 'li') return renderList(lines)
@@ -244,7 +259,7 @@ function renderGroup(kind: LineKind, lines: HTMLElement[], ownerDepth = -1): str
     return `<blockquote>${lines.map((line) => `<p>${lineHTML(line)}</p>`).join('')}</blockquote>`
   }
   if (kind === 'table') {
-    const table = lines[0].querySelector<HTMLElement>('.cm-md-table-widget')
+    const table = widgetIn(lines[0], '.cm-md-table-widget')
     if (!table) return ''
     // 表格本身是语义标签，编辑器自己的东西只有类名和定位属性。
     // 单元格里的行内公式外面还套着一层 `<span class="cm-md-math">`，整棵克隆会
@@ -255,6 +270,7 @@ function renderGroup(kind: LineKind, lines: HTMLElement[], ownerDepth = -1): str
     }
     for (const element of [clone, ...Array.from(clone.querySelectorAll<HTMLElement>('*'))]) {
       element.classList.remove(...Array.from(element.classList).filter((name) => name.startsWith('cm-md-')))
+      if (element.classList.length === 0) element.removeAttribute('class')
       element.removeAttribute('contenteditable')
       for (const attribute of ['data-source-from', 'data-source-to', 'data-list-path', 'data-line']) {
         element.removeAttribute(attribute)
@@ -329,6 +345,14 @@ function blocksHTML(nodes: Node[], ownerDepth = -1): string {
       continue
     }
     if (!isLineElement(node)) {
+      // 整块替换的 widget（表格、图、块公式）直接挂在 .cm-content 下，不在 .cm-line 里：
+      // 当成行内片段拼接只会剩下纯文字（表格变一段「表头表头」），所以先认出整块带走。
+      const widgetKind = blockWidgetKind(node)
+      if (widgetKind) {
+        html += renderGroup(widgetKind, [node as HTMLElement], ownerDepth)
+        index += 1
+        continue
+      }
       // 选区从一个行的中间开始或结束：连续的行内片段属于同一行，要合成一个段落。
       // 不合并的话，`含 **加粗**、` 会变成「含」「加粗」「、」三个段落。
       const inline: string[] = []
