@@ -63,12 +63,12 @@
 
   --slide-page-pad-x: 6vw;
   --slide-page-top-pad: 61px;
-  /* 放映与导出共用的基准字号。纸面 1280×720 与 1280×720 的窗口是同一块地方，
-     1.35vw 在两处都解出 17.28px：导出不再自带一套字号（2026-11-23 之前导出
-     写死 24px，比放映大 39%，内容因此撑破纸面，稿子看着也不是同一份）。 */
+  /* 放映与导出共用的基准字号。纸面 1920×1080 时 1.35vw 解出 25.92px：
+     导出不再自带一套字号（2026-11-23 之前导出写死 24px，稿子看着和放映
+     不是同一份）。 */
   --slide-body-size: clamp(17px, 1.35vw, 26px);
   /* 跟着视口走的几处：chrome 的上下留白、logo 的高、页脚的留白、图的高度上限。
-     做成令牌，是为了让导出能把它们按 1280×720 的纸面定死（见 slides-export.ts）：
+     做成令牌，是为了让导出能把它们按 1920×1080 的纸面定死（见 slides-export.ts）：
      导出在屏幕布局里量页高，屏幕的视口不是纸面，靠视口的值两处会对不上。 */
   --slide-chrome-pad-y: clamp(20px, 3.2vh, 40px);
   --slide-chrome-logo-h: clamp(18px, 1.6vw, 30px);
@@ -340,7 +340,7 @@ body.presenting:has(#editor[data-slide-layout='closing']) .slide-ghost {
  * 衬线栈把中文衬线排在前面（宋体系）：杂志感来自中文衬线的骨架，只在
  * 拉丁字母上找 Georgia 是不够的。等宽栈同理，中文等宽缺字时退回系统字体。 */
 /* 全出血：正文铺满纸面，只留 6vw 边距——幻灯片不是文档，不要阅读列宽。
- * 放映与导出同一条：纸面 1280×720 与 1280×720 的窗口量出同一个 6vw（76.8px）。 */
+ * 放映与导出同一条：纸面 1920×1080 时 6vw 解出 115.2px。 */
 body.presenting #editor .cm-content,
 body.slides-printing #editor .cm-content {
   width: 100% !important;
@@ -352,7 +352,7 @@ body.slides-printing #editor .cm-content {
 /* 基准字号：PPT 的字号要跟画面走，不能跟主题的阅读字号走。
  * 1080p 全屏 ≈ 26px 正文 → 内容标题 ≈ 109px、封面主标题 ≈ 177px；窄窗口退到 17px。
  * 下面的字号阶梯全部是相对它的 em，一处调整整副牌等比缩放。
- * 导出用同一个令牌：纸面 1280×720 时 1.35vw 同样是 17.28px。 */
+ * 导出用同一个令牌：纸面 1920×1080 时 1.35vw 解出 25.92px。 */
 body.presenting #editor .cm-content,
 body.slides-printing #editor .cm-content {
   font-size: var(--slide-body-size);
@@ -512,16 +512,8 @@ body.presenting #editor[data-slide-layout='two-col'] .cm-md-page-start {
   padding-top: 0;
 }
 
-/* 导出没有容器级版式（导出是流式分纸，没有「当前页」可言），但封面/章节/
- * 收束/双栏这几页在放映里是整页居中、页首安全区归零的。导出把它们的页首
- * 安全区也归零：内容居中由 slides-export.ts 在页前撑空白完成，两边看见的
- * 是同一份稿子。 */
-body.slides-printing .cm-md-slide-cover.cm-md-page-start,
-body.slides-printing .cm-md-slide-section.cm-md-page-start,
-body.slides-printing .cm-md-slide-closing.cm-md-page-start,
-body.slides-printing .cm-md-slide-two-col.cm-md-page-start {
-  padding-top: 0 !important;
-}
+/* 导出是流式分纸、没有容器级的 flex 居中：封面/章节/收束/双栏这几页同样
+ * 从页顶安全区开始，不垂直居中（放映里的整页居中只属于放映）。 */
 
 /* ════ cover · 主视觉封面（dsh-ppt: cover.hero）════
  *
@@ -562,7 +554,7 @@ body.presenting #editor[data-slide-layout='cover'] .cm-md-page-lead {
 }
 
 /* 导出：封面是普通块流（没有容器级的 flex 居中），但字号阶梯与放映同一份令牌，
-   不再按纸上高度另收一档——纸面与 1280×720 的窗口是一块地方。 */
+   不再按纸上高度另收一档——纸面与 1920×1080 的设计空间是一块地方。 */
 body.slides-printing .cm-md-slide-cover.cm-md-page-title {
   font-size: var(--slide-cover-title-size, 6.8em);
   line-height: var(--slide-cover-title-line-height, 0.98);
@@ -855,8 +847,8 @@ body.presenting #editor[data-slide-layout='figure'] .cm-md-image img {
   height: auto;
 }
 
-/* 导出：标题/导语走标准页角色，图的高度上限与放映同一档（66vh）。纸面 720 高，
-   vh 在纸面与在 1280×720 的窗口里解出同一个数。 */
+/* 导出：标题/导语走标准页角色，图的高度上限与放映同一档（66vh）。纸面 1080 高，
+   vh 在纸面与在 1920×1080 的窗口里解出同一个数。 */
 body.slides-printing .cm-md-slide-figure.cm-md-page-lead {
   margin-bottom: 0.6em;
 }
@@ -1027,7 +1019,7 @@ body.slides-printing .cm-md-table-widget td {
   border-bottom: 1px solid var(--border-color);
 }
 
-/* 图片：一张图不该撑破一页。放映按视口高度收，导出按纸面高度收——纸面 720 高，
+/* 图片：一张图不该撑破一页。放映按视口高度收，导出按纸面高度收——纸面 1080 高，
  * 导出会把令牌定成纸面的那一档（见 slides-export.ts）。 */
 body.presenting #editor img,
 body.slides-printing #editor img {
@@ -1049,8 +1041,8 @@ body.presenting .cm-md-hr {
  * 流式排在纸上的，条目可能被拦腰切到两页上。这里只加 break-inside: avoid
  * ——宁可整条挪到下一页，不在半截切断。
  *
- * 排版本身（字号、行高、内距）与放映共用同一份规则：纸面 1280×720 就是
- * 1280×720 的放映窗口，之前那套「导出再收一档」的密度校准（基准 24px、
+ * 排版本身（字号、行高、内距）与放映共用同一份规则：纸面 1920×1080 就是
+ * 放映的设计空间，之前那套「导出再收一档」的密度校准（基准 24px、
  * 行高 1.62、代码块 0.72em、表格 0.75em）连同它的理由一起删掉了——
  * 它是为了把写死的 24px 塞进纸面，导出字号回到与放映一致后就不再需要
  * （2026-11-23）。真装不下的页由 slides-export.ts 整页等比压回一页。 */

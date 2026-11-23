@@ -7,14 +7,11 @@
 // 主进程负责文件和对话框；这个模块负责「把编辑面变成纸」：把窗口变成一张张 16:9 的纸，
 // 量出每页内容落在纸上的高度，然后还原。
 //
-// 纸面就是放映画面：1280×720 的纸与 1280×720 的窗口是同一块地方，字号、边距、行高
-// 全部取 slides.css 的同一份令牌（正文 17.28px、左右边距 76.8px）。导出不再自带一套
-// 字号——之前写死的 24px 比放映大 39%，内容因此撑破纸面，纸上那份稿子看着也不是
-// 同一份稿子（2026-11-23 报的）。
+// 纸面是 1920×1080 的设计空间，字号、边距、行高全部取 slides.css 的同一份令牌
+// （正文 25.92px、左右边距 115.2px）。导出不再自带一套字号。
 //
-// 它不动编辑器的 DOM。每页的第一行带 `break-before: page`，上方那片空白用 `::before`
-// 撑出来而不是 margin：margin 正是打印排版在分页处允许丢掉的东西，padding 又会把块自己
-// 的底色一起带走。装不下的页用 `zoom` 整页等比缩放压回一页：zoom 是唯一能把一整页
+// 它不动编辑器的 DOM。每页的第一行带 `break-before: page`，内容一律从页顶安全区开始、
+// 不垂直居中。装不下的页用 `zoom` 整页等比缩放压回一页：zoom 是唯一能把一整页
 // 连字号带内距一起缩小的布局手段（改 font-size 会和标题自己的字号规则打架）。
 
 import { PAGE_CLASS_PREFIX, PAGE_START_CLASS } from './editor/live-preview'
@@ -22,8 +19,8 @@ import { deckPages, tagBlockWidgets } from './slideshow'
 import { renderWholeDocument, restoreViewport } from './print-layout'
 
 /** 16:9, the shape a projector expects and the shape the deck fills. */
-const PAGE_WIDTH_INCHES = 13.3333
-const PAGE_HEIGHT_INCHES = 7.5
+const PAGE_WIDTH_INCHES = 20
+const PAGE_HEIGHT_INCHES = 11.25
 
 /** Chromium prints at 96 CSS pixels to the inch. */
 const PX_PER_INCH = 96
@@ -35,7 +32,7 @@ const SAFETY_PX = 4
  * 装不下时整页缩到的下限。
  *
  * 这个下限只防退化（缩到 0 就什么都不剩了），不是「宁可分两页」的许可：
- * 用户要的是「超出 720px 的页整页等比缩放压回一页」（2026-11-23 定的），
+ * 用户要的是「超出一张纸高的页整页等比缩放压回一页」（2026-11-23 定的），
  * 页裂成两张纸正是当初要修的那个毛病。所以这里让位到实际需要的高度：
  * 内容实在太多时纸上字会小到读不清，但纸上仍然是一页——那本来就该由作者去分页。
  */
@@ -44,31 +41,30 @@ const MIN_ZOOM = 0.08
 const FIT_ROUNDS = 4
 
 /**
- * 纸面是 1280×720 的设计空间，下面这些就是各令牌在 1280×720 的视口下解出来的数。
+ * 纸面是 1920×1080 的设计空间，下面这些就是各令牌在 1920×1080 的视口下解出来的数。
  *
- * 为什么不用 vw/vh 直接算：打印布局的视口是纸面（1280×720，PDF 里 1px = 0.75pt），
- * 但导出是在**屏幕布局**里量页高的——屏幕的视口是窗口那么大（常常不到 1280），
- * 靠视口的值在两处对不上，量出来的页高和纸上落下来的不是一回事（2026-11-23 实的：
- * 屏幕视口 976 宽时 6vw = 58.56，纸上其实是 76.8）。所以这里把令牌按纸面定死，
- * 版心也定死成 1280，两处的换行位置才会一模一样。
+ * 为什么不用 vw/vh 直接算：打印布局的视口是纸面（1920×1080，PDF 里 1px = 0.75pt），
+ * 但导出是在**屏幕布局**里量页高的——屏幕的视口是窗口那么大（常常不到 1920），
+ * 靠视口的值在两处对不上，量出来的页高和纸上落下来的不是一回事。所以这里把令牌
+ * 按纸面定死，版心也定死成 1920，两处的换行位置才会一模一样。
  */
 const PAPER = {
-  /** clamp(17px, 1.35vw, 26px) @1280 */
-  bodySize: 17.28,
-  /** 6vw @1280 */
-  padX: 76.8,
-  /** clamp(11px, 0.72vw, 15px) @1280 */
-  kicker: 11,
-  /** clamp(20px, 3.2vh, 40px) @720 */
-  chromePadY: 23.04,
-  /** clamp(18px, 1.6vw, 30px) @1280 */
-  chromeLogoH: 20.48,
-  /** clamp(16px, 2.4vh, 28px) @720 */
-  footPadY: 17.28,
-  /** 62vh @720 */
-  imgMaxH: 446.4,
-  /** 66vh @720 */
-  figureMaxH: 475.2
+  /** clamp(17px, 1.35vw, 26px) @1920 */
+  bodySize: 25.92,
+  /** 6vw @1920 */
+  padX: 115.2,
+  /** clamp(11px, 0.72vw, 15px) @1920 */
+  kicker: 13.824,
+  /** clamp(20px, 3.2vh, 40px) @1080 */
+  chromePadY: 34.56,
+  /** clamp(18px, 1.6vw, 30px) @1920 */
+  chromeLogoH: 30,
+  /** clamp(16px, 2.4vh, 28px) @1080 */
+  footPadY: 25.92,
+  /** 62vh @1080 */
+  imgMaxH: 669.6,
+  /** 66vh @1080 */
+  figureMaxH: 712.8
 }
 
 const PRINT_CLASS = 'slides-printing'
@@ -118,7 +114,7 @@ function layoutRules(background: string, accent: string): string {
   return `/* The sheet is the page: what margins exist in here are the document's own. */
 @page { size: ${PAGE_WIDTH_INCHES}in ${PAGE_HEIGHT_INCHES}in; margin: 0; background: ${softened}; }
 html, body { display: block !important; height: auto !important; overflow: visible !important; background: ${softened} !important; }
-/* 纸面是 1280×720 的设计空间：跟着视口走的令牌在这里定死，屏幕上的视口再窄，
+/* 纸面是 1920×1080 的设计空间：跟着视口走的令牌在这里定死，屏幕上的视口再窄，
    纸上落下来的版式也不变。 */
 body.${PRINT_CLASS} {
   --slide-page-pad-x: ${PAPER.padX}px;
@@ -142,7 +138,7 @@ body.${PRINT_CLASS} #editor {
    它们里面不会生效，所以这里把它们摊平成块。 */
 body.${PRINT_CLASS} #editor .cm-editor { height: auto !important; }
 body.${PRINT_CLASS} #editor .cm-scroller { display: block !important; height: auto !important; overflow: visible !important; }
-/* 版心就是纸面那么宽：屏幕上的窗口常常不到 1280，版心若跟着窗口走，量出来的
+/* 版心就是纸面那么宽：屏幕上的窗口常常不到 1920，版心若跟着窗口走，量出来的
    换行位置和纸上落下来的就不是一回事。 */
 body.${PRINT_CLASS} #editor .cm-content {
   display: block !important;
@@ -192,14 +188,14 @@ function measurePage(
 /**
  * 把纸面规则写出来。
  *
- * `spacers` 是每页上方要撑的空白（居中用）；量页高的时候不给它，给了页就变高了。
+ * 每页第一行带 `break-before: page`，装不下的页带 `zoom`。不撑垂直居中空白：
+ * 导出内容一律从页顶安全区开始（见 slides.css 的 .cm-md-page-start 规则）。
  */
 function applySheet(
   sheet: HTMLStyleElement,
   background: string,
   accent: string,
   plans: PagePlan[],
-  spacers: Map<number, number> | null,
 ): void {
   const rules: string[] = []
   plans.forEach((plan, order) => {
@@ -209,16 +205,6 @@ function applySheet(
       rules.push(`body.${PRINT_CLASS} #editor .${PAGE_CLASS_PREFIX}${plan.page} { zoom: ${plan.zoom}; }`)
     }
   })
-  if (spacers) {
-    for (const plan of plans) {
-      const above = spacers.get(plan.page) ?? 0
-      if (above <= 0) continue
-      const start = `.cm-content > .${PAGE_CLASS_PREFIX}${plan.page}.${PAGE_START_CLASS}`
-      // 页首那行在缩放里，::before 的高度写在缩放后的空间里：要的是视觉高度，得除回来。
-      const css = plan.zoom < 1 ? above / plan.zoom : above
-      rules.push(`body.${PRINT_CLASS} #editor ${start}::before { content: ''; display: block; height: ${css}px; }`)
-    }
-  }
   sheet.textContent = layoutRules(background, accent) + rules.join('\n') + '\n'
 }
 
@@ -249,7 +235,7 @@ export async function enterPrintLayout(): Promise<SlidesSheet | false> {
   // 不等这一步，长文档只有视口里那几页，后面的页根本不在 DOM 里（2026-09-26 报的）。
   await renderWholeDocument()
   // Mermaid / 图片 / 表格是块级 widget，包在 .cm-lineWrapping 里，本身没有
-  // 页码类；不补类的话，量页高时会把它漏掉，图页的垂直居中会算错。
+  // 页码类；不补类的话，量页高时会把它漏掉。
   tagBlockWidgets(root)
 
   const deck = deckPages()
@@ -278,20 +264,14 @@ export async function enterPrintLayout(): Promise<SlidesSheet | false> {
       }
     }
     if (!changed) break
-    applySheet(sheet, background, accent, plans, null)
+    applySheet(sheet, background, accent, plans)
     for (const plan of plans) {
       const measured = measurePage(root, plan.page)
       if (measured) plan.used = measured.used
     }
   }
 
-  // 每页垂直居中：内容上方撑出一片空白，上下留一样多。
-  const spacers = new Map<number, number>()
-  for (const plan of plans) {
-    const above = Math.max(0, Math.floor((target - plan.used) / 2))
-    if (above > 0) spacers.set(plan.page, above)
-  }
-  applySheet(sheet, background, accent, plans, spacers)
+  applySheet(sheet, background, accent, plans)
 
   return { width: PAGE_WIDTH_INCHES, height: PAGE_HEIGHT_INCHES }
 }
