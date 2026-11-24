@@ -256,7 +256,7 @@ function renderGroup(kind: LineKind, lines: HTMLElement[], ownerDepth = -1): str
   }
   if (kind === 'li') return renderList(lines)
   if (kind === 'quote') {
-    return `<blockquote>${lines.map((line) => `<p>${lineHTML(line)}</p>`).join('')}</blockquote>`
+    return `<blockquote>${lines.filter((line) => !line.classList.contains('cm-md-comment')).map((line) => `<p>${lineHTML(line)}</p>`).join('')}</blockquote>`
   }
   if (kind === 'table') {
     const table = widgetIn(lines[0], '.cm-md-table-widget')
@@ -306,6 +306,11 @@ function blocksHTML(nodes: Node[], ownerDepth = -1): string {
   let quoteEnd = 0
   while (index < nodes.length) {
     const node = nodes[index]
+    // HTML 注释（`<!-- … -->`）是写给看源码的人的：交出去的文档里不留。
+    if (isLineElement(node) && node.classList.contains('cm-md-comment')) {
+      index += 1
+      continue
+    }
     const context = listContext(node)
     // 引用在列表外时先包引用；列表里的引用则由该列表项递归处理。
     if (index >= quoteEnd && node instanceof HTMLElement && node.classList.contains('cm-md-blockquote') &&

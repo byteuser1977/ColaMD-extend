@@ -1258,6 +1258,12 @@ function collectBlocks(
 ): void {
   iterateContent(state, front, (node) => {
     switch (node.name) {
+      case 'CommentBlock': {
+        // HTML 注释（`<!-- … -->`）是写给看源码的人的：编辑器里照常显示，导出
+        // PDF/HTML 时靠 cm-md-comment 把整块认出来藏掉（打印 CSS / clean-html）。
+        pushBlockLines(state, node.from, node.to, 'cm-md-comment', ranges)
+        break
+      }
       case 'Blockquote': {
         pushBlockLines(state, node.from, node.to, 'cm-md-blockquote', ranges)
         break

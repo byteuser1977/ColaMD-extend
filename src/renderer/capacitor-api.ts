@@ -147,10 +147,16 @@ function enterPrintLayout(): () => void {
   const zoomStyle = document.createElement('style')
   zoomStyle.textContent = '.pele-zoom { display: none !important; }'
   document.head.append(zoomStyle)
+  // HTML 注释（<!-- -->）是写给看源码的人的：打印快照不执行脚本，CodeMirror
+  // 没机会重排，所以样式表要在打印前就挂上，让注释行在纸上消失。
+  const commentStyle = document.createElement('style')
+  commentStyle.textContent = '#editor .cm-content .cm-line.cm-md-comment { display: none !important; }'
+  document.head.append(commentStyle)
   const restoreZoom = pauseDiagramZoom()
   return () => {
     restoreZoom()
     zoomStyle.remove()
+    commentStyle.remove()
     undo.forEach(({ el, cssText }) => (el.style.cssText = cssText))
   }
 }

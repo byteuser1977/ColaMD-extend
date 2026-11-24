@@ -1332,6 +1332,8 @@ ipcMain.handle('export-pdf', async (event) => {
         #editor { margin: 0 !important; padding: 0 !important; }
         /* 光标与选区是编辑器的东西，不是文档的内容。 */
         .cm-cursor, .cm-cursorLayer, .cm-selectionLayer, .cm-selectionBackground { display: none !important; }
+        /* HTML 注释（<!-- -->）是写给看源码的人的，不上纸。 */
+        #editor .cm-content .cm-line.cm-md-comment { display: none !important; }
         /* A cell has to break a long token (JSON, a URL) instead of forcing the
            table wider than the page: one unbreakable string sets a minimum width
            the table cannot go below, and the last column ends up cut off at the
