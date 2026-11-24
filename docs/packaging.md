@@ -58,8 +58,10 @@ CI 上的 mac job（universal 加签名、公证、dmg 压缩）实测 7 分 20 
 
 发布相关：
 
-- `package.json` 的 `exports["./renderer"]` 指向 `dist/lib/colamd-renderer.js`；`files` 收录 `dist/lib`、`themes/contract.json`、`themes/*.css` 以及 `scripts/verify-themes-cli.mjs` / `scripts/theme-verify-core.mjs` / `scripts/offscreen-window.cjs`
+- `package.json` 的 `exports["./renderer"]` 指向 `dist/lib/colamd-renderer.js`；`files` 收录 `dist/lib`、`themes/contract.json`、`themes/*.css`、`resources/demo`、`resources/templates` 以及 `scripts/launch-cli.mjs` / `scripts/verify-themes-cli.mjs` / `scripts/theme-verify-core.mjs` / `scripts/offscreen-window.cjs`
 - `bin` 里的 `colamd-verify-themes` 让外部主题仓库可以跑 `npx colamd-verify-themes themes/*.css`
+- `bin` 里的 `colamd` 让 npm 包可以直接启动应用：`npx @bytechain.cn/colamd [文件]`。启动器优先用本机 Electron（`ELECTRON_BIN` 可指定），没有时通过 npx 临时安装 `devDependencies` 里的大版本（默认 npmmirror 镜像）；应用启动后 10 秒内异常退出会提示安全软件按进程名拦截的可能
+- **`resources/demo` 与 `resources/templates` 必须留在 `files` 里**：非打包态下示例文档、速查表和可导入主题按包根解析（`dist/main/../../resources`），缺了这些目录，帮助菜单与「导入主题」会拿到空目录
 - **发 npm 包时先跑 `npm run build && npm run build:lib`**：`npm run build` 只产出 main / preload / renderer，不会产出 `dist/lib`
 - **发桌面安装包时不要先跑 `build:lib`**：`electron-builder.yml` 的 `files` 是 `dist/**/*`，会把约 5 MB 的库产物也装进 asar。桌面版只跑 `npm run build`；本地验证库时单独跑 `build:lib`
 - `npm run verify:lib` 优先用本机 Chrome / Edge 的 headless 模式验收；找不到浏览器时才退回 Electron 离屏窗口
@@ -83,7 +85,7 @@ Android 版是 Capacitor 壳里的同一个渲染层（`src/renderer`），构�
 
 - 发版流程与资产核对清单：`PRINCIPLES.md` 第 9 节
 - 2.7.x 系列的上游同步内容：`docs/social/v2.7.9.md`、`docs/social/v2.7.8.md`
-- Extend 功能改动与验证记录：`docs/release-2.7.13.md`、`docs/release-2.7.13-rc.1.md`、`docs/release-2.7.10-rc.1.md`、`docs/release-2.7.8-rc.2.md`、`docs/release-2.7.8-rc.1.md`；v2.7.13-fix1（幻灯片导出与放映对齐）与 v2.8.0（重写列表交互、块级 widget 整块导出）见 `resources/demo/changelog.md` 对应段落，对外文案见 `docs/social/`
+- Extend 功能改动与验证记录：`docs/release-2.7.13.md`、`docs/release-2.7.13-rc.1.md`、`docs/release-2.7.10-rc.1.md`、`docs/release-2.7.8-rc.2.md`、`docs/release-2.7.8-rc.1.md`；v2.7.13-fix1（幻灯片导出与放映对齐）、v2.8.0（重写列表交互、块级 widget 整块导出）与 v2.8.1（npm 包启动器）见 `resources/demo/changelog.md` 对应段落，对外文案见 `docs/social/`
 - Word 导出实现方案：`docs/word-export.md`
 - CI 配置：`.github/workflows/release.yml`
 - 打包配置：`electron-builder.yml`

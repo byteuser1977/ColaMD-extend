@@ -1,6 +1,6 @@
 {
   "name": "@bytechain.cn/colamd",
-  "version": "2.8.0",
+  "version": "2.8.1",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -11,6 +11,9 @@
     "dist/renderer",
     "dist/lib",
     "themes",
+    "resources/demo",
+    "resources/templates",
+    "scripts/launch-cli.mjs",
     "scripts/verify-themes-cli.mjs",
     "scripts/theme-verify-core.mjs",
     "scripts/offscreen-window.cjs",
@@ -30,6 +33,7 @@
     "./package.json": "./package.json"
   },
   "bin": {
+    "colamd": "scripts/launch-cli.mjs",
     "colamd-verify-themes": "scripts/verify-themes-cli.mjs"
   },
   "author": {
