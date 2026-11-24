@@ -44,7 +44,6 @@
   },
   "scripts": {
     "dev": "electron-vite dev",
-    "postinstall": "patch-package",
     "build": "electron-vite build",
     "build:lib": "vite build --config vite.lib.config.ts",
     "preview": "electron-vite preview",
