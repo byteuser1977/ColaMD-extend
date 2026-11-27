@@ -332,6 +332,109 @@ try {
   const editBack = await toggle('source', newHead)
   check('编辑后再次切源码保留新内容与可见光标', await evaluate(`document.getElementById('source-editor').value`) === edited && editBack.selection.anchor === newHead && editBack.selection.head === newHead && editBack.visible, editBack)
 
+  // 空格子由格里的临时输入框接收输入。切回渲染后焦点若停在编辑器本体，光标会撑满整格，
+  // 打的字落进下一行。缺省格在源码里只有行尾一个位置，切回后落在第一个缺省格。
+  const tableText = '| 编号 | 名称 | 备注 |\n|---|---|---|\n| 0008 | 团队订阅 |  |\n| 0009 | 笔记本 | 常规订单。 |\n| 缺省 |\n'
+  const tableFile = join(runtime, 'empty-cell.md')
+  writeFileSync(tableFile, tableText)
+  await openFixture(tableFile, tableText)
+  const clickCell = async (row, column) => {
+    const box = await evaluate(`(()=>{const r=document.querySelectorAll('.cm-md-table-row')[${row}].querySelectorAll('.cm-md-table-cell')[${column}].getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2}})()`)
+    for (const type of ['mousePressed', 'mouseReleased']) await send('Input.dispatchMouseEvent', { type, ...box, button: 'left', clickCount: 1 })
+  }
+  const cellFocused = (row, column) => `(()=>{const a=document.activeElement;return a.classList.contains('cm-md-table-input')&&a.closest('.cm-md-table-row').dataset.tableRow==='${row}'&&a.closest('.cm-md-table-cell').dataset.column==='${column}'&&getComputedStyle(document.querySelector('.cm-cursorLayer')).display==='none'})()`
+  const roundTrip = async (name, row, column, landing) => {
+    await clickCell(row, column)
+    await waitFor(cellFocused(row, column), name + '点击后未进入格内输入')
+    const head = await evaluate('v.state.selection.main.head')
+    await toggle('source', head)
+    check(name + '渲染→源码光标在格子位置', await evaluate(`document.getElementById('source-editor').selectionStart`) === head)
+    const back = await toggle('render', head)
+    const ready = await evaluate(`(async()=>{for(let i=0;i<60;i++){if(${cellFocused(row, landing)})return true;await new Promise(resolve => setTimeout(resolve, 16))}return false})()`)
+    const caret = await evaluate(`(()=>{const cell=document.querySelectorAll('.cm-md-table-row')[${row}].querySelectorAll('.cm-md-table-cell')[${landing}],c=v.coordsAtPos(v.state.selection.main.head,v.state.selection.main.assoc||1);return{height:c&&c.bottom-c.top,input:cell.querySelector('.cm-md-table-input').getBoundingClientRect().height,cell:cell.getBoundingClientRect().height}})()`)
+    transcript.cases.push({ name, back, caret })
+    check(name + '源码往返后由格内输入框接住焦点', ready && back.selection.head === head, { active: await evaluate('document.activeElement.className'), back })
+    // 缺省格挤在行尾同一个位置，没有单独的光标几何；只有真实空格子有
+    if (column === landing && row !== 3) check(name + '源码往返后光标高度是一行而不是整格', caret.height > 0 && caret.height <= caret.input + 1, caret)
+  }
+  await roundTrip('空格子', 1, 2, 2)
+  await send('Input.insertText', { text: 'Z' })
+  await waitFor(`v.state.doc.toString()!==${JSON.stringify(tableText)}`, '空格子输入没有写入')
+  const typedEmpty = (await evaluate('v.state.doc.toString()')).split('\n')
+  check('空格子源码往返后输入写进原格', /^\| 0008 \| 团队订阅 \|\s*Z\s*\|$/.test(typedEmpty[2]) && typedEmpty[3] === '| 0009 | 笔记本 | 常规订单。 |', typedEmpty)
+  await roundTrip('第二个缺省格', 3, 2, 1)
+  await roundTrip('第一个缺省格', 3, 1, 1)
+  await send('Input.insertText', { text: 'Y' })
+  await waitFor(`/缺省 \\|\\s*Y/.test(v.state.doc.toString())`, '缺省格输入没有写入')
+  const typedMissing = (await evaluate('v.state.doc.toString()')).split('\n')
+  check('缺省格源码往返后输入补齐整行', typedMissing[4] === '| 缺省 | Y |  |' && typedMissing.length === tableText.split('\n').length, typedMissing)
+
+  // #189：源码模式下，含大量软折行段落时，大纲点击跳转、滚动高亮同步与查找定位都按真实折行位置算
+  const wrappedPara = '这是一段很长的中文与 English words 混排软折行段落，用来让逻辑行号与实际视觉高度彻底脱节。'.repeat(24)
+  const navText = [
+    '# 第一章 起点',
+    wrappedPara,
+    wrappedPara,
+    '## 第二章 中段',
+    wrappedPara,
+    wrappedPara,
+    '## 第三章 终点',
+    wrappedPara,
+    '文末锚点：源码查找目标词',
+  ].join('\n')
+  const navFile = join(runtime, 'source-nav-189.md')
+  writeFileSync(navFile, navText)
+  await openFixture(navFile, navText)
+  await toggle('source', 0)
+  // 打开文件面板并切到大纲页签
+  await evaluate(`(() => {
+    if (!document.body.classList.contains('show-file-panel')) document.getElementById('file-toggle-btn').click()
+    document.getElementById('file-panel-outline').click()
+  })()`)
+  await waitFor(`document.querySelectorAll('#outline-list button').length === 3`, '源码大纲未渲染出 3 条标题')
+  // 1) 点击大纲「第三章 终点」，标题应落入视口且被选中
+  await evaluate(`document.querySelectorAll('#outline-list button')[2].click()`)
+  const h3Offset = navText.indexOf('## 第三章 终点')
+  const afterOutlineClick = await evaluate(`viewportProbe.settle('source', ${h3Offset})`)
+  check('#189 源码模式点击大纲跳转目标标题可见且选中',
+    afterOutlineClick.visible && afterOutlineClick.selection.anchor === h3Offset && afterOutlineClick.selection.head === h3Offset + '## 第三章 终点'.length,
+    afterOutlineClick)
+  // 2) 滚到「第二章 中段」真实顶部附近，大纲高亮应同步为第 2 项（索引 1）
+  const h2Offset = navText.indexOf('## 第二章 中段')
+  const spyIndex = await evaluate(`(async () => {
+    const ta = document.getElementById('source-editor')
+    const [rect] = viewportProbe.sourceCarets([${h2Offset}])
+    // 等大纲点击锁释放再触发手动滚动
+    await new Promise(r => setTimeout(r, 1700))
+    ta.scrollTop = Math.max(0, rect.top - 10)
+    ta.dispatchEvent(new Event('scroll'))
+    for (let i = 0; i < 6; i++) await new Promise(requestAnimationFrame)
+    const btns = [...document.querySelectorAll('#outline-list button')]
+    return btns.findIndex(b => b.classList.contains('active'))
+  })()`)
+  check('#189 源码模式滚动大纲高亮同步到真实折行章节', spyIndex === 1, { spyIndex })
+  // 3) 回到顶部后，用查找面板搜文末关键词，匹配项应主动滚进视口
+  const targetOffset = navText.indexOf('源码查找目标词')
+  await evaluate(`(() => {
+    const ta = document.getElementById('source-editor')
+    ta.scrollTop = 0
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', metaKey: true, ctrlKey: true, bubbles: true }))
+  })()`)
+  const searchVisible = await evaluate(`(async () => {
+    const input = document.querySelector('.search-input')
+    if (!input) return { ok: false, reason: 'no input' }
+    input.value = '源码查找目标词'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    for (let i = 0; i < 4; i++) await new Promise(requestAnimationFrame)
+    const m = viewportProbe.measure('source', ${targetOffset})
+    // 关掉查找面板与侧栏以免影响后续用例
+    document.querySelector('.search-close')?.click()
+    if (document.body.classList.contains('show-file-panel')) document.getElementById('file-toggle-btn').click()
+    return { ok: m.visible && m.selection.anchor === ${targetOffset} && m.selection.head === ${targetOffset + '源码查找目标词'.length}, m }
+  })()`)
+  check('#189 源码模式查找命中远端关键词主动滚入视口', searchVisible.ok, searchVisible)
+  await toggle('render', 0)
+
   // 源码位置按真实排版测量，代价随光标前的文字线性增长。用接近整篇源码阈值
   // （512K 字符）的文档记录切换耗时，防止退化成多次全文排版。
   let large = '', index = 0

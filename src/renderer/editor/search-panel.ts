@@ -12,7 +12,9 @@ import { Decoration, EditorView, type DecorationSet } from '@codemirror/view'
 import { RangeSetBuilder, type StateEffect } from '@codemirror/state'
 import { getEditorView } from './editor'
 import { setSearchHighlight } from './search-highlight'
+import { sourcePositionTop } from './source-line'
 import { getUiLanguage, type UiLanguage } from '../ui-language'
+import { findTextMatches, replaceTextMatches } from './table-editing'
 
 export class SearchPanel {
   private container: HTMLDivElement
@@ -159,7 +161,7 @@ export class SearchPanel {
     const view = getEditorView()
     if (!view) return
     const match = this.matches[this.currentIndex]
-    view.dispatch({ changes: { from: match.from, to: match.to, insert: replacement } })
+    replaceTextMatches(view, [match], replacement)
     this.search()
   }
 
@@ -176,12 +178,7 @@ export class SearchPanel {
     }
     const view = getEditorView()
     if (!view) return
-    // 从后往前替，前面的改动就不会挪动后面匹配项的偏移量
-    const changes = this.matches
-      .slice()
-      .sort((a, b) => b.from - a.from)
-      .map((match) => ({ from: match.from, to: match.to, insert: replacement }))
-    view.dispatch({ changes })
+    replaceTextMatches(view, this.matches, replacement)
     this.search()
   }
 
@@ -217,13 +214,7 @@ export class SearchPanel {
       return
     }
 
-    const lowerQuery = query.toLowerCase()
-    const text = view.state.doc.toString().toLowerCase()
-    let idx = 0
-    while ((idx = text.indexOf(lowerQuery, idx)) !== -1) {
-      this.matches.push({ from: idx, to: idx + query.length })
-      idx += 1
-    }
+    this.matches = findTextMatches(view.state, query)
 
     if (this.matches.length > 0) {
       this.currentIndex = 0
@@ -249,12 +240,8 @@ export class SearchPanel {
       return
     }
 
-    const lowerQuery = query.toLowerCase()
-    const text = sourceEditor.value.toLowerCase()
-    let idx = 0
-    while ((idx = text.indexOf(lowerQuery, idx)) !== -1) {
-      this.matches.push({ from: idx, to: idx + query.length })
-      idx += 1
+    for (const match of sourceEditor.value.matchAll(new RegExp(this.escapeRegExp(query), 'gi'))) {
+      this.matches.push({ from: match.index!, to: match.index! + match[0].length })
     }
 
     if (this.matches.length > 0) {
@@ -331,8 +318,10 @@ export class SearchPanel {
   private selectSourceMatch(sourceEditor: HTMLTextAreaElement): void {
     if (this.currentIndex < 0 || this.currentIndex >= this.matches.length) return
     const match = this.matches[this.currentIndex]
-    sourceEditor.focus()
+    const top = sourcePositionTop(sourceEditor, match.from)
+    sourceEditor.focus({ preventScroll: true })
     sourceEditor.setSelectionRange(match.from, match.to)
-    this.input.focus()
+    sourceEditor.scrollTop = Math.max(0, top - sourceEditor.clientHeight / 3)
+    this.input.focus({ preventScroll: true })
   }
 }
