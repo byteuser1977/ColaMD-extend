@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'url'
 import { appendFile, readFile, writeFile, readdir, copyFile, mkdir, stat } from 'fs/promises'
 import { watch, FSWatcher, existsSync, readdirSync, readFileSync, writeFileSync, statSync } from 'fs'
 import { resolveMarkdownLink } from './markdown-link'
+import { renameDocument } from './rename-file'
 
 // The npm package name is scoped (@bytechain.cn/colamd), but the app itself stays
 // "colamd": it decides userData (window state, language, release notice) and the
@@ -930,6 +931,10 @@ ipcMain.handle('entry-context-menu', (event, targetPath: unknown, kind: unknown)
         win.webContents.send('open-in-new-tab', targetPath)
       }
     })
+    items.push({
+      label: zh ? '重命名…' : 'Rename…',
+      click: () => win.webContents.send('request-rename-file', targetPath)
+    })
     items.push({ type: 'separator' })
   }
   items.push({ label: zh ? '复制路径' : 'Copy path', click: () => copyToClipboard(targetPath) })
@@ -941,6 +946,44 @@ ipcMain.handle('entry-context-menu', (event, targetPath: unknown, kind: unknown)
     click: () => shell.showItemInFolder(targetPath)
   })
   Menu.buildFromTemplate(items).popup({ window: win })
+})
+
+ipcMain.handle('rename-file', (event, source: unknown, name: unknown) => {
+  const win = getWinFromEvent(event)
+  if (!win || typeof source !== 'string' || typeof name !== 'string') return { error: 'EINVAL' }
+  // Insert one barrier into every window's write queue. An autosave captured
+  // before this rename must finish first; a stale one queued after it must fail
+  // its existing sourcePath check instead of recreating the old filename.
+  const states = BrowserWindow.getAllWindows().map((window) => ({ window, state: getState(window) }))
+  const pending = states.map(({ state }) => state.writeQueue)
+  const operation = Promise.all(pending).then(async () => {
+    try {
+      const target = await renameDocument(source, name)
+      if (target === source) return { path: target }
+      for (const { window, state } of states) {
+        if (window.isDestroyed()) continue
+        state.tabFiles = state.tabFiles.map((path) => path === source ? target : path)
+        state.pendingTabFiles = state.pendingTabFiles.map((path) => path === source ? target : path)
+        if (state.filePath === source) {
+          if (state.debounceTimer) clearTimeout(state.debounceTimer)
+          if (state.siblingsTimer) clearTimeout(state.siblingsTimer)
+          state.filePath = target
+          watchFile(window, state)
+          updateTitle(window)
+        }
+        window.webContents.send('file-renamed', { oldPath: source, newPath: target, fileUrl: pathToFileURL(target).href })
+      }
+      recentStore.recent = [...new Set(recentStore.recent.map((path) => path === source ? target : path))]
+      persistRecentStore()
+      if (process.platform === 'darwin') app.addRecentDocument(target)
+      else buildMenu()
+      return { path: target }
+    } catch (error) {
+      return { error: (error as NodeJS.ErrnoException).code ?? 'UNKNOWN' }
+    }
+  })
+  for (const { state } of states) state.writeQueue = operation.then(() => undefined, () => undefined)
+  return operation
 })
 
 ipcMain.handle('reveal-file', (event) => {
@@ -1254,8 +1297,9 @@ ipcMain.handle('export-image', async (event, snapshot: unknown, preset: unknown)
   if (!win || (preset !== 'desktop' && preset !== 'mobile') || !snapshot || typeof snapshot !== 'object') return false
   win.show()
   win.focus()
-  const { html, styles, bodyClass, background } = snapshot as { html?: unknown; styles?: unknown; bodyClass?: unknown; background?: unknown }
+  const { html, styles, bodyClass, background, tableLayout } = snapshot as { tableLayout?: unknown; html?: unknown; styles?: unknown; bodyClass?: unknown; background?: unknown }
   if (typeof html !== 'string' || typeof styles !== 'string' || typeof bodyClass !== 'string' || typeof background !== 'string') return false
+  if (tableLayout !== undefined && (typeof tableLayout !== 'string' || !/^\d*$/.test(tableLayout))) return false
   const baseName = suggestFileName(win) ?? 'untitled'
   const suffix = preset === 'desktop' ? 'desktop' : 'mobile'
   const result = await dialog.showSaveDialog(win, {
@@ -1268,7 +1312,7 @@ ipcMain.handle('export-image', async (event, snapshot: unknown, preset: unknown)
   if (result.canceled || !result.filePath) return false
   try {
     const { renderDocumentImages } = await import('./image-export')
-    const pages = await renderDocumentImages({ html, styles, bodyClass, background }, preset)
+    const pages = await renderDocumentImages({ html, styles, bodyClass, background, tableLayout: tableLayout as string | undefined }, preset)
     if (pages.length === 0) throw new Error('没有可导出的内容')
 
     const extension = extname(result.filePath)
@@ -1329,7 +1373,6 @@ ipcMain.handle('export-pdf', async (event) => {
            warm or dark theme ends up with a bright frame around every page. */
         @page { margin: 20mm 18mm; background: ${background}; }
         html, body, #editor { height: auto !important; overflow: visible !important; background: ${background} !important; }
-        #editor { margin: 0 !important; padding: 0 !important; }
         /* 光标与选区是编辑器的东西，不是文档的内容。 */
         .cm-cursor, .cm-cursorLayer, .cm-selectionLayer, .cm-selectionBackground { display: none !important; }
         /* HTML 注释（<!-- -->）是写给看源码的人的，不上纸。 */
@@ -1339,10 +1382,20 @@ ipcMain.handle('export-pdf', async (event) => {
            the table cannot go below, and the last column ends up cut off at the
            paper's edge (#108). The table already carries width: 100% in the
            theme; this is what lets it actually shrink to that width. */
-        #editor .cm-content th, #editor .cm-content td { overflow-wrap: anywhere !important; word-break: break-word !important; }
+        #editor .cm-md-table-cell { overflow-wrap: anywhere !important; word-break: break-word !important; }
       }`
     )
+    let spacingCSSKey: string | undefined
     try {
+      // 底部输入留白不能另起一页；user !important 才能覆盖任意主题的 author !important。
+      // 只把间距放在 user origin：Chromium 不应用该 origin 的 @page，页边距须留在上面。
+      spacingCSSKey = await win.webContents.insertCSS(
+        `@media print {
+          #editor { margin: 0 !important; padding: 0 !important; }
+          #editor .cm-content { margin-bottom: 0 !important; padding-bottom: 0 !important; }
+        }`,
+        { cssOrigin: 'user' }
+      )
       const pdfData = await win.webContents.printToPDF({
         margins: { top: 0, bottom: 0, left: 0, right: 0 },
         printBackground: true,
@@ -1351,6 +1404,7 @@ ipcMain.handle('export-pdf', async (event) => {
       await writeFile(result.filePath, pdfData)
       return true
     } finally {
+      if (spacingCSSKey) await win.webContents.removeInsertedCSS(spacingCSSKey)
       await win.webContents.removeInsertedCSS(cssKey)
     }
   } catch {

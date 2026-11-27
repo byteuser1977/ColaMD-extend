@@ -11,11 +11,12 @@
 // Scope is deliberate (MVP): typing, the 12 themes, and one sample document.
 // Tabs, the file list, search, export, diagrams and formulas stay in the app.
 
-import { createEditor, setMarkdown } from '../renderer/editor/editor'
-import { applyTheme } from '../renderer/themes/theme-manager'
+import { createEditor, remeasureEditor, setMarkdown } from '../renderer/editor/editor'
+import { applyTheme, onThemeChange } from '../renderer/themes/theme-manager'
 import { SAMPLES } from './sample'
 import '../renderer/themes/base.css'
 import '../renderer/themes/premium.css'
+import '../renderer/themes/editor-preview.css'
 import './web.css'
 
 type Lang = 'zh' | 'en'
@@ -175,6 +176,7 @@ window.addEventListener('message', (event) => {
   if (data.type === SET_LANG && (data.lang === 'zh' || data.lang === 'en')) setLang(data.lang)
 })
 
+onThemeChange(remeasureEditor)
 applyTheme(theme)
 applyCopy(lang)
 renderThemeSwitch(lang, theme, setTheme)

@@ -34,12 +34,13 @@
   color: #c44b2b;
 }
 
-#editor .cm-content .cm-md-table-widget th,
-#editor .cm-content .cm-md-table-widget td {
-  border-left: none;
+#editor .cm-content .cm-md-table-header .cm-md-table-cell {
+  border-bottom: 2px solid #c44b2b;
   border-right: none;
 }
 
-#editor .cm-content .cm-md-table-widget th {
-  border-bottom: 2px solid #c44b2b;
+#editor .cm-content .cm-md-table-row:not(.cm-md-table-header) .cm-md-table-cell {
+  border-right: none;
 }
+
+#editor .cm-content .cm-md-table-cell[data-column="0"] { border-left: none; }

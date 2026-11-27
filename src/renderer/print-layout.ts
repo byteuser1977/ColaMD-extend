@@ -30,7 +30,7 @@ let savedScrollTop = 0
 // 同为单类时它永远排在后面；加高优先级才盖得住。
 const PAPER_RULES = `
 body.${PAPER_CLASS} #editor { height: auto !important; overflow: visible !important; }
-body.${PAPER_CLASS} #editor .cm-editor { height: auto !important; }
+body.${PAPER_CLASS} #editor .cm-editor { display: block !important; height: auto !important; }
 body.${PAPER_CLASS} #editor .cm-scroller { display: block !important; height: auto !important; overflow: visible !important; }
 /* 放不下的图带一排缩放控件（#129）。打印时 Chromium 不执行脚本，pele 没机会把它们
    收回去，控件就叠在图上进了 PDF。它是编辑器的东西，不是文档的内容——纸面上藏掉

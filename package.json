@@ -1,6 +1,6 @@
 {
   "name": "@bytechain.cn/colamd",
-  "version": "2.8.1",
+  "version": "2.8.2",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -58,10 +58,15 @@
     "build:web": "vite build --config vite.web.config.ts",
     "preview:web": "vite preview --config vite.web.config.ts",
     "check:theme-colors": "node scripts/check-theme-colors.mjs",
+    "verify:inline-math": "node scripts/verify-inline-math.mjs",
     "verify:markdown": "node scripts/verify-markdown.mjs",
+    "verify:rename": "node scripts/verify-rename.mjs",
     "verify:links": "node scripts/verify-links.mjs",
     "verify:features": "node scripts/verify-features.mjs",
     "verify:list": "node scripts/verify-list-input.mjs",
+    "verify:tables": "node scripts/verify-tables.mjs",
+    "verify:table-caret": "node scripts/verify-table-caret.mjs",
+    "verify:table-syntax": "node scripts/verify-table-syntax.mjs",
     "verify:scroll-render": "node scripts/verify-scroll-render.mjs",
     "verify:image-export": "node scripts/verify-image-export.mjs",
     "verify:export-pdf": "node scripts/verify-export-pdf.mjs",

@@ -9,13 +9,16 @@
 // 这一层需要 DOM（EditorView 要做布局测量）。不依赖 DOM 的那一半在 state.ts 里，
 // 验收脚本直接消费那一半，所以保真的证明不需要真实浏览器。
 
+import { tableEditing } from './table-editing'
 import { Compartment, EditorState, RangeSet, type Extension } from '@codemirror/state'
 import { EditorView, drawSelection, dropCursor, highlightSpecialChars, rectangularSelection, crosshairCursor, Decoration } from '@codemirror/view'
 import { syntaxTree } from '@codemirror/language'
 import { undo, redo } from '@codemirror/commands'
+import { paragraphLayout } from './paragraph-layout'
 import { livePreview, livePreviewField, setEditorFocus, setMeasureHost } from './live-preview'
 import { listInput } from './list-input'
 import { QUOTE_PREFIX_RE, frontmatterEnd, isActiveOrderedListLine, parseListLine } from './list-model'
+import { codeBlockSelectAll } from './code-select'
 import { searchHighlightField } from './search-highlight'
 import { stateExtensions, editableCompartment, bodyStart } from './state'
 import { editorTheme } from './source-theme'
@@ -50,6 +53,8 @@ export interface EditorHandle {
   redo(): void
   /** 拿到底层 view（装饰层、搜索面板需要）。 */
   getView(): EditorView
+  /** 主题这类外部样式换过之后，让编辑器按新字体重量行高。 */
+  remeasure(): void
   /** 销毁。 */
   destroy(): void
 }
@@ -65,6 +70,13 @@ export function getEditorHandle(): EditorHandle | null {
  * 模式跟着 EditorState 走（每个标签的状态各自记着），所以换状态不会丢模式。
  */
 const livePreviewCompartment = new Compartment()
+
+/**
+ * 主题这类外部样式换过之后让 CM 重量内容的开关：在空主题和无之间切一次。
+ * 短文档的总高度可能被 min-height 撑住，requestMeasure 不会重测行高。
+ */
+const themeLayout = new Compartment()
+const remeasureTheme = EditorView.theme({})
 
 /**
  * 列表前缀与任务复选框的原子区间：
@@ -153,10 +165,13 @@ function editorExtensions(
     rectangularSelection(),
     crosshairCursor(),
     editorTheme,
+    themeLayout.of([]),
     // 装饰层：把源码画成所见即所得。它只画不写，所以装在这里不会影响
     // 「没改过的字节不许变」这条纪律。源码模式把它收起来，剩下的就是带 markdown
     // 语法高亮的原文（高亮在 state.ts 的 markdown 扩展里，跟模式无关）。
     livePreviewCompartment.of(sourceMode ? [] : livePreview),
+    // 段落排版：按屏幕上的段落实测行高与留白，标题与段落之间不留白叠加。
+    paragraphLayout,
     // 幻灯片版式：独立于 live-preview 的行装饰（slide-layout.ts），给声明了版式的
     // 页打 cm-md-slide-* 类。常驻安装：样式只在放映/导出时命中，平时零影响。
     slideLayout,
@@ -175,11 +190,15 @@ function editorExtensions(
     }),
     // 回车续列表。这是编辑器的输入手感，与渲染无关，所以单独一个模块。
     listInput,
+    // 代码块里的 ⌘A 先只选这段代码（见 code-select.ts）
+    codeBlockSelectAll,
     // 检索高亮。面板靠 effect 改它，而 effect 得有 StateField 接住；
     // 不装这一条，检索面板会以为高亮画上了，实际什么也没发生。
     searchHighlightField,
     // 列表前缀与任务复选框原子区间：一次跨过 `[ ] ` 与有序列表的 `1. ` 前缀。
     listPrefixAtomicRanges,
+    // 表格就地编辑：渲染后的表格直接在单元格内改（见 table-editing.ts）。
+    tableEditing,
     editableCompartment.of(EditorView.editable.of(editable)),
     // 文档变化的唯一出口：把新文本交给外壳
     EditorView.updateListener.of((update) => {
@@ -245,6 +264,10 @@ export function createEditorCore(parent: HTMLElement, options: EditorOptions = {
     undo: () => { undo(view) },
     redo: () => { redo(view) },
     getView: () => view,
+    remeasure(): void {
+      // 公开 API 里只有 theme 变化会让 CM 重量内容：在空主题和无之间切一次，不改文档或撤销栈。
+      view.dispatch({ effects: themeLayout.reconfigure(themeLayout.get(view.state) === remeasureTheme ? [] : remeasureTheme) })
+    },
     destroy(): void {
       setMeasureHost(null)
       view.destroy()

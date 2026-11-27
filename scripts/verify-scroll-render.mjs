@@ -14,6 +14,7 @@ import { join } from 'node:path'
 
 import { assertBuildFresh } from './build-freshness.mjs'
 import { APP_ROOT, ELECTRON_BIN, stopVerifyApp, verifyWorkdir } from './verify-workdir.mjs'
+import './verify-live-preview.mjs'
 
 const APP = APP_ROOT
 assertBuildFresh()

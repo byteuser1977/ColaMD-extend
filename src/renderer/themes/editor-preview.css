@@ -83,21 +83,38 @@ body.source-mode #editor .cm-content {
 
 /* ======= 标题 ======= */
 
-/* 标题上方留白。
- *
- * 换内核之后标题只靠上一行的空行把它和上文分开，而 Milkdown 时代每个标题自带
- * 上边距（h1 1.5em、h2 1.25em、h3 以下 1em，2026-10-20 量过旧版）。少了这一段，
- * 标题和前一段挤在一起，整页读起来比原来紧。
- *
- * 用 padding-top 而不是 margin-top：CodeMirror 按行盒量光标位置，margin 不进入
- * 行盒，落在空白里的点击会被判到相邻行；padding 计入行盒，点标题上方的空白仍然
- * 落在这一个标题上。下方的留白不动，那里已经有空行。
+/* 分隔空行由 paragraph-layout 隐藏，间距按相邻块计算，不再叠加一整行。
+ * 用 padding 而非 margin，让 CodeMirror 的点击和光标测量包含这段留白。
+ * 上一标题的下边距与当前块的上边距取较大值，对应旧版的外边距折叠。
  */
+.cm-content .cm-md-flow-paragraph,
+.cm-content .cm-md-block-space {
+  --md-space-before: 0.5em;
+}
+.cm-content .cm-md-flow-paragraph {
+  padding-top: max(var(--md-space-before), var(--md-previous-space, 0px));
+}
+.cm-content .cm-md-paragraph-separator {
+  /* 空 span 不占宽度，光标高度沿用同一行的字体度量。
+   * inline-block + 1em 会让保留的空段落光标矮于正文（雅致 16px 对 22.5px）。 */
+  display: inline;
+}
+.cm-content .cm-md-block-space {
+  height: max(var(--md-space-before), var(--md-previous-space, 0px));
+  pointer-events: none;
+}
+.cm-content .cm-md-after-heading1 { --md-previous-space: var(--editor-font-size, 16px); }
+.cm-content .cm-md-after-heading2 { --md-previous-space: calc(var(--editor-font-size, 16px) * 0.75); }
+.cm-content .cm-md-after-heading3 { --md-previous-space: calc(var(--editor-font-size, 16px) * 0.625); }
+.cm-content .cm-md-after-heading4,
+.cm-content .cm-md-after-heading5,
+.cm-content .cm-md-after-heading6 { --md-previous-space: calc(var(--editor-font-size, 16px) * 0.5); }
+
 .cm-content .cm-md-atxheading1 {
   font-size: 2em;
   font-weight: 700;
   line-height: 1.25;
-  padding-top: 1.5em;
+  padding-top: max(1.5em, var(--md-previous-space, 0px));
   padding-bottom: 0.3em;
   border-bottom: 1px solid var(--border-color);
 }
@@ -106,7 +123,7 @@ body.source-mode #editor .cm-content {
   font-size: 1.5em;
   font-weight: 600;
   line-height: 1.3;
-  padding-top: 1.25em;
+  padding-top: max(1.25em, var(--md-previous-space, 0px));
   padding-bottom: 0.25em;
   border-bottom: 1px solid var(--border-color);
 }
@@ -115,7 +132,7 @@ body.source-mode #editor .cm-content {
   font-size: 1.25em;
   font-weight: 600;
   line-height: 1.4;
-  padding-top: 1em;
+  padding-top: max(1em, var(--md-previous-space, 0px));
 }
 
 .cm-content .cm-md-atxheading4,
@@ -123,7 +140,7 @@ body.source-mode #editor .cm-content {
 .cm-content .cm-md-atxheading6 {
   font-weight: 600;
   line-height: 1.5;
-  padding-top: 1em;
+  padding-top: max(1em, var(--md-previous-space, 0px));
 }
 
 /* 标记字符（#、>、-、围栏、*）：光标不在这一行时压淡。 */
@@ -212,15 +229,15 @@ body.source-mode #editor .cm-content {
 .cm-content .cm-md-li-5:not(.cm-md-li-blank) { padding-left: 9em; }
 .cm-content .cm-md-li-6:not(.cm-md-li-blank) { padding-left: 10.5em; }
 
-/* 有序列表悬挂缩进：首行序号起点与同级无序圆点对齐，长句折行后对齐正文首字。 */
+/* 有序列表悬挂缩进：首行序号起点与同级无序圆点对齐，长句折行与项内续行对齐正文首字。 */
 .cm-content .cm-md-li-ordered { text-indent: -1.35em; }
-.cm-content .cm-md-li-ordered.cm-md-li-0 { padding-left: 2.85em; }
-.cm-content .cm-md-li-ordered.cm-md-li-1 { padding-left: 4.35em; }
-.cm-content .cm-md-li-ordered.cm-md-li-2 { padding-left: 5.85em; }
-.cm-content .cm-md-li-ordered.cm-md-li-3 { padding-left: 7.35em; }
-.cm-content .cm-md-li-ordered.cm-md-li-4 { padding-left: 8.85em; }
-.cm-content .cm-md-li-ordered.cm-md-li-5 { padding-left: 10.35em; }
-.cm-content .cm-md-li-ordered.cm-md-li-6 { padding-left: 11.85em; }
+.cm-content :is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-0 { padding-left: 2.85em; }
+.cm-content :is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-1 { padding-left: 4.35em; }
+.cm-content :is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-2 { padding-left: 5.85em; }
+.cm-content :is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-3 { padding-left: 7.35em; }
+.cm-content :is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-4 { padding-left: 8.85em; }
+.cm-content :is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-5 { padding-left: 10.35em; }
+.cm-content :is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-6 { padding-left: 11.85em; }
 
 /* 引用块内列表缩进：高优先级避免被 elegant / sepia 等主题的 #editor .cm-content .cm-md-blockquote 盖掉，
  * 导致有序序号叠加 text-indent 后贴住引用左竖线或嵌套层级塌陷。 */
@@ -231,13 +248,13 @@ body.source-mode #editor .cm-content {
 #editor .cm-content .cm-md-blockquote.cm-md-li-4:not(.cm-md-li-blank) { padding-left: 8.2em; }
 #editor .cm-content .cm-md-blockquote.cm-md-li-5:not(.cm-md-li-blank) { padding-left: 9.7em; }
 #editor .cm-content .cm-md-blockquote.cm-md-li-6:not(.cm-md-li-blank) { padding-left: 11.2em; }
-#editor .cm-content .cm-md-blockquote.cm-md-li-ordered.cm-md-li-0 { padding-left: 3.55em; }
-#editor .cm-content .cm-md-blockquote.cm-md-li-ordered.cm-md-li-1 { padding-left: 5.05em; }
-#editor .cm-content .cm-md-blockquote.cm-md-li-ordered.cm-md-li-2 { padding-left: 6.55em; }
-#editor .cm-content .cm-md-blockquote.cm-md-li-ordered.cm-md-li-3 { padding-left: 8.05em; }
-#editor .cm-content .cm-md-blockquote.cm-md-li-ordered.cm-md-li-4 { padding-left: 9.55em; }
-#editor .cm-content .cm-md-blockquote.cm-md-li-ordered.cm-md-li-5 { padding-left: 11.05em; }
-#editor .cm-content .cm-md-blockquote.cm-md-li-ordered.cm-md-li-6 { padding-left: 12.55em; }
+#editor .cm-content .cm-md-blockquote:is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-0 { padding-left: 3.55em; }
+#editor .cm-content .cm-md-blockquote:is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-1 { padding-left: 5.05em; }
+#editor .cm-content .cm-md-blockquote:is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-2 { padding-left: 6.55em; }
+#editor .cm-content .cm-md-blockquote:is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-3 { padding-left: 8.05em; }
+#editor .cm-content .cm-md-blockquote:is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-4 { padding-left: 9.55em; }
+#editor .cm-content .cm-md-blockquote:is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-5 { padding-left: 11.05em; }
+#editor .cm-content .cm-md-blockquote:is(.cm-md-li-ordered, .cm-md-li-ordered-cont).cm-md-li-6 { padding-left: 12.55em; }
 
 /* 无序列表的圆点。宽度与 `- ` 接近，避免换掉标记时行内文字抖动。
  *
@@ -265,6 +282,7 @@ body.source-mode #editor .cm-content {
 /* 逐行加底色，首末行加圆角，拼出整块的外形（旧版 pre 是 16px 内边距、圆角 6px）。
  * 不用真 <pre> 是因为 CM6 的行是一个个 div，插不了包住多行的元素。 */
 .cm-content .cm-md-codeblock {
+  --syntax-escape: var(--code-string);
   /* 底色本身在 ::before 上，位置因此需要 relative（见下一条）。 */
   position: relative;
   color: var(--code-block-text, var(--text-color));
@@ -332,7 +350,6 @@ body.source-mode #editor .cm-content {
  * 夹着一个块级 widget，就成了两个各 30.4px 高的匿名块，照样多出 61px。所以要让它们
  * **脱离行内流**（absolute）。不能用 display:none：缓冲块是 CodeMirror 用来给光标定位
  * 的，没有 rect 时光标会跳到别处。 */
-.cm-content .cm-line:has(> .cm-md-table-widget) > .cm-widgetBuffer,
 .cm-content .cm-line:has(> .cm-md-mermaid) > .cm-widgetBuffer,
 .cm-content .cm-line:has(> .cm-md-math-block) > .cm-widgetBuffer,
 .cm-content .cm-line:has(> .cm-md-html-block) > .cm-widgetBuffer {
@@ -341,38 +358,128 @@ body.source-mode #editor .cm-content {
   line-height: 0;
 }
 
+/* 分隔占位与光标缓冲同理：不能在块级 widget 后再撑起一个匿名文字行。 */
+.cm-content .cm-line:has(> .cm-md-mermaid, > .cm-md-math-block, > .cm-md-html-block) > .cm-md-paragraph-separator {
+  position: absolute;
+  height: 0;
+  line-height: 0;
+}
+
 /* ======= 表格 ======= */
 
-/* 表格画成真表格（live-preview 的 TableWidget）。光标进表格时退回源码，
- * 这时每一行是一段等宽文字，底色让它读起来还是一块。 */
-.cm-content .cm-md-table {
-  background: color-mix(in srgb, var(--table-header-bg, transparent) 45%, transparent);
-  font-family: var(--font-mono);
-  font-size: 0.875em;
-}
-
-/* 
- * 上下留白用 padding，不能用 margin。块级 widget 的高度是 CodeMirror 按
- * getBoundingClientRect() 量的，外边距不算在 rect 里，可浏览器排版时又真的占位置，
- * 于是它往后每一行的坐标都比 CodeMirror 记的偏低一截，点正文时光标落到下一行
- * （#199，两张表叠起来就够错一行）。 */
 .cm-content .cm-md-table-widget {
-  border-collapse: collapse;
+  display: table;
   width: 100%;
-  padding: 0.25em 0;
+  border-spacing: 0;
+  table-layout: auto;
+  box-sizing: border-box;
+  /* 外边距不在 BlockWrapper 的 rect 内，CM 无法把它计入高度表。
+   * 用内边距让首尾留白参与同一次测量，避免多表滚动累计坐标偏差。 */
+  margin: 0;
+  padding-block: 0.25em;
 }
 
-.cm-content .cm-md-table-widget th,
-.cm-content .cm-md-table-widget td {
-  border: 1px solid var(--border-color);
+/* 引用里的表格外框带着引用竖线，上下留白改用内边距，竖线才不会在表格上下断开 */
+.cm-content .cm-md-table-widget.cm-md-blockquote {
+  margin-block: 0;
+  padding-block: 0.25em;
+}
+
+/* 块级留白会被 CM 单独包成外框片段，它不参与表格布局。
+ * 保留只含 cm-gap 的虚拟行片段，避免长表格滚动时失去原有尺寸。 */
+.cm-content .cm-md-table-widget:not(:has(> .cm-line, > .cm-gap)) {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.cm-content .cm-md-table-row {
+  display: table-row;
+  border-left: none;
+  padding: 0;
+}
+
+.cm-content .cm-md-table-cell {
+  display: table-cell;
+  min-width: calc(2em + 26px);
+  min-height: 1.75em;
   padding: 8px 12px;
-  text-align: left;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
-.cm-content .cm-md-table-widget th {
-  background: var(--table-header-bg);
+.cm-content .cm-md-table-cell[data-column="0"] { border-left: 1px solid var(--border-color); }
+
+/* 表头底色和代码块一样画在 z-index -3 的伪元素上，选区层（-2）才看得见。
+ * 用 ::after：引用行的底色占着 ::before。 */
+.cm-content .cm-md-table-header {
+  position: relative;
   font-weight: 600;
 }
+
+.cm-content .cm-md-table-header::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background: var(--table-header-bg);
+  pointer-events: none;
+}
+
+.cm-content .cm-md-table-header .cm-md-table-cell { border-top: 1px solid var(--border-color); }
+
+.cm-content .cm-md-table-marker {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  font-size: 0;
+}
+
+/* 分隔行必须保留在表格中的零高几何锚点。display:none 的 rect 是 (0,0)，
+ * 当虚拟视口从分隔行起步时，BlockWrapper 会把它到外框的距离误算成上留白。 */
+.cm-content .cm-md-table-delimiter {
+  display: table-row;
+  height: 0;
+  font-size: 0;
+  line-height: 0;
+  visibility: hidden;
+}
+.cm-content .cm-md-table-delimiter > * { display: none; }
+
+.cm-md-table-widget > .cm-gap { display: table-row; }
+.cm-content .cm-md-table-row > .cm-widgetBuffer { display: none; }
+.cm-content .cm-md-table-row > br { display: none; }
+.cm-content .cm-md-table-row > span:not(.cm-md-table-cell) { display: none; }
+/* 可编辑区里格子的空白会被保留，开头这个空格后面是换行机会：放不下的长词、长数字会
+ * 整段挪到第二行，第一行只剩空格。不让它在这里断行 */
+.cm-content .cm-md-table-padding { font-size: 0; white-space: nowrap; }
+.cm-content .cm-md-table-number { white-space: nowrap; }
+
+.cm-content .cm-md-table-input {
+  display: block;
+  min-height: 1.75em;
+  outline: none;
+  caret-color: var(--text-color);
+}
+
+.cm-editor:has(.cm-md-table-input:focus) .cm-cursorLayer { display: none; }
+
+.cm-content .cm-md-table-paragraph {
+  margin-block: 0.5em;
+}
+
+.cm-content .cm-md-table-paragraph-input {
+  min-height: 1.75em;
+  outline: none;
+  caret-color: var(--text-color);
+  white-space: pre-wrap;
+}
+
+.cm-editor:has(.cm-md-table-paragraph-input[contenteditable="true"]:focus) .cm-cursorLayer { display: none; }
 
 /* ======= 分隔线 ======= */
 
@@ -471,6 +578,13 @@ body.source-mode #editor .cm-content {
 
 .cm-content .cm-md-html-inline {
   white-space: normal;
+}
+
+.cm-content .cm-md-table-caret-anchor {
+  display: inline-block;
+  width: 0;
+  height: 1em;
+  vertical-align: baseline;
 }
 
 /* ======= 图片 ======= */
@@ -584,6 +698,7 @@ body.exporting .cm-cursor,
 body.exporting .cm-cursorLayer,
 body.exporting .cm-selectionLayer,
 body.exporting .cm-selectionBackground,
+body.exporting .cm-content .cm-md-table-paragraph,
 body.exporting .cm-content .cm-md-frontmatter {
   display: none !important;
 }
@@ -593,9 +708,24 @@ body.exporting .cm-content .cm-md-frontmatter {
   .cm-cursorLayer,
   .cm-selectionLayer,
   .cm-selectionBackground,
+  .cm-content .cm-md-table-paragraph,
   .cm-content .cm-md-frontmatter {
     display: none !important;
   }
+
+  /* 保留与正文相同的内边距；@page 的页边距在它之外。
+   * 只移除编辑区最小高度，避免将文末编辑留白带成空白末页。 */
+  body.paper #editor .cm-content { min-height: 0 !important; }
+  /* 纸面按内容重新分配列宽，不沿用屏幕的百分比。数字也参与换行后的
+   * min-content 计算，长数字不能再独占最小宽度，短编号由格子下限保护。 */
+  .cm-content .cm-md-table-widget { table-layout: auto; }
+  .cm-content .cm-md-table-cell { width: auto !important; }
+  .cm-content .cm-md-table-row { break-inside: avoid; }
+  .cm-content .cm-md-table-header { display: table-header-group; break-after: avoid; }
+  .cm-content .cm-md-table-header + .cm-md-table-delimiter + .cm-md-table-row { break-before: avoid; }
+  .cm-content .cm-md-table-number { white-space: normal; }
+  .cm-content .cm-md-table-token { white-space: nowrap; }
+
 }
 
 /* ======= pele 变量 ======= */
@@ -771,20 +901,22 @@ body.theme-writer .cm-content .cm-md-blockquote {
 }
 
 /* 表格 */
-body.theme-elegant .cm-content .cm-md-table-widget th,
-body.theme-elegant .cm-content .cm-md-table-widget td,
-body.theme-notion .cm-content .cm-md-table-widget th,
-body.theme-notion .cm-content .cm-md-table-widget td {
-  border-left: none;
+body.theme-elegant .cm-content .cm-md-table-cell[data-column="0"],
+body.theme-notion .cm-content .cm-md-table-cell[data-column="0"] { border-left: none; }
+
+body.theme-elegant .cm-content .cm-md-table-header .cm-md-table-cell,
+body.theme-elegant .cm-content .cm-md-table-row:not(.cm-md-table-header) .cm-md-table-cell,
+body.theme-notion .cm-content .cm-md-table-header .cm-md-table-cell,
+body.theme-notion .cm-content .cm-md-table-row:not(.cm-md-table-header) .cm-md-table-cell {
   border-right: none;
 }
 
-body.theme-elegant .cm-content .cm-md-table-widget th {
+body.theme-elegant .cm-content .cm-md-table-header .cm-md-table-cell {
   border-bottom: 2px solid #c44b2b;
 }
 
-body.theme-writer .cm-content .cm-md-table-widget th,
-body.theme-writer .cm-content .cm-md-table-widget td {
+body.theme-writer .cm-content .cm-md-table-header .cm-md-table-cell,
+body.theme-writer .cm-content .cm-md-table-row:not(.cm-md-table-header) .cm-md-table-cell {
   font-size: 0.9em;
 }
 

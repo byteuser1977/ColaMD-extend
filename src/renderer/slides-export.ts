@@ -175,7 +175,8 @@ body.${PRINT_CLASS} #editor .cm-content {
 body.${PRINT_CLASS} #editor .cm-line.cm-md-hr { display: none !important; }
 /* Nothing may be cut off at the sheet's edge: code and cells wrap. */
 body.${PRINT_CLASS} #editor .cm-md-codeblock { white-space: pre-wrap !important; overflow-wrap: anywhere !important; }
-body.${PRINT_CLASS} #editor .cm-md-table-widget th, body.${PRINT_CLASS} #editor .cm-md-table-widget td { overflow-wrap: anywhere !important; word-break: break-word !important; }
+body.${PRINT_CLASS} #editor .cm-md-table-cell { overflow-wrap: anywhere !important; word-break: break-word !important; }
+body.${PRINT_CLASS} #editor img, body.${PRINT_CLASS} #editor svg { max-height: ${Math.round(PAGE_HEIGHT_PX * 0.72)}px; }
 `
 }
 

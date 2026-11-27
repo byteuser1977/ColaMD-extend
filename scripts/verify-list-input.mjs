@@ -185,6 +185,11 @@ const scenarios = [
   { name: '9. 涨成 10. 时旧 3 空格子项自动补缩进不脱钩', doc: '8. 甲\n9. 乙\n   1. 子', cursor: (d) => [at(d, '甲') + 1], keys: ['Enter'], expect: '8. 甲\n9. \n10. 乙\n    1. 子' },
   { name: '带子列表的父项行尾回车插入为第一条子项', doc: '1. 甲\n    1. 子1\n2. 乙', cursor: (d) => [at(d, '甲') + 1], keys: ['Enter'], expect: '1. 甲\n    1. \n    2. 子1\n2. 乙', expectHead: (d) => at(d, '    1. ') + 7 },
   { name: '有序项正文首字前回车在上方插空项原项顺延', doc: '1. 甲\n2. 乙', cursor: (d) => [at(d, '甲')], keys: ['Enter'], expect: '1. \n2. 甲\n3. 乙', expectHead: (d) => at(d, '甲') },
+  // 无序项同理；上方新项必须保留标记后的空格，否则 `-` 不再算列表
+  { name: '无序项正文首字前回车在上方插空项', doc: '正文\n\n- 甲\n- 乙', cursor: (d) => [at(d, '甲')], keys: ['Enter'], expect: '正文\n\n- \n- 甲\n- 乙', expectHead: (d) => at(d, '甲') },
+  { name: '引用里无序项首字前回车保留 > 与空格', doc: '> - 甲', cursor: (d) => [at(d, '甲')], keys: ['Enter'], expect: '> - \n> - 甲', expectHead: (d) => at(d, '甲') },
+  { name: '嵌套无序项首字前回车保留缩进', doc: '- 甲\n  * 乙', cursor: (d) => [at(d, '乙')], keys: ['Enter'], expect: '- 甲\n  * \n  * 乙', expectHead: (d) => at(d, '乙') },
+  { name: '待办首字前回车在上方插未勾选空项', doc: '- [x] 甲', cursor: (d) => [at(d, '甲')], keys: ['Enter'], expect: '- [ ] \n- [x] 甲', expectHead: (d) => at(d, '甲') },
   { name: '子列表首项 Shift+Tab 退级后留下的子项归 1.', doc: '1. 甲\n    1. 乙\n    2. 丙', cursor: (d) => [at(d, '乙')], keys: [['Tab', 8]], expect: '1. 甲\n2. 乙\n    1. 丙', expectHead: (d) => at(d, '乙') },
   { name: '嵌套空子项回车先退一级成上层同级项', doc: '1. 甲\n    1. 乙\n    2. ', cursor: (d) => [d.length], keys: ['Enter'], expect: '1. 甲\n    1. 乙\n2. ', expectHead: (d) => d.length },
   { name: '带子列表父项 Tab 缩进时整棵子树联动', doc: '1. 甲\n2. 乙\n    1. 子1', cursor: (d) => [at(d, '乙')], keys: ['Tab'], expect: '1. 甲\n    1. 乙\n        1. 子1', expectHead: (d) => at(d, '乙') },
@@ -613,28 +618,30 @@ async function main() {
     check('敲 1. 后按 Tab 不触发有序列表格式也不续 2.',
       !orderedTabState.cls.includes('cm-md-li')
         && !orderedTabState.hasMark
-        && (await docOf()) === '1.\t\n',
+        && (await docOf()) === '1.\t\n\n',
       `state=${JSON.stringify(orderedTabState)} doc=${JSON.stringify(await docOf())}`)
 
     // 20. 敲 `-` 后按 Tab 不触发无序列表格式也不出现圆点，回车不续 `- `
-    await setDoc('说明\n-')
-    await setCursor(4)
+    // 段落排版下「说明」回车是新的一段，所以起点是两段：说明、-
+    await setDoc('说明\n\n-')
+    await setCursor(5)
     await press(renderer, 'Tab')
     await setCursor(0) // 移开光标验证非激活行也不把 `-` 画成圆点
     const bulletTabState = JSON.parse(await evaluate(renderer, `(() => {
       const lines = [...document.querySelectorAll('#editor .cm-line')]
-      const line = lines[1]
+      const line = lines.find((l) => l.textContent.startsWith('-'))
       return JSON.stringify({
         cls: line?.className ?? '',
         hasBullet: !!line?.querySelector('.cm-md-bullet'),
       })
     })()`))
-    await setCursor(5)
+    await setCursor(6)
     await press(renderer, 'Enter')
+    // `-\t` 不是列表，回车按正文新起一段（段落排版：一次回车插入两个换行），不续 `- `。
     check('敲 - 后按 Tab 不触发无序列表格式也不出圆点',
       !bulletTabState.cls.includes('cm-md-li')
         && !bulletTabState.hasBullet
-        && (await docOf()) === '说明\n-\t\n',
+        && (await docOf()) === '说明\n\n-\t\n\n',
       `state=${JSON.stringify(bulletTabState)} doc=${JSON.stringify(await docOf())}`)
 
     // 21. 引用行 `> 1.` 后按 Tab 插入制表符而非空格，不触发列表格式且回车只续 `> `
@@ -646,6 +653,106 @@ async function main() {
     check('引用内 1. 后按 Tab 不触发列表格式且回车只续引用',
       (await docOf()) === '> 1.\t\n> ' && !quoteAfterNumCls.includes('cm-md-li'),
       `doc=${JSON.stringify(await docOf())} cls=${JSON.stringify(quoteAfterNumCls)}`)
+
+    // 22. 双击隔空行后有序列表的 `1.` 选中数字，改回 `2` 后同组顺延为 `2. 乙 / 3. 丙`
+    await setDoc('1. 甲\n\n插一段\n\n1. 乙\n2. 丙')
+    await setCursor(0)
+    await sleep(140)
+    const secondListMarkPos = JSON.parse(await evaluate(renderer, `(() => {
+      const marks = [...document.querySelectorAll('#editor .cm-md-li-ordered .cm-md-listmark')]
+      const m = marks[1]
+      if (!m) return 'null'
+      const r = m.getBoundingClientRect()
+      return JSON.stringify({ x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) })
+    })()`))
+    if (secondListMarkPos) {
+      for (const clickCount of [1, 2]) {
+        for (const type of ['mousePressed', 'mouseReleased']) {
+          await renderer.send('Input.dispatchMouseEvent', {
+            type, x: secondListMarkPos.x, y: secondListMarkPos.y, button: 'left', clickCount,
+          })
+        }
+      }
+      await sleep(160)
+    }
+    const dblSel = JSON.parse(await evaluate(renderer, `(() => {
+      const r = ${VIEW}.state.selection.main
+      return JSON.stringify({ from: r.from, to: r.to, text: ${VIEW}.state.sliceDoc(r.from, r.to) })
+    })()`))
+    await renderer.send('Input.insertText', { text: '2' })
+    await sleep(160)
+    check('双击有序序号选中纯数字并改起始号，同组顺延',
+      dblSel.text === '1' && (await docOf()) === '1. 甲\n\n插一段\n\n2. 乙\n3. 丙',
+      `dblSel=${JSON.stringify(dblSel)} doc=${JSON.stringify(await docOf())}`)
+
+    // 23. 有序列表中间插入普通行：行首 Tab 按上一项正文宽度对齐、接回下方序号，且渲染层不再叠双倍缩进
+    const contDoc = '1. 甲\n新内容\n1. 乙\n2. 丙'
+    await setDoc(contDoc)
+    await setCursor(contDoc.indexOf('新内容'))
+    await press(renderer, 'Tab')
+    await sleep(140)
+    const afterContTab = await docOf()
+    const contGeom = JSON.parse(await evaluate(renderer, `(() => {
+      const lines = [...document.querySelectorAll('#editor .cm-line')]
+      const firstLine = lines[0]
+      const contLine = lines[1]
+      const findCharLeft = (el, ch) => {
+        const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+        while (w.nextNode()) {
+          const i = w.currentNode.nodeValue.indexOf(ch)
+          if (i >= 0) {
+            const r = document.createRange()
+            r.setStart(w.currentNode, i)
+            r.setEnd(w.currentNode, i + 1)
+            return r.getBoundingClientRect().left
+          }
+        }
+        return null
+      }
+      return JSON.stringify({
+        cls: contLine?.className ?? '',
+        text: contLine?.textContent ?? '',
+        firstLeft: firstLine ? findCharLeft(firstLine, '甲') : null,
+        contLeft: contLine ? findCharLeft(contLine, '新') : null,
+      })
+    })()`))
+    check('列表中间插入普通行按 Tab 对齐正文、接回编号且无双倍缩进',
+      afterContTab === '1. 甲\n   新内容\n2. 乙\n3. 丙'
+        && contGeom.cls.includes('cm-md-li-ordered-cont')
+        && contGeom.text === '新内容'
+        && contGeom.firstLeft !== null && contGeom.contLeft !== null
+        && Math.abs(contGeom.contLeft - contGeom.firstLeft) <= 8,
+      `doc=${JSON.stringify(afterContTab)} geom=${JSON.stringify(contGeom)}`)
+
+    // 24. 列表续行按 Shift+Tab 或行首退格一次退回顶格（不卡 2 空格）
+    await press(renderer, 'Tab', 8) // Shift+Tab
+    const afterContShiftTab = await docOf()
+    await press(renderer, 'Tab')
+    await press(renderer, 'Backspace')
+    const afterContBackspace = await docOf()
+    check('列表续行按 Shift+Tab 与行首退格均一次干净退回顶格',
+      afterContShiftTab === '1. 甲\n新内容\n1. 乙\n2. 丙'
+        && afterContBackspace === '1. 甲\n新内容\n1. 乙\n2. 丙',
+      `shiftTab=${JSON.stringify(afterContShiftTab)} backspace=${JSON.stringify(afterContBackspace)}`)
+
+    // 25. 嵌套子列表中间插普通行：Tab 逐级对齐并接回子项与外层编号，Shift+Tab 逐级退回顶格
+    const nestedContDoc = '1. 甲\n    1. 子一\n新内容\n    1. 子二\n1. 乙'
+    await setDoc(nestedContDoc)
+    await setCursor(nestedContDoc.indexOf('新内容'))
+    await press(renderer, 'Tab')
+    const nestedTab1 = await docOf()
+    await press(renderer, 'Tab')
+    const nestedTab2 = await docOf()
+    await press(renderer, 'Tab', 8)
+    const nestedShift1 = await docOf()
+    await press(renderer, 'Tab', 8)
+    const nestedShift2 = await docOf()
+    check('嵌套列表中间普通行 Tab/Shift+Tab 逐级对齐并恢复编号',
+      nestedTab1 === '1. 甲\n    1. 子一\n   新内容\n    2. 子二\n2. 乙'
+        && nestedTab2 === '1. 甲\n    1. 子一\n       新内容\n    2. 子二\n2. 乙'
+        && nestedShift1 === '1. 甲\n    1. 子一\n   新内容\n    2. 子二\n2. 乙'
+        && nestedShift2 === '1. 甲\n    1. 子一\n新内容\n    1. 子二\n1. 乙',
+      JSON.stringify({ nestedTab1, nestedTab2, nestedShift1, nestedShift2 }))
 
     reportChecks()
   } finally {
