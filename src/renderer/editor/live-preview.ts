@@ -1528,9 +1528,17 @@ function collectPages(state: EditorState, ranges: DecorationRange[], front: Rang
   for (let n = 1; n <= state.doc.lines; n++) {
     const lineFrom = state.doc.line(n).from
     const classes = [`${PAGE_CLASS_PREFIX}${page}`]
-    if (startsPage) classes.push(PAGE_START_CLASS)
+    // 空行不算页首：段落排版会把 `---` 两侧的空行整行换成间距 widget
+    // （paragraph-layout 的 separator / BlockSpace），DOM 里没有这一行，
+    // 标记落在它身上等于没落——导出按 page-start 找页首，只有第一页找得到，
+    // 其余页全挤进一张纸（2026-11-27 报的）。页首标记顺延到这一页第一个
+    // 有字的行；整页都没有字时自然也不会有标记（那种页本来就不成页）。
+    // `---` 自身仍归它结束的那一页，不受影响。
+    if (startsPage && state.doc.line(n).text.trim() !== '') {
+      classes.push(PAGE_START_CLASS)
+      startsPage = false
+    }
     ranges.push({ from: lineFrom, to: lineFrom, deco: BLOCK(classes.join(' ')) })
-    startsPage = false
     // 分隔线归它结束的那一页，下一行开新的一页
     if (nextBreak < breaks.length && breaks[nextBreak] === n) {
       page++

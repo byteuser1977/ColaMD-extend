@@ -521,9 +521,11 @@ body.presenting #editor[data-slide-layout='two-col'] .cm-md-slide-directive {
 
 /* 导出是流式分纸、没有容器级的 flex 居中，封面/收束的整页居中由
  * slides-export.ts 在页前撑空白完成（spacer），页首安全区在这里归零——否则
- * 那截 padding 会叠在 spacer 之上，内容被推得偏下。双栏页不居中，保留安全区。 */
-body.slides-printing .cm-md-slide-cover.cm-md-page-start,
-body.slides-printing .cm-md-slide-closing.cm-md-page-start {
+ * 那截 padding 会叠在 spacer 之上，内容被推得偏下。双栏页不居中，保留安全区。
+ * 带 #editor：页首常常就是指令行，它同时命中上面那条「指令行承担安全区」的
+ * 规则，两条同为 !important、特异性相同时本文件靠后的这一条才压得住。 */
+body.slides-printing #editor .cm-md-slide-cover.cm-md-page-start,
+body.slides-printing #editor .cm-md-slide-closing.cm-md-page-start {
   padding-top: 0 !important;
 }
 

@@ -183,6 +183,50 @@ body.${PRINT_CLASS} #editor img, body.${PRINT_CLASS} #editor svg { max-height: $
 `
 }
 
+/**
+ * 把每页的起点重新锚定到真实存在的行上。
+ *
+ * 分页标记（`cm-md-page-start`，见 live-preview 的 collectPages）打在 `---` 紧接着的
+ * 那一行上。那一行常常是空行，而空行被段落排版的分隔 widget 整个替换掉了
+ * （paragraph-layout 的 separator）：DOM 里没有这一行，标记就没有着落。导出按
+ * page-start 找页首，于是只有第一页找得到，其余页全挤在一张纸上（2026-11-27 报的）。
+ *
+ * 所以量页高之前按 DOM 顺序重新认一次页首：每页第一个带页码类的行就是这一页的
+ * 起点，优先取真行（`.cm-line`），该页没有真行时退回第一个元素。标记写在同一个
+ * 类名上，CSS 那边不必知道页首是从哪来的。
+ */
+function anchorPageStarts(root: HTMLElement, pages: number[]): void {
+  const wanted = new Set(pages)
+  const firstAt = new Map<number, HTMLElement>()
+  for (const child of Array.from(root.children) as HTMLElement[]) {
+    const page = pageOfLine(child)
+    if (page === null || !wanted.has(page)) continue
+    const current = firstAt.get(page)
+    const isLine = child.classList.contains('cm-line')
+    if (!current || (!current.classList.contains('cm-line') && isLine)) firstAt.set(page, child)
+  }
+  for (const element of firstAt.values()) {
+    if (element.classList.contains(PAGE_START_CLASS)) continue
+    element.classList.add(PAGE_START_CLASS)
+    // 记一笔，退出导出时只摘掉我们补的，不碰 collectPages 自己打的。
+    element.dataset.sheetStart = '1'
+  }
+}
+
+/**
+ * 交给打印之前再认一次页首。
+ *
+ * 补在 DOM 上的类不属于装饰层：这之后只要 CodeMirror 重算一次（打印布局摊平、
+ * 视口变化都会触发），行元素重建，类就被覆盖掉，分页符跟着消失。所以补完之后
+ * 不能再有重排的机会——主进程在 `printToPDF` 之前最后一步调这里。
+ * 不在幻灯片导出态（普通 PDF）时什么也不做。
+ */
+export function reanchorPageStarts(): void {
+  const root = documentRoot()
+  if (!root || !sheetStyle) return
+  anchorPageStarts(root, deckPages())
+}
+
 /** 一页在纸上的账：几行、占多高、要不要缩。 */
 type PagePlan = {
   page: number
@@ -296,6 +340,9 @@ export async function enterPrintLayout(): Promise<SlidesSheet | false> {
     return false
   }
 
+  // 页首标记原本落在被分隔 widget 吃掉的空行上，先按 DOM 把它落回真行。
+  anchorPageStarts(root, deck)
+
   const target = PAGE_HEIGHT_PX - SAFETY_PX
   const plans: PagePlan[] = []
   for (const page of deck) {
@@ -332,12 +379,22 @@ export async function enterPrintLayout(): Promise<SlidesSheet | false> {
     if (above > 0) spacers.set(plan.page, above)
   }
   applySheet(sheet, background, accent, plans, spacers)
+  // 量页高的这几轮重排有可能让 CodeMirror 重建行元素、把补上的类抹掉；
+  // 交付打印前再补一次，确保分页符都还挂着。
+  anchorPageStarts(root, deck)
 
   return { width: PAGE_WIDTH_INCHES, height: PAGE_HEIGHT_INCHES }
 }
 
 export function exitPrintLayout(): void {
   restoreViewport()
+  // 摘掉导出时补的页首标记：它们不在装饰层里，重算不会自己消失。
+  for (const element of Array.from(
+    document.querySelectorAll<HTMLElement>('#editor .cm-content > [data-sheet-start]'),
+  )) {
+    element.classList.remove(PAGE_START_CLASS)
+    delete element.dataset.sheetStart
+  }
   if (!sheetStyle) return
   sheetStyle.remove()
   sheetStyle = null

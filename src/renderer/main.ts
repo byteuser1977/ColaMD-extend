@@ -7,7 +7,7 @@ import { withDiagramZoomPaused } from './editor/mermaid-bridge'
 import { EditorView } from '@codemirror/view'
 import { documentHTMLFrom } from './editor/clean-html'
 import { isPresenting, startSlideshow, stopSlideshow } from './slideshow'
-import { enterPrintLayout, exitPrintLayout } from './slides-export'
+import { enterPrintLayout, exitPrintLayout, reanchorPageStarts } from './slides-export'
 import { enterPaperLayout, exitPaperLayout } from './print-layout'
 import { SearchPanel } from './editor/search-panel'
 import { applyTheme, loadSavedTheme, onThemeChange } from './themes/theme-manager'
@@ -1836,6 +1836,9 @@ window.__colamdPrintExport = {
   enter: async () => {
     setCleanExport(true)
     await enterPaperLayout()
+    // 摊平会重排，页首标记可能随行元素重建被覆盖；这里是打印前最后一步，
+    // 补完就交给主进程 printToPDF，中间不再有让 CodeMirror 重算的机会。
+    reanchorPageStarts()
   },
   exit: () => {
     exitPaperLayout()
