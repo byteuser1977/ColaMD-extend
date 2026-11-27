@@ -143,8 +143,6 @@ export class SearchPanel {
 
   private replaceCurrent(): void {
     if (this.currentIndex < 0 || this.currentIndex >= this.matches.length) return
-    const view = getEditorView()
-    if (!view) return
     const match = this.matches[this.currentIndex]
     const replacement = this.replaceInput.value
     const view = getEditorView()

@@ -267,6 +267,10 @@ function createCapacitorAPI(): ElectronAPI {
       }
     },
     getFileManagerName: async () => 'system' as FileManagerName,
+    // 文件列表右键重命名（上游 #195）：移动端侧栏不提供该入口，先给类型兜底。
+    renameFile: async () => ({ error: 'rename is not supported on Android' }),
+    onRequestRenameFile: (cb) => onEvent('request-rename-file', cb),
+    onFileRenamed: (cb) => onEvent('file-renamed', cb),
     revealFile: noopTrue,
     showEntryContextMenu: noopVoid,
     showTabContextMenu: async (menu) => showTabMenu(menu),

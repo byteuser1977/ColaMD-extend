@@ -142,11 +142,15 @@ const listFixture = [
 ].join('\n')
 const listPath = join(WORK, 'list.docx')
 writeFileSync(listPath, await markdownToDocx({ content: listFixture, sourcePath: null }))
-const listXml = execFileSync('unzip', ['-p', listPath, 'word/document.xml']).toString('utf8')
+const listXml = readDocxDocumentXml(listPath)
 const at = (text) => listXml.indexOf(text)
 check('列表项里表格在后续段落之前', at('表头甲') >= 0 && at('表头甲') < at('表格后的段落'), `表格 ${at('表头甲')} 段落 ${at('表格后的段落')}`)
 check('列表项里代码在后续段落之前', at('代码行') >= 0 && at('代码行') < at('代码后的段落'), `代码 ${at('代码行')} 段落 ${at('代码后的段落')}`)
-check('以段落开头的项仍和符号同一行', /• <\/w:t>(?:(?!<\/w:p>).)*普通项文字/s.test(listXml))
+// 本地导出器的列表符号走 Word 原生编号（w:numPr），不是字面 `• ` 文本：
+// 以段落开头的项，段落文字必须落在带编号属性的列表段落里，而不是符号后面另起一段。
+const paragraphItem = listXml.match(/<w:p\b(?:(?!<\/w:p>).)*普通项文字(?:(?!<\/w:p>).)*<\/w:p>/s)
+check('以段落开头的项仍和符号同一行', !!paragraphItem && paragraphItem[0].includes('w:numPr'),
+  paragraphItem ? '普通项文字所在段落带编号属性' : '没找到普通项文字所在段落')
 
 mkdirSync(WORK, { recursive: true })
 rmSync(WORK, { recursive: true, force: true })

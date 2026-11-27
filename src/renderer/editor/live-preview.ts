@@ -597,6 +597,7 @@ function collectMath(
             state.doc.lineAt(range.from).from === range.from &&
             state.doc.lineAt(Math.min(range.to, state.doc.length)).to === range.to,
         }) })
+    }
   }
   if (enclosingMarks.size) {
     // CM 把同范围、同 startSide 的后一个 mark 放外层。源码 wrapper 必须在格式

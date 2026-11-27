@@ -1,12 +1,16 @@
 // 解析规则的纯 Node 回归：真实编辑器 parser，完整代码跨度里的竖线不参与分格。
 import { build } from 'esbuild'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 
-const root = new URL('..', import.meta.url).pathname
-const dir = mkdtempSync(join(tmpdir(), 'colamd-table-syntax-'))
+// fileURLToPath 而不是 URL.pathname：Windows 下 pathname 会带 `/D:/` 前缀，esbuild 解析不了。
+const root = fileURLToPath(new URL('..', import.meta.url))
+// 临时产物落 node_modules/.cache：本机安全软件限制 esbuild 子进程只能写这里（见 verify-docx 同款处理）。
+const cacheRoot = join(root, 'node_modules', '.cache')
+mkdirSync(cacheRoot, { recursive: true })
+const dir = mkdtempSync(join(cacheRoot, 'table-syntax-'))
 try {
   await build({
     stdin: { contents: `export { markdownParser, createState } from './src/renderer/editor/state'; export { parseMarkdownForWord } from './src/main/markdown-for-word'; export { findTextMatches, replaceTextMatches } from './src/renderer/editor/table-editing'; export { tableCodeSpans } from './src/shared/markdown-tables'; export { parser, GFM } from '@lezer/markdown'`, resolveDir: root, loader: 'ts' },

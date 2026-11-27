@@ -10,7 +10,10 @@ import { stopVerifyApp } from './verify-workdir.mjs'
 
 assertBuildFresh()
 const root = fileURLToPath(new URL('..', import.meta.url))
-const directory = mkdtempSync('/tmp/colamd-inline-math-')
+// 临时目录落 node_modules/.cache：本机安全软件限制子进程只能写这里，/tmp 在 Windows 上也不存在。
+const cacheRoot = join(root, 'node_modules', '.cache')
+mkdirSync(cacheRoot, { recursive: true })
+const directory = mkdtempSync(join(cacheRoot, 'inline-math-'))
 const output = process.env.COLAMD_MATH_OUTPUT
 if (output) mkdirSync(output, { recursive: true })
 const file = join(directory, 'caret.md')

@@ -3,11 +3,13 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import vm from 'node:vm'
 import ts from 'typescript'
 
 const require = createRequire(import.meta.url)
-const root = new URL('..', import.meta.url).pathname
+// fileURLToPath 而不是 URL.pathname：Windows 下 pathname 带 `/D:/` 前缀，路径会拼成 D:\D:\…。
+const root = fileURLToPath(new URL('..', import.meta.url))
 const { EditorState, ChangeSet } = require('@codemirror/state')
 const { markdown } = require('@codemirror/lang-markdown')
 const language = require('@codemirror/language')
@@ -21,7 +23,7 @@ const cache = new Map()
 function load(path) {
   if (cache.has(path)) return cache.get(path)
   let source = readFileSync(path, 'utf8')
-  if (path.endsWith('/live-preview.ts')) source += '\nexport { parseRefresh, buildDecorations }'
+  if (path.endsWith('/live-preview.ts') || path.endsWith('\\live-preview.ts')) source += '\nexport { parseRefresh, buildDecorations }'
   const code = ts.transpileModule(source, { compilerOptions: {
     module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true,
   } }).outputText
