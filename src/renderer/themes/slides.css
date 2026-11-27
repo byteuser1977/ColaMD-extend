@@ -62,7 +62,10 @@
   --slide-quote-size: 2.4em;
 
   --slide-page-pad-x: 6vw;
-  --slide-page-top-pad: 61px;
+  /* 页顶安全区按 1080p 高 24px 的比例随窗口高度缩放（2026-11-27 定）：
+     1080p 全屏解出 24px。导出在 slides-export.ts 的 PAPER 里按纸面 1080 定死 24px，
+     两处解出同一个数。 */
+  --slide-page-top-pad: calc(100vh * 24 / 1080);
   /* 放映与导出共用的基准字号。纸面 1920×1080 时 1.35vw 解出 25.92px：
      导出不再自带一套字号（2026-11-23 之前导出写死 24px，稿子看着和放映
      不是同一份）。 */
@@ -139,11 +142,13 @@ body.theme-midnight {
 }
 
 /* ─── 页首安全区与指令行 ──────────────────────────────────────────────
- * chrome 悬在页顶（约 60px 高），每页第一条线（cm-md-page-start）统一留出
- * padding-top 当安全区。指令行往往是 page-start：它自己压成零内容盒
- * （visibility + 字号 0），padding 只留一次——多行指令块的其他行绝不能再吃
- * 一次 84/96px，否则四行页头块就是三百多像素的空白。
- * 导出不能用 display:none（page-start 藏了 break-before 就失效），正好同构。 */
+ * 放映一页一屏，页顶安全区写在 .cm-content 容器上（见下面全出血那条后面的
+ * 容器规则）：行级落点太多（`---` 后的空行、指令行、kicker 源行、标题行都可能
+ * 当 page-start），还有标题 padding-top: 0 这类覆盖，kicker 会贴顶
+ * （2026-11-27 报的）。two-col 的容器间隔同日验证可行，放映统一走这条路。
+ * 导出是流式分纸，容器 padding 只会垫第一页，所以导出仍按行级规则走：
+ * 每页第一条线（cm-md-page-start）承担安全区，指令行压成零内容盒
+ * （visibility + 字号 0），padding 只留一次——多行指令块的其他行绝不能再吃。 */
 body.presenting #editor .cm-md-slide-directive {
   font-size: 0 !important;
   line-height: 0 !important;
@@ -162,18 +167,14 @@ body.slides-printing #editor .cm-md-slide-directive {
   border: none !important;
 }
 
-/* 只有整块指令的第一行（页首）承担安全区，后续字段行零高度。 */
-body.presenting #editor .cm-md-slide-directive.cm-md-page-start {
-  padding-top: var(--slide-page-top-pad) !important;
-}
-
+/* 导出：只有整块指令的第一行（页首）承担安全区，后续字段行零高度。 */
 body.slides-printing #editor .cm-md-slide-directive.cm-md-page-start {
   padding-top: var(--slide-page-top-pad) !important;
 }
 
 /* 结构兜底的 kicker：标题前那段文字在放映/导出里不占位，文字由标题行的
- * ::before 显示，源行留在编辑器里照常可改。不能用 display:none：这一行
- * 可能就是 page-start，分页符依赖它。 */
+ * ::before 显示，源行留在编辑器里照常可改。不能用 display:none：导出里
+ * 这一行可能就是 page-start，分页符依赖它。 */
 body.presenting .cm-md-page-kicker,
 body.slides-printing .cm-md-page-kicker {
   font-size: 0 !important;
@@ -184,21 +185,15 @@ body.slides-printing .cm-md-page-kicker {
   border: none !important;
 }
 
-/* kicker 源行正好是页首时，它还得承担页顶安全区：文字藏掉，内距留下。 */
-body.presenting .cm-md-page-kicker.cm-md-page-start {
-  padding-top: var(--slide-page-top-pad) !important;
-}
-
+/* 导出：kicker 源行正好是页首时，它还得承担页顶安全区：文字藏掉，内距留下。 */
 body.slides-printing .cm-md-page-kicker.cm-md-page-start {
   padding-top: var(--slide-page-top-pad) !important;
 }
 
-/* 没写指令的页：安全区落在第一条内容行上。 */
-body.presenting .cm-md-page-start {
-  padding-top: var(--slide-page-top-pad);
-}
-
-body.slides-printing .cm-md-page-start {
+/* 导出：没写指令的页，安全区落在第一条内容行上。带 #editor 提权：页首行往往
+ * 是页标题（.cm-md-page-title / .cm-md-atxheading* 写了 padding-top: 0），
+ * 同权重会被压掉，默认页就贴顶了。 */
+body.slides-printing #editor .cm-md-page-start {
   padding-top: var(--slide-page-top-pad);
 }
 
@@ -350,6 +345,14 @@ body.slides-printing #editor .cm-content {
   max-width: none !important;
   margin: 0 !important;
   padding: 0 var(--slide-page-pad-x) !important;
+}
+
+/* 放映的页顶安全区写在容器上：放映一页一屏，.cm-content 就是整页纸面，
+ * 一条规则覆盖所有版式（agenda/kpi/steps/matrix/two-col/section/默认页），
+ * 不再依赖 page-start 的行级落点。two-col 的双栏顶齐也是这一条顺带保证的。
+ * 导出不走这条：流式分纸里容器 padding 只会垫第一页，导出按行级规则走。 */
+body.presenting #editor .cm-content {
+  padding-top: var(--slide-page-top-pad) !important;
 }
 
 /* 行也铺满版心。放映有 base.css 的 `.cm-content > * { max-width: 100% }`，
@@ -505,29 +508,21 @@ body.slides-printing .cm-md-li {
   }
 }
 
-/* 容器级版式（整页 flex 居中或分栏）里，页首安全区要交还给布局本身：
- * 指令行改成真正不占位（display:none），page-start 的上内距归零——否则
- * 那截安全区会被 flex 当成一项内容，整页内容被推得偏下。这些页靠 flex
- * 自己居中，不需要页首安全区。 */
+/* 容器级版式（整页 flex 居中或分栏）里，指令行改成真正不占位（display:none）：
+ * 放映的安全区写在 .cm-content 容器上（见全出血那条后面），flex 居中的页
+ * （cover/closing）内容整体居中，间隔自然比安全区大；two-col 分栏页从安全区
+ * 下方开始，两栏顶齐。section（2026-11-27 定）与 agenda/kpi 等内容页一样
+ * 顶部对齐，指令行走通用放映规则压成零盒，不再有 page-start 行级内距。 */
 body.presenting #editor[data-slide-layout='cover'] .cm-md-slide-directive,
-body.presenting #editor[data-slide-layout='section'] .cm-md-slide-directive,
 body.presenting #editor[data-slide-layout='closing'] .cm-md-slide-directive,
 body.presenting #editor[data-slide-layout='two-col'] .cm-md-slide-directive {
   display: none;
 }
 
-body.presenting #editor[data-slide-layout='cover'] .cm-md-page-start,
-body.presenting #editor[data-slide-layout='section'] .cm-md-page-start,
-body.presenting #editor[data-slide-layout='closing'] .cm-md-page-start,
-body.presenting #editor[data-slide-layout='two-col'] .cm-md-page-start {
-  padding-top: 0;
-}
-
-/* 导出是流式分纸、没有容器级的 flex 居中，封面/章节/收束的整页居中由
+/* 导出是流式分纸、没有容器级的 flex 居中，封面/收束的整页居中由
  * slides-export.ts 在页前撑空白完成（spacer），页首安全区在这里归零——否则
  * 那截 padding 会叠在 spacer 之上，内容被推得偏下。双栏页不居中，保留安全区。 */
 body.slides-printing .cm-md-slide-cover.cm-md-page-start,
-body.slides-printing .cm-md-slide-section.cm-md-page-start,
 body.slides-printing .cm-md-slide-closing.cm-md-page-start {
   padding-top: 0 !important;
 }
@@ -591,14 +586,9 @@ body.slides-printing .cm-md-slide-cover.cm-md-page-lead {
 
 /* ════ section · 章节陈述（dsh-ppt: section.statement）════
  *
- * 约定：一个 h1（或 h2）作章节判断，标题后一段一句说明，剩下的交给留白。 */
-body.presenting #editor[data-slide-layout='section'] .cm-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 92vh;
-}
-
+ * 约定：一个 h1（或 h2）作章节判断，标题后一段一句说明。原来是整页 flex
+ * 垂直居中，2026-11-27 起与 agenda/kpi 等内容页一致改为顶部对齐：
+ * 页顶安全区由 page-start 统一承担，不再有自己的容器级布局。 */
 body.presenting #editor[data-slide-layout='section'] .cm-md-page-title {
   font-size: var(--slide-section-title-size, 5.2em);
   line-height: 1.02;
@@ -824,6 +814,8 @@ body.presenting #editor[data-slide-layout='two-col'] .cm-content {
   column-rule: 1px solid var(--border-color);
   height: 88vh;
   column-fill: auto;
+  /* 页顶安全区由通用的 .cm-content 容器 padding 承担：写在容器上两栏顶部
+   * 才落得齐平——写在第一行上只有左栏吃得到，右栏会从 0 开始（2026-11-27）。 */
 }
 
 body.slides-printing .cm-md-slide-two-col:not(.cm-md-page-start) {

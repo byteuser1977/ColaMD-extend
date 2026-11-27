@@ -57,6 +57,8 @@ const PAPER = {
   kicker: 13.824,
   /** clamp(20px, 3.2vh, 40px) @1080 */
   chromePadY: 34.56,
+  /** 页顶安全区：slides.css 按 1080p 高 24px 的比例取 vh，纸面 1080 高解出 24px */
+  topPad: 24,
   /** clamp(18px, 1.6vw, 30px) @1920 */
   chromeLogoH: 30,
   /** clamp(16px, 2.4vh, 28px) @1080 */
@@ -145,6 +147,7 @@ body.${PRINT_CLASS} {
   --slide-body-size: ${PAPER.bodySize}px;
   --slide-kicker-size: ${PAPER.kicker}px;
   --slide-chrome-pad-y: ${PAPER.chromePadY}px;
+  --slide-page-top-pad: ${PAPER.topPad}px;
   --slide-chrome-logo-h: ${PAPER.chromeLogoH}px;
   --slide-foot-pad-y: ${PAPER.footPadY}px;
   --slide-img-max-h: ${PAPER.imgMaxH}px;
@@ -186,12 +189,13 @@ type PagePlan = {
   lines: HTMLElement[]
   used: number
   zoom: number
-  /** 放映里这一版式是整页垂直居中的（cover/section/closing），导出也要居中。 */
+  /** 放映里这一版式是整页垂直居中的（cover/closing），导出也要居中。 */
   centered: boolean
 }
 
-/** 放映里 justify-content:center 的版式（slides.css 的容器级规则）。 */
-const CENTERED_LAYOUTS = ['cm-md-slide-cover', 'cm-md-slide-section', 'cm-md-slide-closing']
+/** 放映里 justify-content:center 的版式（slides.css 的容器级规则）。
+ *  section 2026-11-27 起改为顶部对齐，与普通页同待遇。 */
+const CENTERED_LAYOUTS = ['cm-md-slide-cover', 'cm-md-slide-closing']
 
 function isCenteredLayout(first: HTMLElement): boolean {
   return CENTERED_LAYOUTS.some((cls) => first.classList.contains(cls))
@@ -319,7 +323,8 @@ export async function enterPrintLayout(): Promise<SlidesSheet | false> {
     }
   }
 
-  // 只给放映里整页垂直居中的版式（cover/section/closing）撑空白居中；普通页顶部对齐。
+  // 只给放映里整页垂直居中的版式（cover/closing）撑空白居中；普通页（含 section）
+  // 从页顶安全区开始，顶部对齐。
   const spacers = new Map<number, number>()
   for (const plan of plans) {
     if (!plan.centered) continue
